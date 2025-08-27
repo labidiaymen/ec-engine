@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="16" height="16">
+  <defs>
+    <style>
+      .ec-letter { 
+        font-family: 'Arial Black', 'Arial', sans-serif; 
+        font-weight: 900; 
+        font-size: 72px; 
+        fill: #323330;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+    </style>
+  </defs>
+  <text x="35" y="60" class="ec-letter">E</text>
+  <text x="85" y="60" class="ec-letter">C</text>
+</svg>

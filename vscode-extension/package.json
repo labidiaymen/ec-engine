@@ -1,0 +1,76 @@
+{
+  "name": "ecengine-syntax",
+  "displayName": "ECEngine Language Support",
+  "description": "Syntax highlighting for ECEngine (.ec) files",
+  "version": "1.0.0",
+  "publisher": "ecengine",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ecengine",
+    "javascript-like",
+    "syntax-highlighting"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "ecengine",
+        "aliases": [
+          "ECEngine",
+          "ecengine"
+        ],
+        "extensions": [
+          ".ec"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./fileicons/ec-light.svg",
+          "dark": "./fileicons/ec-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ecengine",
+        "scopeName": "source.ecengine",
+        "path": "./syntaxes/ecengine.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "ECEngine",
+      "properties": {
+        "ecengine.enableSyntaxHighlighting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable syntax highlighting for ECEngine files"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.126",
+    "@types/vscode": "^1.103.0",
+    "typescript": "^4.9.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/labidiaymen/ec-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/labidiaymen/ec-engine/issues"
+  },
+  "homepage": "https://github.com/labidiaymen/ec-engine#readme",
+  "license": "MIT",
+  "author": ""
+}
