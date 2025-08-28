@@ -6,7 +6,21 @@ namespace ECEngine.Runtime;
 public class Interpreter
 {
     private string _sourceCode = "";
-    private Dictionary<string, object?> _variables = new Dictionary<string, object?>();
+    private Dictionary<string, VariableInfo> _variables = new Dictionary<string, VariableInfo>();
+
+    /// <summary>
+    /// Get read-only access to current variables
+    /// </summary>
+    public IReadOnlyDictionary<string, VariableInfo> Variables => _variables;
+
+    /// <summary>
+    /// Clear all variables and reset interpreter state
+    /// </summary>
+    public void ClearState()
+    {
+        _variables.Clear();
+        _sourceCode = "";
+    }
 
     public object? Evaluate(ASTNode node, string sourceCode = "")
     {
@@ -48,9 +62,9 @@ public class Interpreter
     private object? EvaluateIdentifier(Identifier identifier)
     {
         // Check if it's a variable
-        if (_variables.TryGetValue(identifier.Name, out var value))
+        if (_variables.TryGetValue(identifier.Name, out var variableInfo))
         {
-            return value;
+            return variableInfo.Value;
         }
         
         // Check for built-in identifiers
@@ -73,6 +87,15 @@ public class Interpreter
 
     private object? EvaluateVariableDeclaration(VariableDeclaration varDecl)
     {
+        // Check if const declaration has an initializer
+        if (varDecl.Kind == "const" && varDecl.Initializer == null)
+        {
+            var token = varDecl.Token;
+            throw new ECEngineException($"Missing initializer in const declaration '{varDecl.Name}'",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "const declarations must be initialized");
+        }
+
         object? value = null;
         
         if (varDecl.Initializer != null)
@@ -89,24 +112,32 @@ public class Interpreter
                 $"Cannot redeclare variable '{varDecl.Name}'");
         }
         
-        _variables[varDecl.Name] = value;
+        _variables[varDecl.Name] = new VariableInfo(varDecl.Kind, value);
         return value;
     }
 
     private object? EvaluateAssignmentExpression(AssignmentExpression assignment)
     {
-        var value = Evaluate(assignment.Right, _sourceCode);
-        
         // Check if variable exists
-        if (!_variables.ContainsKey(assignment.Left.Name))
+        if (!_variables.TryGetValue(assignment.Left.Name, out var variableInfo))
         {
             var token = assignment.Token;
             throw new ECEngineException($"Variable '{assignment.Left.Name}' not declared",
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
                 $"Cannot assign to undeclared variable '{assignment.Left.Name}'");
         }
+
+        // Check if trying to reassign a const variable
+        if (variableInfo.IsConstant)
+        {
+            var token = assignment.Token;
+            throw new ECEngineException($"Cannot assign to const variable '{assignment.Left.Name}'",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                $"const variables cannot be reassigned after declaration");
+        }
         
-        _variables[assignment.Left.Name] = value;
+        var value = Evaluate(assignment.Right, _sourceCode);
+        variableInfo.Value = value;
         return value;
     }
 
