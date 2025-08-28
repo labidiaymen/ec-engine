@@ -5,53 +5,85 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET 7.0](https://img.shields.io/badge/.NET-7.0-purple.svg)](https://dotnet.microsoft.com/download/dotnet/7.0)
 
-A lightweight JavaScript interpreter engine written in C# - a mini V8-style engine that can parse, interpret, and execute JavaScript code.
+A lightweight ECMAScript (JavaScript) interpreter engine written in C# that supports standard JavaScript syntax plus additional design patterns and reactive programming features.
 
 ## Overview
 
-ECEngine is designed to demonstrate the core concepts of JavaScript engine implementation, including:
-- **Lexical Analysis** - Tokenizing JavaScript source code
-- **Parsing** - Building Abstract Syntax Trees (AST)
-- **Interpretation** - Evaluating and executing JavaScript expressions
-- **Runtime** - Basic runtime environment with console support
+ECEngine is a modern JavaScript interpreter that implements core ECMAScript features while introducing innovative design patterns for reactive programming. The engine supports:
+
+- **Standard ECMAScript** - Full JavaScript syntax compatibility (variables, functions, expressions, etc.)
+- **Reactive Programming** - Built-in `observe` pattern for variable change detection
+- **Interactive REPL** - Advanced console with cursor navigation and command history
+- **Modern Architecture** - Clean separation of lexing, parsing, and interpretation phases
+
+Key capabilities include:
+- **Lexical Analysis** - Complete tokenization of JavaScript source code
+- **Parsing** - Robust Abstract Syntax Tree (AST) generation
+- **Interpretation** - Full evaluation and execution of JavaScript expressions
+- **Runtime** - Comprehensive runtime environment with console support
+- **Observe Pattern** - Reactive programming with automatic change detection
 
 ## Project Structure
 
 ```
 ECEngine/
 ├── AST/                 # Abstract Syntax Tree definitions
-│   └── ASTNode.cs      # Base AST classes and node types
+│   └── ASTNode.cs      # Complete AST classes including ObserveStatement
 ├── Lexer/              # Tokenization components
-│   ├── Lexer.cs        # Main lexer implementation
-│   └── Token.cs        # Token type definitions
+│   ├── Lexer.cs        # Full lexer implementation with all JS tokens
+│   └── Token.cs        # Comprehensive token type definitions
 ├── Parser/             # Parsing components
-│   └── Parser.cs       # Parser implementation
+│   └── Parser.cs       # Complete parser for JavaScript + observe syntax
 ├── Runtime/            # Runtime environment
-│   ├── Interpreter.cs  # AST evaluation engine
+│   ├── Interpreter.cs  # Full AST evaluation engine with observe support
+│   ├── InteractiveRuntime.cs # REPL with cursor navigation
+│   ├── ConsoleInputHandler.cs # Advanced input handling
 │   └── ConsoleRuntime.cs # Console.log implementation
-├── VM/                 # Virtual Machine (future)
-├── Tests/              # Unit tests
+├── Tests/              # Comprehensive unit tests
+├── examples/           # Example ECEngine programs
+│   ├── variables/      # Variable declaration examples
+│   ├── functions/      # Function examples
+│   ├── expressions/    # Expression examples
+│   └── console/        # Console usage examples
+├── vscode-extension/   # VS Code syntax highlighting
 └── Program.cs          # Main entry point
 ```
 
 ## Features
 
-### Current Implementation
-- ✅ Basic project structure and architecture
-- ✅ Lexer stub for tokenization
-- ✅ Parser stub for AST generation
-- ✅ Interpreter stub for evaluation
-- ✅ Console runtime stub
+### ✅ Implemented Features
+- **Complete ECMAScript Support**
+  - Variable declarations (`var`, `let`, `const`)
+  - All data types (numbers, strings, booleans, undefined)
+  - Arithmetic and assignment expressions
+  - Function declarations and calls
+  - Anonymous and higher-order functions
+  - Comprehensive operator support
 
-### Planned Features
-- 🔄 Complete lexer implementation (identifiers, numbers, operators)
-- 🔄 Expression parser (+, -, *, /, parentheses)
-- 🔄 Binary expression evaluation
-- 🔄 Variable declarations and assignments
-- 🔄 Function declarations and calls
-- 🔄 Control flow (if/else, loops)
-- 🔄 Object and array support
-- 🔄 Advanced runtime features
+- **Advanced Design Patterns**
+  - **Observe Pattern**: `observe variable function() { ... }` for reactive programming
+  - Automatic change detection and callback execution
+  - Multiple observers per variable support
+
+- **Interactive Development**
+  - Full-featured REPL with cursor navigation (←→↑↓)
+  - Command history with navigation
+  - Line editing (Home, End, Backspace, Delete)
+  - Variable inspection (`.vars` command)
+  - Interactive debugging support
+
+- **Developer Experience**
+  - VS Code extension with syntax highlighting
+  - Comprehensive example library
+  - Built-in help system
+  - Error reporting with location information
+
+### 🔄 Planned Enhancements
+- Control flow statements (if/else, loops)
+- Object and array literal support
+- Advanced error handling
+- Module system
+- More reactive programming patterns
 
 ## Getting Started
 
@@ -61,23 +93,37 @@ ECEngine/
 
 ### Running the Engine
 
-1. Clone the repository:
+#### File Execution
+Execute ECEngine files directly:
 ```bash
-git clone <repository-url>
-cd ec-engine
+dotnet run path/to/script.ec
 ```
 
-2. Navigate to the project directory:
+#### Interactive Mode (REPL)
+Start the interactive shell with full cursor support:
 ```bash
-cd ECEngine
+dotnet run -i
 ```
 
-3. Run the engine:
-```bash
-dotnet run
-```
+Features in interactive mode:
+- ←/→ arrows for cursor movement
+- ↑/↓ arrows for command history
+- Home/End for line navigation
+- Tab completion (planned)
+- Multi-line input support
 
-The engine will execute the sample JavaScript code: `console.log(1 + 2);`
+#### Example Programs
+Try the included examples:
+```bash
+# Variable declarations and observe pattern
+dotnet run examples/variables/simple_observe.ec
+
+# Function examples
+dotnet run examples/functions/basic_functions.ec
+
+# Expression evaluation
+dotnet run examples/expressions/arithmetic.ec
+```
 
 ### Building the Project
 
@@ -93,9 +139,70 @@ dotnet test
 
 ## Sample Usage
 
+### Basic ECMAScript Features
+```javascript
+// Variable declarations
+var x = 42;
+let y = "Hello World";
+const z = true;
+
+// Functions
+function greet(name) {
+    return "Hello, " + name + "!";
+}
+
+// Expressions
+var result = x * 2 + 10;
+console.log(greet("ECEngine"));
+```
+
+### Observe Pattern (Reactive Programming)
+```javascript
+// Declare a variable
+var temperature = 20;
+
+// Set up an observer
+observe temperature function() {
+    console.log("Temperature changed to: " + temperature);
+    if (temperature > 30) {
+        console.log("It's getting hot!");
+    }
+}
+
+// Trigger the observer
+temperature = 35;  // Output: "Temperature changed to: 35" + "It's getting hot!"
+temperature = 25;  // Output: "Temperature changed to: 25"
+```
+
+### Interactive Session Example
+```bash
+$ dotnet run -i
+ECEngine Interactive Shell
+Type .help for available commands or .exit to quit
+
+ec> var x = 10
+10
+ec> observe x function() { console.log("x is now: " + x); }
+ec> x = 20
+x is now: 20
+20
+ec> .vars
+Current variables:
+  var x = 20
+ec> .exit
+Goodbye!
+```
+
+### Programmatic Usage
 ```csharp
-// Sample JS code to execute
-string code = "console.log(1 + 2);";
+// Create and execute ECEngine code
+string code = @"
+    var message = 'Hello from ECEngine!';
+    observe message function() {
+        console.log('Message changed: ' + message);
+    }
+    message = 'Updated message';
+";
 
 // Tokenize
 var lexer = new Lexer(code);
@@ -107,17 +214,68 @@ var ast = parser.Parse(code);
 
 // Interpret
 var interpreter = new Interpreter();
-interpreter.Evaluate(ast);
+interpreter.Evaluate(ast, code);
 ```
 
 ## Architecture
 
-ECEngine follows a traditional interpreter architecture:
+ECEngine implements a modern interpreter architecture with reactive programming capabilities:
 
-1. **Lexer**: Converts source code into tokens
-2. **Parser**: Builds an Abstract Syntax Tree from tokens
-3. **Interpreter**: Walks the AST and evaluates expressions
-4. **Runtime**: Provides built-in functions and environment
+### Core Components
+1. **Lexer**: Converts ECMAScript source code into tokens with full JavaScript syntax support
+2. **Parser**: Builds an Abstract Syntax Tree from tokens, including observe statements
+3. **Interpreter**: Walks the AST and evaluates expressions with reactive observer management
+4. **Runtime**: Provides built-in functions, variable management, and console environment
+
+### Reactive Programming Architecture
+- **Observer Registry**: Tracks variable observers and their associated callback functions
+- **Change Detection**: Automatically triggers observers when variable values change
+- **Memory Management**: Efficient cleanup of observers and variables
+- **Event Propagation**: Handles multiple observers per variable with proper execution order
+
+### Design Patterns
+- **Observer Pattern**: Core reactive programming implementation
+- **Visitor Pattern**: AST traversal and evaluation
+- **Strategy Pattern**: Different evaluation strategies for various node types
+- **Factory Pattern**: Token and AST node creation
+
+## ECMAScript Compatibility
+
+ECEngine implements a subset of ECMAScript (JavaScript) with full syntax compatibility for supported features:
+
+### Supported ECMAScript Features
+- ✅ **Variables**: `var`, `let`, `const` declarations
+- ✅ **Data Types**: Numbers, strings, booleans, undefined
+- ✅ **Operators**: Arithmetic (`+`, `-`, `*`, `/`), assignment (`=`)
+- ✅ **Functions**: Function declarations, calls, anonymous functions
+- ✅ **Expressions**: Binary expressions, parentheses, operator precedence
+- ✅ **Console**: `console.log()` for output
+
+### ECEngine Extensions
+ECEngine extends standard JavaScript with additional design patterns:
+
+#### Observe Pattern
+```javascript
+// Standard JavaScript - NOT reactive
+var counter = 0;
+function onCounterChange() {
+    console.log("Counter: " + counter);
+}
+// Manual calls required: onCounterChange();
+
+// ECEngine - Reactive with observe
+var counter = 0;
+observe counter function() {
+    console.log("Counter: " + counter);  // Automatically called when counter changes
+}
+counter = 5;  // Automatically triggers the observer
+```
+
+This pattern enables:
+- **Automatic Change Detection**: No manual event binding
+- **Declarative Reactive Programming**: Clean, readable code
+- **Multiple Observers**: Multiple functions can observe the same variable
+- **Zero Configuration**: Works out of the box without setup
 
 ## 🔄 CI/CD & Automation
 
@@ -161,10 +319,12 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - **Security scanning** runs on all commits
 
 ### Areas for Contribution
-- 🚀 **JavaScript Features**: Variables, functions, control flow
+- 🚀 **ECMAScript Features**: Control flow, objects, arrays, modules
+- 🔮 **Reactive Patterns**: Additional design patterns beyond observe
 - 🐛 **Bug Fixes**: Parser edge cases, runtime improvements  
-- 📚 **Documentation**: Component guides, usage examples
+- 📚 **Documentation**: Component guides, usage examples, tutorials
 - 🧪 **Testing**: Additional test cases, performance tests
+- 🎨 **VS Code Extension**: Enhanced syntax highlighting, IntelliSense
 
 ## 🔒 Security
 
