@@ -108,7 +108,7 @@
       "patterns": [
         {
           "name": "keyword.control.ecengine",
-          "match": "\\b(if|else|while|for|do|switch|case|default|break|continue|return)\\b"
+          "match": "\\b(if|else|while|for|do|switch|case|default|break|continue|return|observe)\\b"
         },
         {
           "name": "keyword.operator.logical.ecengine",

@@ -182,3 +182,17 @@ public class BlockStatement : Statement
         Token = token;
     }
 }
+
+// Observe statement node (e.g., observe x function() { console.log("x changed!"); })
+public class ObserveStatement : Statement
+{
+    public string VariableName { get; }
+    public FunctionExpression Handler { get; }
+    
+    public ObserveStatement(string variableName, FunctionExpression handler, Token? token = null)
+    {
+        VariableName = variableName;
+        Handler = handler;
+        Token = token;
+    }
+}

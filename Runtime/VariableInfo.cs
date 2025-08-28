@@ -10,6 +10,7 @@ public class VariableInfo
     public string Type { get; }
     public object? Value { get; set; }
     public bool IsConstant => Type == "const";
+    public List<Function> Observers { get; } = new List<Function>();
 
     public VariableInfo(string type, object? value)
     {
