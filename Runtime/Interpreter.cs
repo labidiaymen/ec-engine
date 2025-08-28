@@ -10,7 +10,7 @@ public class Interpreter
     public object? Evaluate(ASTNode node, string sourceCode = "")
     {
         _sourceCode = sourceCode;
-        
+
         if (node is ProgramNode program)
             return EvaluateProgram(program);
         if (node is ExpressionStatement stmt)
@@ -25,8 +25,8 @@ public class Interpreter
             return EvaluateMemberExpression(member);
         if (node is CallExpression call)
             return EvaluateCallExpression(call);
-        
-        throw new ECEngineException($"Unknown node type: {node.GetType().Name}", 
+
+        throw new ECEngineException($"Unknown node type: {node.GetType().Name}",
             1, 1, _sourceCode, "Unsupported AST node encountered during evaluation");
     }
 
@@ -52,7 +52,7 @@ public class Interpreter
         if (result == null)
         {
             var token = identifier.Token;
-            throw new ECEngineException($"Unknown identifier: {identifier.Name}", 
+            throw new ECEngineException($"Unknown identifier: {identifier.Name}",
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
                 $"The identifier '{identifier.Name}' is not defined in the current scope");
         }
@@ -73,14 +73,14 @@ public class Interpreter
                 "-" => leftNum - rightNum,
                 "*" => leftNum * rightNum,
                 "/" => leftNum / rightNum,
-                _ => throw new ECEngineException($"Unknown operator: {binary.Operator}", 
+                _ => throw new ECEngineException($"Unknown operator: {binary.Operator}",
                     binary.Token?.Line ?? 1, binary.Token?.Column ?? 1, _sourceCode,
                     $"The operator '{binary.Operator}' is not supported")
             };
         }
 
         var token = binary.Token;
-        throw new ECEngineException($"Cannot perform {binary.Operator} on {left?.GetType().Name} and {right?.GetType().Name}", 
+        throw new ECEngineException($"Cannot perform {binary.Operator} on {left?.GetType().Name} and {right?.GetType().Name}",
             token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
             "Type mismatch in binary operation");
     }
@@ -88,14 +88,14 @@ public class Interpreter
     private object? EvaluateMemberExpression(MemberExpression member)
     {
         var obj = Evaluate(member.Object, _sourceCode);
-        
+
         if (obj is ConsoleObject && member.Property == "log")
         {
             return new ConsoleLogFunction();
         }
 
         var token = member.Token;
-        throw new ECEngineException($"Property {member.Property} not found on {obj?.GetType().Name}", 
+        throw new ECEngineException($"Property {member.Property} not found on {obj?.GetType().Name}",
             token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
             $"The property '{member.Property}' does not exist on the object");
     }
@@ -115,7 +115,7 @@ public class Interpreter
         }
 
         var token = call.Token;
-        throw new ECEngineException($"Cannot call {function?.GetType().Name}", 
+        throw new ECEngineException($"Cannot call {function?.GetType().Name}",
             token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
             "Attempted to call a non-function value");
     }

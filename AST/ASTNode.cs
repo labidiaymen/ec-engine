@@ -3,7 +3,7 @@ using ECEngine.Lexer;
 namespace ECEngine.AST;
 
 // Base class for AST nodes
-public abstract class ASTNode 
+public abstract class ASTNode
 {
     public Token? Token { get; set; }
 }
@@ -18,8 +18,8 @@ public abstract class Expression : ASTNode { }
 public class NumberLiteral : Expression
 {
     public double Value { get; }
-    public NumberLiteral(double value, Token? token = null) 
-    { 
+    public NumberLiteral(double value, Token? token = null)
+    {
         Value = value;
         Token = token;
     }
@@ -29,8 +29,8 @@ public class NumberLiteral : Expression
 public class Identifier : Expression
 {
     public string Name { get; }
-    public Identifier(string name, Token? token = null) 
-    { 
+    public Identifier(string name, Token? token = null)
+    {
         Name = name;
         Token = token;
     }

@@ -47,8 +47,8 @@ public class Parser
             Advance();
             return token;
         }
-        throw new ECEngineException($"{message}. Got {_currentToken.Type} instead.", 
-            _currentToken.Line, _currentToken.Column, _sourceCode, 
+        throw new ECEngineException($"{message}. Got {_currentToken.Type} instead.",
+            _currentToken.Line, _currentToken.Column, _sourceCode,
             $"Expected {type} but found {_currentToken.Type}");
     }
 
@@ -62,7 +62,7 @@ public class Parser
         _currentToken = _tokens[0];
 
         var statements = new List<Statement>();
-        
+
         while (_currentToken.Type != TokenType.EOF)
         {
             statements.Add(ParseStatement());
@@ -178,7 +178,7 @@ public class Parser
             return expression;
         }
 
-        throw new ECEngineException($"Unexpected token: {_currentToken.Type}", 
+        throw new ECEngineException($"Unexpected token: {_currentToken.Type}",
             _currentToken.Line, _currentToken.Column, _sourceCode,
             $"Cannot parse expression starting with {_currentToken.Type}");
     }

@@ -10,10 +10,10 @@ public class ExpressionTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("1 + 2");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(4, tokens.Count); // Number, Plus, Number, EOF
         Assert.Equal(TokenType.Number, tokens[0].Type);
@@ -30,10 +30,10 @@ public class ExpressionTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("10 * 5 + 3");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(6, tokens.Count); // Number, Multiply, Number, Plus, Number, EOF
         Assert.Equal(TokenType.Number, tokens[0].Type);
@@ -51,10 +51,10 @@ public class ExpressionTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("(1 + 2)");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(6, tokens.Count); // LeftParen, Number, Plus, Number, RightParen, EOF
         Assert.Equal(TokenType.LeftParen, tokens[0].Type);

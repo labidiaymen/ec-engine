@@ -1,13 +1,17 @@
 name: Security Scanning
 
+# Temporarily disabled - uncomment to re-enable
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main ]
+#   schedule:
+#     # Run security scan weekly on Mondays at 3 AM UTC
+#     - cron: '0 3 * * 1'
+
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    # Run security scan weekly on Mondays at 3 AM UTC
-    - cron: '0 3 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -13,17 +13,17 @@ public class ConsoleLogExecutionTests
     {
         // Arrange
         string code = "console.log(42)";
-        
+
         // Capture console output
         var originalConsoleOut = Console.Out;
         using var stringWriter = new StringWriter();
         Console.SetOut(stringWriter);
-        
+
         try
         {
             // Act
             var result = ExecuteCode(code);
-            
+
             // Assert
             Assert.Null(result); // console.log returns undefined (null)
             var output = stringWriter.ToString().Trim();
@@ -40,17 +40,17 @@ public class ConsoleLogExecutionTests
     {
         // Arrange
         string code = "console.log(1 + 2)";
-        
+
         // Capture console output
         var originalConsoleOut = Console.Out;
         using var stringWriter = new StringWriter();
         Console.SetOut(stringWriter);
-        
+
         try
         {
             // Act
             var result = ExecuteCode(code);
-            
+
             // Assert
             Assert.Null(result);
             var output = stringWriter.ToString().Trim();
@@ -67,17 +67,17 @@ public class ConsoleLogExecutionTests
     {
         // Arrange
         string code = "console.log(10 * 5 + 3)";
-        
+
         // Capture console output
         var originalConsoleOut = Console.Out;
         using var stringWriter = new StringWriter();
         Console.SetOut(stringWriter);
-        
+
         try
         {
             // Act
             var result = ExecuteCode(code);
-            
+
             // Assert
             Assert.Null(result);
             var output = stringWriter.ToString().Trim();
@@ -93,10 +93,10 @@ public class ConsoleLogExecutionTests
     {
         var lexer = new ECEngine.Lexer.Lexer(code);
         var tokens = lexer.Tokenize();
-        
+
         var parser = new ECEngine.Parser.Parser();
         var ast = parser.Parse(code);
-        
+
         var interpreter = new ECEngine.Runtime.Interpreter();
         return interpreter.Evaluate(ast, code);
     }

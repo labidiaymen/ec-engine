@@ -12,10 +12,10 @@ public class LiteralEvaluationTests
         // Arrange
         var interpreter = new RuntimeInterpreter();
         var numberLiteral = new NumberLiteral(42);
-        
+
         // Act
         var result = interpreter.Evaluate(numberLiteral, "42");
-        
+
         // Assert
         Assert.Equal(42.0, result);
     }
@@ -26,10 +26,10 @@ public class LiteralEvaluationTests
         // Arrange
         var interpreter = new RuntimeInterpreter();
         var numberLiteral = new NumberLiteral(3.14);
-        
+
         // Act
         var result = interpreter.Evaluate(numberLiteral, "3.14");
-        
+
         // Assert
         Assert.Equal(3.14, result);
     }
@@ -40,10 +40,10 @@ public class LiteralEvaluationTests
         // Arrange
         var interpreter = new RuntimeInterpreter();
         var numberLiteral = new NumberLiteral(0);
-        
+
         // Act
         var result = interpreter.Evaluate(numberLiteral, "0");
-        
+
         // Assert
         Assert.Equal(0.0, result);
     }
@@ -54,10 +54,10 @@ public class LiteralEvaluationTests
         // Arrange
         var interpreter = new RuntimeInterpreter();
         var numberLiteral = new NumberLiteral(-5);
-        
+
         // Act
         var result = interpreter.Evaluate(numberLiteral, "-5");
-        
+
         // Assert
         Assert.Equal(-5.0, result);
     }
