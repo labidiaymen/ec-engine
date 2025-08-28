@@ -24,6 +24,10 @@ public class ConsoleLogExecutionTests
             // Act
             var result = ExecuteCode(code);
 
+            // Ensure output is flushed
+            stringWriter.Flush();
+            Console.Out.Flush();
+
             // Assert
             Assert.Null(result); // console.log returns undefined (null)
             var output = stringWriter.ToString().Trim();
@@ -51,6 +55,10 @@ public class ConsoleLogExecutionTests
             // Act
             var result = ExecuteCode(code);
 
+            // Ensure output is flushed
+            stringWriter.Flush();
+            Console.Out.Flush();
+
             // Assert
             Assert.Null(result);
             var output = stringWriter.ToString().Trim();
@@ -77,6 +85,10 @@ public class ConsoleLogExecutionTests
         {
             // Act
             var result = ExecuteCode(code);
+
+            // Ensure output is flushed
+            stringWriter.Flush();
+            Console.Out.Flush();
 
             // Assert
             Assert.Null(result);

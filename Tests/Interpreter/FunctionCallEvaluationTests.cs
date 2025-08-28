@@ -59,6 +59,10 @@ public class FunctionCallEvaluationTests
             // Act
             var result = interpreter.Evaluate(callExpression, "console.log(1 + 2)");
 
+            // Ensure output is flushed
+            stringWriter.Flush();
+            Console.Out.Flush();
+
             // Assert
             Assert.Null(result);
             var output = stringWriter.ToString().Trim();

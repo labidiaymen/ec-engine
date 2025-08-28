@@ -6,5 +6,6 @@ public static class ConsoleRuntime
     public static void Log(object value)
     {
         Console.WriteLine(value);
+        Console.Out.Flush(); // Ensure output is flushed immediately
     }
 }
