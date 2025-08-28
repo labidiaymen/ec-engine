@@ -66,6 +66,17 @@ public class Lexer
         return _code.Substring(start, _position - start);
     }
 
+    private TokenType GetKeywordTokenType(string identifier)
+    {
+        return identifier switch
+        {
+            "var" => TokenType.Var,
+            "let" => TokenType.Let,
+            "const" => TokenType.Const,
+            _ => TokenType.Identifier
+        };
+    }
+
     // Tokenize input code into a list of tokens
     public List<Token> Tokenize()
     {
@@ -92,7 +103,8 @@ public class Lexer
             if (char.IsLetter(_currentChar))
             {
                 var identifier = ReadIdentifier();
-                tokens.Add(new Token(TokenType.Identifier, identifier, _position, tokenLine, tokenColumn));
+                var tokenType = GetKeywordTokenType(identifier);
+                tokens.Add(new Token(tokenType, identifier, _position, tokenLine, tokenColumn));
                 continue;
             }
 
@@ -136,6 +148,10 @@ public class Lexer
                     break;
                 case '.':
                     tokens.Add(new Token(TokenType.Dot, ".", _position, tokenLine, tokenColumn));
+                    Advance();
+                    break;
+                case '=':
+                    tokens.Add(new Token(TokenType.Assign, "=", _position, tokenLine, tokenColumn));
                     Advance();
                     break;
                 default:
