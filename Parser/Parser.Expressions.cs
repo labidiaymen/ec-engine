@@ -271,6 +271,11 @@ public partial class Parser
             return ParseFunctionExpression();
         }
 
+        if (_currentToken.Type == TokenType.LeftBrace)
+        {
+            return ParseObjectLiteral();
+        }
+
         if (_currentToken.Type == TokenType.LeftParen)
         {
             Advance(); // consume '('
@@ -282,5 +287,78 @@ public partial class Parser
         throw new ECEngineException($"Unexpected token: {_currentToken.Type}",
             _currentToken.Line, _currentToken.Column, _sourceCode,
             $"Cannot parse expression starting with {_currentToken.Type}");
+    }
+
+    /// <summary>
+    /// Parse object literal expressions { key: value, ... }
+    /// </summary>
+    private Expression ParseObjectLiteral()
+    {
+        var startToken = _currentToken;
+        Consume(TokenType.LeftBrace, "Expected '{'");
+        
+        var properties = new List<ObjectProperty>();
+        
+        // Handle empty object {}
+        if (_currentToken.Type == TokenType.RightBrace)
+        {
+            Advance();
+            return new ObjectLiteral(properties, startToken);
+        }
+        
+        // Parse properties
+        do
+        {
+            // Parse property key (identifier or string)
+            string key;
+            if (_currentToken.Type == TokenType.Identifier)
+            {
+                key = _currentToken.Value;
+                Advance();
+            }
+            else if (_currentToken.Type == TokenType.String)
+            {
+                key = _currentToken.Value;
+                Advance();
+            }
+            else
+            {
+                throw new ECEngineException("Expected property name (identifier or string)",
+                    _currentToken.Line, _currentToken.Column, _sourceCode,
+                    "Object properties must have a key");
+            }
+            
+            Consume(TokenType.Colon, "Expected ':' after property key");
+            
+            // Parse property value
+            var value = ParseExpression();
+            
+            properties.Add(new ObjectProperty(key, value, _currentToken));
+            
+            // Check for comma or end
+            if (_currentToken.Type == TokenType.Comma)
+            {
+                Advance();
+                // Allow trailing comma
+                if (_currentToken.Type == TokenType.RightBrace)
+                {
+                    break;
+                }
+            }
+            else if (_currentToken.Type == TokenType.RightBrace)
+            {
+                break;
+            }
+            else
+            {
+                throw new ECEngineException("Expected ',' or '}' after property value",
+                    _currentToken.Line, _currentToken.Column, _sourceCode,
+                    "Invalid object literal syntax");
+            }
+        } while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF);
+        
+        Consume(TokenType.RightBrace, "Expected '}' to close object literal");
+        
+        return new ObjectLiteral(properties, startToken);
     }
 }

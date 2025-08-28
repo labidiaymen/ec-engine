@@ -47,6 +47,30 @@ public class BooleanLiteral : Expression
     }
 }
 
+// Object literal node  
+public class ObjectLiteral : Expression
+{
+    public List<ObjectProperty> Properties { get; }
+    public ObjectLiteral(List<ObjectProperty> properties, Token? token = null)
+    {
+        Properties = properties;
+        Token = token;
+    }
+}
+
+// Object property for object literals
+public class ObjectProperty : ASTNode
+{
+    public string Key { get; }
+    public Expression Value { get; }
+    public ObjectProperty(string key, Expression value, Token? token = null)
+    {
+        Key = key;
+        Value = value;
+        Token = token;
+    }
+}
+
 // Identifier node
 public class Identifier : Expression
 {
@@ -198,17 +222,26 @@ public class BlockStatement : Statement
     }
 }
 
-// Observe statement node (e.g., observe x function() { console.log("x changed!"); })
+// Observe statement node (e.g., observe x function() { console.log("x changed!"); } or observe server.requests function(ev) { ... })
 public class ObserveStatement : Statement
 {
-    public string VariableName { get; }
+    public Expression Target { get; }  // Can be Identifier or MemberExpression
     public FunctionExpression Handler { get; }
     
-    public ObserveStatement(string variableName, FunctionExpression handler, Token? token = null)
+    // Legacy property for backward compatibility
+    public string VariableName => Target is Identifier id ? id.Name : Target.ToString() ?? "";
+    
+    public ObserveStatement(Expression target, FunctionExpression handler, Token? token = null)
     {
-        VariableName = variableName;
+        Target = target;
         Handler = handler;
         Token = token;
+    }
+    
+    // Legacy constructor for backward compatibility
+    public ObserveStatement(string variableName, FunctionExpression handler, Token? token = null) 
+        : this(new Identifier(variableName), handler, token)
+    {
     }
 }
 
@@ -251,6 +284,18 @@ public class WhenStatement : Statement
     public WhenStatement(Expression condition, BlockStatement body, Token? token = null)
     {
         Condition = condition;
+        Body = body;
+        Token = token;
+    }
+}
+
+// Otherwise statement node (e.g., otherwise { ... })
+public class OtherwiseStatement : Statement
+{
+    public BlockStatement Body { get; }
+    
+    public OtherwiseStatement(BlockStatement body, Token? token = null)
+    {
         Body = body;
         Token = token;
     }

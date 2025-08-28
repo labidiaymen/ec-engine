@@ -1,4 +1,5 @@
 using ECEngine.AST;
+using ECEngine.Lexer;
 
 namespace ECEngine.Runtime;
 
@@ -213,6 +214,8 @@ public class Interpreter
             return EvaluateMultiObserveStatement(multiObserveStmt);
         if (node is WhenStatement whenStmt)
             return EvaluateWhenStatement(whenStmt);
+        if (node is OtherwiseStatement otherwiseStmt)
+            return EvaluateOtherwiseStatement(otherwiseStmt);
         if (node is IfStatement ifStmt)
             return EvaluateIfStatement(ifStmt);
         if (node is ForStatement forStmt)
@@ -241,6 +244,8 @@ public class Interpreter
             return stringLiteral.Value;
         if (node is BooleanLiteral booleanLiteral)
             return booleanLiteral.Value;
+        if (node is ObjectLiteral objectLiteral)
+            return EvaluateObjectLiteral(objectLiteral);
         if (node is Identifier identifier)
             return EvaluateIdentifier(identifier);
         if (node is AssignmentExpression assignment)
@@ -268,6 +273,19 @@ public class Interpreter
         return lastResult;
     }
 
+    private object? EvaluateObjectLiteral(ObjectLiteral objectLiteral)
+    {
+        var result = new Dictionary<string, object?>();
+        
+        foreach (var property in objectLiteral.Properties)
+        {
+            var value = Evaluate(property.Value);
+            result[property.Key] = value;
+        }
+        
+        return result;
+    }
+
     private object? EvaluateIdentifier(Identifier identifier)
     {
         // Check if it's a variable using scope-aware lookup
@@ -286,6 +304,8 @@ public class Interpreter
             "clearTimeout" => _eventLoop != null ? new ClearTimeoutFunction(_eventLoop) : null,
             "clearInterval" => _eventLoop != null ? new ClearIntervalFunction(_eventLoop) : null,
             "nextTick" => _eventLoop != null ? new NextTickFunction(_eventLoop, this) : null,
+            "http" => _eventLoop != null ? new HttpModule(_eventLoop, this) : null,
+            "createServer" => _eventLoop != null ? new CreateServerFunction(_eventLoop, this) : null,
             _ => null
         };
 
@@ -557,6 +577,90 @@ public class Interpreter
             return new ConsoleLogFunction();
         }
         
+        if (obj is HttpModule httpModule && member.Property == "createServer")
+        {
+            return httpModule.CreateServer;
+        }
+        
+        if (obj is ServerObject serverObj)
+        {
+            return member.Property switch
+            {
+                "listen" => new ServerMethodFunction(serverObj, "listen"),
+                "close" => new ServerMethodFunction(serverObj, "close"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on ServerObject",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the server object")
+            };
+        }
+        
+        if (obj is ObservableServerObject observableServer)
+        {
+            return member.Property switch
+            {
+                "listen" => new ObservableServerMethodFunction(observableServer, "listen"),
+                "close" => new ObservableServerMethodFunction(observableServer, "close"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on ObservableServerObject",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the observable server object")
+            };
+        }
+        
+        if (obj is HttpRequestObject request)
+        {
+            return member.Property switch
+            {
+                "method" => request.Method,
+                "url" => request.Url,
+                "path" => request.Path,
+                "headers" => request.Headers,
+                _ => null
+            };
+        }
+        
+        if (obj is HttpResponseObject response)
+        {
+            return member.Property switch
+            {
+                "statusCode" => response.StatusCode,
+                "setHeader" => new ResponseMethodFunction(response, "setHeader"),
+                "writeHead" => new ResponseMethodFunction(response, "writeHead"),
+                "write" => new ResponseMethodFunction(response, "write"),
+                "end" => new ResponseMethodFunction(response, "end"),
+                _ => null
+            };
+        }
+        
+        if (obj is HttpRequestEvent requestEvent)
+        {
+            return member.Property switch
+            {
+                "method" => requestEvent.method,
+                "url" => requestEvent.url,
+                "headers" => requestEvent.headers,
+                "body" => requestEvent.body,
+                "response" => requestEvent.response,
+                _ => throw new ECEngineException($"Property {member.Property} not found on HttpRequestEvent",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the request event object")
+            };
+        }
+        
+        if (obj is ResponseObject responseObj)
+        {
+            return member.Property switch
+            {
+                "send" => new ResponseWrapperFunction(responseObj, "send"),
+                "json" => new ResponseWrapperFunction(responseObj, "json"),
+                "status" => new ResponseWrapperFunction(responseObj, "status"),
+                "setHeader" => new ResponseWrapperFunction(responseObj, "setHeader"),
+                "redirect" => new ResponseWrapperFunction(responseObj, "redirect"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on ResponseObject",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the response object")
+            };
+        }
+
         if (obj is ChangeInfo changeInfo)
         {
             return GetChangeInfoProperty(changeInfo, member.Property);
@@ -611,6 +715,32 @@ public class Interpreter
         if (function is NextTickFunction nextTickFunc)
         {
             return nextTickFunc.Call(arguments);
+        }
+
+        // Handle HTTP functions
+        if (function is CreateServerFunction createServerFunc)
+        {
+            return createServerFunc.Call(arguments);
+        }
+
+        if (function is ServerMethodFunction serverMethodFunc)
+        {
+            return serverMethodFunc.Call(arguments);
+        }
+
+        if (function is ResponseMethodFunction responseMethodFunc)
+        {
+            return responseMethodFunc.Call(arguments);
+        }
+
+        if (function is ObservableServerMethodFunction observableServerMethodFunc)
+        {
+            return observableServerMethodFunc.Call(arguments);
+        }
+
+        if (function is ResponseWrapperFunction responseWrapperFunc)
+        {
+            return responseWrapperFunc.Call(arguments);
         }
 
         if (function is Function userFunction)
@@ -677,10 +807,37 @@ public class Interpreter
         try
         {
             object? lastValue = null;
+            bool anyWhenExecuted = false;
             
             foreach (var statement in blockStmt.Body)
             {
-                lastValue = Evaluate(statement);
+                // Handle when/otherwise logic
+                if (statement is WhenStatement whenStmt)
+                {
+                    var conditionValue = Evaluate(whenStmt.Condition);
+                    if (IsTruthy(conditionValue))
+                    {
+                        anyWhenExecuted = true;
+                        lastValue = EvaluateBlockStatement(whenStmt.Body);
+                        // Important: Once a when condition is true and executed,
+                        // we should skip the rest of the statements in this block
+                        // to prevent otherwise from executing
+                        break;
+                    }
+                }
+                else if (statement is OtherwiseStatement otherwiseStmt)
+                {
+                    // Only execute otherwise if no when conditions were true
+                    if (!anyWhenExecuted)
+                    {
+                        lastValue = EvaluateBlockStatement(otherwiseStmt.Body);
+                    }
+                }
+                else
+                {
+                    // Regular statement evaluation
+                    lastValue = Evaluate(statement);
+                }
             }
             
             return lastValue;
@@ -720,14 +877,35 @@ public class Interpreter
 
     private object? EvaluateObserveStatement(ObserveStatement observeStmt)
     {
-        // Check if variable exists
-        var variableInfo = FindVariable(observeStmt.VariableName);
-        if (variableInfo == null)
+        // Handle different types of observation targets
+        if (observeStmt.Target is Identifier identifier)
+        {
+            // Simple variable observation: observe variable function(old, new) { ... }
+            return EvaluateVariableObservation(identifier.Name, observeStmt.Handler, observeStmt.Token);
+        }
+        else if (observeStmt.Target is MemberExpression memberExpr)
+        {
+            // Property chain observation: observe server.requests function(ev) { ... }
+            return EvaluatePropertyObservation(memberExpr, observeStmt.Handler, observeStmt.Token);
+        }
+        else
         {
             var token = observeStmt.Token;
-            throw new ECEngineException($"Cannot observe undeclared variable '{observeStmt.VariableName}'",
+            throw new ECEngineException($"Invalid observe target: {observeStmt.Target.GetType().Name}",
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
-                $"Variable '{observeStmt.VariableName}' must be declared before observing");
+                "Observe target must be a variable or property chain");
+        }
+    }
+
+    private object? EvaluateVariableObservation(string variableName, FunctionExpression handler, Token? token)
+    {
+        // Check if variable exists
+        var variableInfo = FindVariable(variableName);
+        if (variableInfo == null)
+        {
+            throw new ECEngineException($"Cannot observe undeclared variable '{variableName}'",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                $"Variable '{variableName}' must be declared before observing");
         }
         
         // Create closure with current scope variables (flattened view)
@@ -744,12 +922,61 @@ public class Interpreter
         }
         
         // Create observer function
-        var observerFunction = new Function(null, observeStmt.Handler.Parameters, observeStmt.Handler.Body, closure);
+        var observerFunction = new Function(null, handler.Parameters, handler.Body, closure);
         
         // Add observer to the variable
         variableInfo.Observers.Add(observerFunction);
         
         return null; // observe statements don't return a value
+    }
+
+    private object? EvaluatePropertyObservation(MemberExpression memberExpr, FunctionExpression handler, Token? token)
+    {
+        // Evaluate the object part (e.g., 'server' in 'server.requests')
+        var obj = Evaluate(memberExpr.Object, _sourceCode);
+        var property = memberExpr.Property;
+
+        // Handle different types of observable objects
+        if (obj is ObservableServerObject observableServer)
+        {
+            // Create observer function
+            var closure = new Dictionary<string, VariableInfo>();
+            foreach (var scope in _scopes.Reverse())
+            {
+                foreach (var kvp in scope)
+                {
+                    if (!closure.ContainsKey(kvp.Key))
+                    {
+                        closure[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+            
+            var observerFunction = new Function(null, handler.Parameters, handler.Body, closure);
+            
+            // Register observer based on property
+            switch (property)
+            {
+                case "requests":
+                    observableServer.AddRequestObserver(observerFunction);
+                    break;
+                case "errors":
+                    observableServer.AddErrorObserver(observerFunction);
+                    break;
+                default:
+                    throw new ECEngineException($"Property '{property}' is not observable on server object",
+                        token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                        "Available observable properties: requests, errors");
+            }
+            
+            return null;
+        }
+        else
+        {
+            throw new ECEngineException($"Object of type '{obj?.GetType().Name}' does not support property observation",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "Only certain objects like servers support property observation");
+        }
     }
 
     private void TriggerObservers(string variableName, object? oldValue, object? newValue, List<Function> observers)
@@ -772,6 +999,19 @@ public class Interpreter
 
     public object? CallUserFunction(Function function, List<object?> arguments)
     {
+        // Check if this is an observable server proxy function
+        if (function.IsObservableProxy && function.ObservableServer is ObservableServerObject observableServer)
+        {
+            // Handle HTTP requests by emitting to observers
+            if (arguments.Count >= 2 && 
+                arguments[0] is HttpRequestObject request && 
+                arguments[1] is HttpResponseObject response)
+            {
+                observableServer.HandleRequest(request, response);
+            }
+            return null;
+        }
+        
         // Push new scope for function execution
         PushScope();
         
@@ -842,8 +1082,8 @@ public class Interpreter
 
     private object? EvaluateWhenStatement(WhenStatement whenStmt)
     {
-        // When statements are only evaluated within observer context
-        // This should only be called when we're inside an observer function
+        // When statements are now handled in EvaluateBlockStatement
+        // This method is kept for compatibility but shouldn't be called directly
         var conditionValue = Evaluate(whenStmt.Condition);
         
         if (IsTruthy(conditionValue))
@@ -852,6 +1092,13 @@ public class Interpreter
         }
         
         return null;
+    }
+
+    private object? EvaluateOtherwiseStatement(OtherwiseStatement otherwiseStmt)
+    {
+        // Otherwise statements are now handled in EvaluateBlockStatement
+        // This method is kept for compatibility but shouldn't be called directly
+        return EvaluateBlockStatement(otherwiseStmt.Body);
     }
 
     private object? EvaluateLogicalExpression(LogicalExpression logicalExpr)
@@ -1339,3 +1586,153 @@ public class Interpreter
 public class ConsoleObject { }
 
 public class ConsoleLogFunction { }
+
+/// <summary>
+/// Helper class for server method function calls
+/// </summary>
+public class ServerMethodFunction
+{
+    private readonly ServerObject _server;
+    private readonly string _methodName;
+
+    public ServerMethodFunction(ServerObject server, string methodName)
+    {
+        _server = server;
+        _methodName = methodName;
+    }
+
+    public object? Call(List<object?> arguments)
+    {
+        return _methodName switch
+        {
+            "listen" => _server.Listen(arguments),
+            "close" => _server.Close(arguments),
+            _ => throw new ECEngineException($"Unknown server method: {_methodName}", 0, 0, "", "Runtime error")
+        };
+    }
+}
+
+/// <summary>
+/// Helper class for response method function calls
+/// </summary>
+public class ResponseMethodFunction
+{
+    private readonly HttpResponseObject _response;
+    private readonly string _methodName;
+
+    public ResponseMethodFunction(HttpResponseObject response, string methodName)
+    {
+        _response = response;
+        _methodName = methodName;
+    }
+
+    public object? Call(List<object?> arguments)
+    {
+        try
+        {
+            switch (_methodName)
+            {
+                case "setHeader":
+                    if (arguments.Count >= 2)
+                        _response.SetHeader(arguments[0]?.ToString() ?? "", arguments[1]?.ToString() ?? "");
+                    return null;
+                
+                case "writeHead":
+                    if (arguments.Count >= 1)
+                    {
+                        var statusCode = Convert.ToInt32(arguments[0]);
+                        Dictionary<string, string>? headers = null;
+                        
+                        if (arguments.Count >= 2 && arguments[1] is Dictionary<string, object?> headerDict)
+                        {
+                            headers = headerDict.ToDictionary(
+                                kvp => kvp.Key, 
+                                kvp => kvp.Value?.ToString() ?? ""
+                            );
+                        }
+                        
+                        _response.WriteHead(statusCode, headers);
+                    }
+                    return null;
+                
+                case "write":
+                    if (arguments.Count >= 1)
+                        _response.Write(arguments[0]?.ToString() ?? "");
+                    return null;
+                
+                case "end":
+                    var data = arguments.Count > 0 ? arguments[0]?.ToString() : null;
+                    _response.End(data);
+                    return null;
+                
+                default:
+                    throw new ECEngineException($"Unknown response method: {_methodName}", 0, 0, "", "Runtime error");
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new ECEngineException($"Error in response.{_methodName}: {ex.Message}", 0, 0, "", "Runtime error");
+        }
+    }
+}
+
+/// <summary>
+/// Helper class for observable server method function calls
+/// </summary>
+public class ObservableServerMethodFunction
+{
+    private readonly ObservableServerObject _server;
+    private readonly string _methodName;
+
+    public ObservableServerMethodFunction(ObservableServerObject server, string methodName)
+    {
+        _server = server;
+        _methodName = methodName;
+    }
+
+    public object? Call(List<object?> arguments)
+    {
+        return _methodName switch
+        {
+            "listen" => _server.Listen(arguments),
+            "close" => _server.Close(arguments),
+            _ => throw new ECEngineException($"Unknown server method: {_methodName}", 0, 0, "", "Runtime error")
+        };
+    }
+}
+
+/// <summary>
+/// Helper class for response wrapper method function calls
+/// </summary>
+public class ResponseWrapperFunction
+{
+    private readonly ResponseObject _responseObj;
+    private readonly string _methodName;
+
+    public ResponseWrapperFunction(ResponseObject responseObj, string methodName)
+    {
+        _responseObj = responseObj;
+        _methodName = methodName;
+    }
+
+    public object? Call(List<object?> arguments)
+    {
+        switch (_methodName)
+        {
+            case "send":
+                return _responseObj.Send(arguments.FirstOrDefault()?.ToString() ?? "");
+            case "json":
+                return _responseObj.Json(arguments.FirstOrDefault());
+            case "status":
+                return _responseObj.Status(Convert.ToInt32(arguments.FirstOrDefault()));
+            case "setHeader":
+                _responseObj.SetHeader(arguments[0]?.ToString() ?? "", arguments[1]?.ToString() ?? "");
+                return null;
+            case "redirect":
+                _responseObj.Redirect(arguments[0]?.ToString() ?? "", arguments.Count > 1 ? Convert.ToInt32(arguments[1]) : 302);
+                return null;
+            default:
+                throw new ECEngineException($"Unknown response method: {_methodName}", 0, 0, "", "Runtime error");
+        }
+    }
+}
