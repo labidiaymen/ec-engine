@@ -145,6 +145,20 @@ public class FunctionDeclaration : Statement
     }
 }
 
+// Function expression node (e.g., function(a, b) { return a + b; })
+public class FunctionExpression : Expression
+{
+    public List<string> Parameters { get; }
+    public List<Statement> Body { get; }
+    
+    public FunctionExpression(List<string> parameters, List<Statement> body, Token? token = null)
+    {
+        Parameters = parameters;
+        Body = body;
+        Token = token;
+    }
+}
+
 // Return statement node (e.g., return x + y;)
 public class ReturnStatement : Statement
 {

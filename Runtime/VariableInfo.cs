@@ -28,12 +28,12 @@ public class VariableInfo
 /// </summary>
 public class Function
 {
-    public string Name { get; }
+    public string? Name { get; }
     public List<string> Parameters { get; }
     public List<Statement> Body { get; }
     public Dictionary<string, VariableInfo> Closure { get; }
 
-    public Function(string name, List<string> parameters, List<Statement> body, Dictionary<string, VariableInfo> closure)
+    public Function(string? name, List<string> parameters, List<Statement> body, Dictionary<string, VariableInfo> closure)
     {
         Name = name;
         Parameters = parameters;
@@ -43,7 +43,8 @@ public class Function
 
     public override string ToString()
     {
-        return $"function {Name}({string.Join(", ", Parameters)}) {{ ... }}";
+        var functionName = Name ?? "anonymous";
+        return $"function {functionName}({string.Join(", ", Parameters)}) {{ ... }}";
     }
 }
 

@@ -243,6 +243,11 @@ public class Parser
             return new Identifier(name, token);
         }
 
+        if (_currentToken.Type == TokenType.Function)
+        {
+            return ParseFunctionExpression();
+        }
+
         if (_currentToken.Type == TokenType.LeftParen)
         {
             Advance(); // consume '('
@@ -281,6 +286,31 @@ public class Parser
         var body = ParseBlockStatement();
         
         return new FunctionDeclaration(name, parameters, body.Body, token);
+    }
+
+    private FunctionExpression ParseFunctionExpression()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Function, "Expected 'function' keyword");
+        
+        Consume(TokenType.LeftParen, "Expected '(' after 'function'");
+        
+        var parameters = new List<string>();
+        if (_currentToken.Type != TokenType.RightParen)
+        {
+            parameters.Add(Consume(TokenType.Identifier, "Expected parameter name").Value);
+            
+            while (Match(TokenType.Comma))
+            {
+                parameters.Add(Consume(TokenType.Identifier, "Expected parameter name after ','").Value);
+            }
+        }
+        
+        Consume(TokenType.RightParen, "Expected ')' after parameters");
+        
+        var body = ParseBlockStatement();
+        
+        return new FunctionExpression(parameters, body.Body, token);
     }
 
     private ReturnStatement ParseReturnStatement()

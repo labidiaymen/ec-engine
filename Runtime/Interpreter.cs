@@ -34,6 +34,8 @@ public class Interpreter
             return EvaluateVariableDeclaration(varDecl);
         if (node is FunctionDeclaration funcDecl)
             return EvaluateFunctionDeclaration(funcDecl);
+        if (node is FunctionExpression funcExpr)
+            return EvaluateFunctionExpression(funcExpr);
         if (node is ReturnStatement returnStmt)
             return EvaluateReturnStatement(returnStmt);
         if (node is BlockStatement blockStmt)
@@ -219,6 +221,12 @@ public class Interpreter
         var function = new Function(funcDecl.Name, funcDecl.Parameters, funcDecl.Body, _variables);
         _variables[funcDecl.Name] = new VariableInfo("function", function);
         return function;
+    }
+
+    private object? EvaluateFunctionExpression(FunctionExpression funcExpr)
+    {
+        // Anonymous function - no name, just return the function object
+        return new Function(null, funcExpr.Parameters, funcExpr.Body, _variables);
     }
 
     private object? EvaluateReturnStatement(ReturnStatement returnStmt)
