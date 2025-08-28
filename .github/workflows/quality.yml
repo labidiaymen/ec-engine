@@ -1,0 +1,110 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+jobs:
+  lint:
+    name: Code Style & Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Format check
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+      
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      
+  analyze:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run static analysis
+      run: |
+        # Install security analyzer
+        dotnet add package Microsoft.CodeAnalysis.NetAnalyzers --version 7.0.4
+        dotnet build --configuration Release
+        
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Install coverage tools
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      
+    - name: Run tests with coverage
+      run: dotnet test --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+      
+    - name: Generate coverage report
+      run: reportgenerator -reports:"./coverage/**/coverage.cobertura.xml" -targetdir:"./coverage/report" -reporttypes:"Html;Cobertura"
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/report/Cobertura.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: ./coverage/report/
+        
+    - name: Comment coverage
+      uses: 5monkeys/cobertura-action@master
+      with:
+        path: ./coverage/report/Cobertura.xml
+        minimum_coverage: 80
+        fail_below_threshold: false
+        show_missing: true
+        show_line: true
+        show_branch: true
