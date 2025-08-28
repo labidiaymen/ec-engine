@@ -12,12 +12,14 @@ public class InteractiveRuntime
 {
     private readonly Interpreter _interpreter;
     private readonly List<string> _history;
+    private readonly ConsoleInputHandler _inputHandler;
     private bool _isRunning;
 
     public InteractiveRuntime()
     {
         _interpreter = new Interpreter();
         _history = new List<string>();
+        _inputHandler = new ConsoleInputHandler(_history);
         _isRunning = false;
     }
 
@@ -33,11 +35,9 @@ public class InteractiveRuntime
         {
             try
             {
-                // Show prompt
+                // Show prompt and read input with cursor support
                 Console.Write("ec> ");
-                
-                // Read input (may be multi-line)
-                var input = ReadCompleteInput();
+                var input = _inputHandler.ReadLine();
                 
                 // Handle special commands
                 if (HandleSpecialCommands(input))
@@ -46,9 +46,6 @@ public class InteractiveRuntime
                 // Skip empty input
                 if (string.IsNullOrWhiteSpace(input))
                     continue;
-
-                // Add to history
-                _history.Add(input);
 
                 // Execute the input
                 ExecuteInteractive(input);
@@ -196,10 +193,18 @@ public class InteractiveRuntime
         Console.WriteLine("  .vars         - Show current variables");
         Console.WriteLine("  .reset        - Reset interpreter state");
         Console.WriteLine();
+        Console.WriteLine("Navigation:");
+        Console.WriteLine("  ←/→           - Move cursor left/right");
+        Console.WriteLine("  ↑/↓           - Navigate command history");
+        Console.WriteLine("  Home/End      - Go to beginning/end of line");
+        Console.WriteLine("  Backspace/Del - Delete characters");
+        Console.WriteLine("  Esc           - Clear current line");
+        Console.WriteLine();
         Console.WriteLine("JavaScript-like syntax examples:");
         Console.WriteLine("  var x = 42;");
         Console.WriteLine("  let y = x + 10;");
         Console.WriteLine("  console.log('Hello World');");
+        Console.WriteLine("  observe x function() { console.log('x changed!'); }");
         Console.WriteLine("  x * y");
         Console.ResetColor();
         Console.WriteLine();
@@ -275,90 +280,6 @@ public class InteractiveRuntime
         Console.WriteLine("Interpreter state reset. All variables cleared.");
         Console.ResetColor();
         Console.WriteLine();
-    }
-
-    /// <summary>
-    /// Read complete input, handling multi-line comments
-    /// </summary>
-    private string ReadCompleteInput()
-    {
-        var firstLine = Console.ReadLine();
-        if (string.IsNullOrEmpty(firstLine))
-            return firstLine ?? "";
-
-        // Check if this line has an unmatched multi-line comment start
-        if (HasUnmatchedMultiLineCommentStart(firstLine))
-        {
-            // Multi-line comment started but not completed
-            var result = new System.Text.StringBuilder(firstLine);
-            result.AppendLine();
-
-            // Continue reading lines until we find the end of the comment
-            while (true)
-            {
-                Console.Write("... ");
-                var line = Console.ReadLine();
-                if (line == null) break;
-
-                result.Append(line);
-
-                // Check if this line contains the end of the multi-line comment
-                if (ContainsMultiLineCommentEnd(line))
-                {
-                    break;
-                }
-                
-                result.AppendLine();
-            }
-
-            return result.ToString();
-        }
-
-        return firstLine;
-    }
-
-    /// <summary>
-    /// Check if a line contains the start of a multi-line comment
-    /// </summary>
-    private bool ContainsMultiLineCommentStart(string line)
-    {
-        // Simple check for now - could be enhanced to handle strings and escaped chars
-        return line.Contains("/*");
-    }
-
-    /// <summary>
-    /// Check if a line contains the end of a multi-line comment
-    /// </summary>
-    private bool ContainsMultiLineCommentEnd(string line)
-    {
-        // Simple check for now - could be enhanced to handle strings and escaped chars
-        return line.Contains("*/");
-    }
-
-    /// <summary>
-    /// Check if a line has unmatched multi-line comment start
-    /// </summary>
-    private bool HasUnmatchedMultiLineCommentStart(string line)
-    {
-        // Count opening and closing comment markers
-        int openCount = 0;
-        int closeCount = 0;
-        
-        for (int i = 0; i < line.Length - 1; i++)
-        {
-            if (line[i] == '/' && line[i + 1] == '*')
-            {
-                openCount++;
-                i++; // Skip next char
-            }
-            else if (line[i] == '*' && line[i + 1] == '/')
-            {
-                closeCount++;
-                i++; // Skip next char
-            }
-        }
-        
-        return openCount > closeCount;
     }
 
     /// <summary>
