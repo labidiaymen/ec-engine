@@ -46,6 +46,50 @@ public class Lexer
         }
     }
 
+    private void SkipSingleLineComment()
+    {
+        // Skip //
+        Advance(); // Skip first /
+        Advance(); // Skip second /
+        
+        // Skip until end of line or end of file
+        while (_currentChar != '\0' && _currentChar != '\n')
+        {
+            Advance();
+        }
+        
+        // Skip the newline character if we're not at EOF
+        if (_currentChar == '\n')
+        {
+            Advance();
+        }
+    }
+
+    private void SkipMultiLineComment()
+    {
+        // Skip /*
+        Advance(); // Skip /
+        Advance(); // Skip *
+        
+        // Skip until we find */
+        while (_currentChar != '\0')
+        {
+            if (_currentChar == '*')
+            {
+                Advance();
+                if (_currentChar == '/')
+                {
+                    Advance(); // Skip the final /
+                    break;
+                }
+            }
+            else
+            {
+                Advance();
+            }
+        }
+    }
+
     private string ReadNumber()
     {
         var start = _position;
@@ -123,6 +167,25 @@ public class Lexer
                     Advance();
                     break;
                 case '/':
+                    // Check for comments
+                    if (_position + 1 < _code.Length)
+                    {
+                        var nextChar = _code[_position + 1];
+                        if (nextChar == '/')
+                        {
+                            // Single-line comment
+                            SkipSingleLineComment();
+                            continue;
+                        }
+                        else if (nextChar == '*')
+                        {
+                            // Multi-line comment
+                            SkipMultiLineComment();
+                            continue;
+                        }
+                    }
+                    
+                    // Regular division operator
                     tokens.Add(new Token(TokenType.Divide, "/", _position, tokenLine, tokenColumn));
                     Advance();
                     break;
