@@ -25,6 +25,17 @@ public class NumberLiteral : Expression
     }
 }
 
+// String literal node
+public class StringLiteral : Expression
+{
+    public string Value { get; }
+    public StringLiteral(string value, Token? token = null)
+    {
+        Value = value;
+        Token = token;
+    }
+}
+
 // Identifier node
 public class Identifier : Expression
 {
@@ -114,6 +125,46 @@ public class AssignmentExpression : Expression
     {
         Left = left;
         Right = right;
+        Token = token;
+    }
+}
+
+// Function declaration node (e.g., function add(a, b) { return a + b; })
+public class FunctionDeclaration : Statement
+{
+    public string Name { get; }
+    public List<string> Parameters { get; }
+    public List<Statement> Body { get; }
+    
+    public FunctionDeclaration(string name, List<string> parameters, List<Statement> body, Token? token = null)
+    {
+        Name = name;
+        Parameters = parameters;
+        Body = body;
+        Token = token;
+    }
+}
+
+// Return statement node (e.g., return x + y;)
+public class ReturnStatement : Statement
+{
+    public Expression? Argument { get; }
+    
+    public ReturnStatement(Expression? argument = null, Token? token = null)
+    {
+        Argument = argument;
+        Token = token;
+    }
+}
+
+// Block statement node (e.g., { statement1; statement2; })
+public class BlockStatement : Statement
+{
+    public List<Statement> Body { get; }
+    
+    public BlockStatement(List<Statement> body, Token? token = null)
+    {
+        Body = body;
         Token = token;
     }
 }

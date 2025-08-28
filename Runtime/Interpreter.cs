@@ -32,8 +32,16 @@ public class Interpreter
             return Evaluate(stmt.Expression, sourceCode);
         if (node is VariableDeclaration varDecl)
             return EvaluateVariableDeclaration(varDecl);
+        if (node is FunctionDeclaration funcDecl)
+            return EvaluateFunctionDeclaration(funcDecl);
+        if (node is ReturnStatement returnStmt)
+            return EvaluateReturnStatement(returnStmt);
+        if (node is BlockStatement blockStmt)
+            return EvaluateBlockStatement(blockStmt);
         if (node is NumberLiteral literal)
             return literal.Value;
+        if (node is StringLiteral stringLiteral)
+            return stringLiteral.Value;
         if (node is Identifier identifier)
             return EvaluateIdentifier(identifier);
         if (node is AssignmentExpression assignment)
@@ -184,7 +192,7 @@ public class Interpreter
     private object? EvaluateCallExpression(CallExpression call)
     {
         var function = Evaluate(call.Callee, _sourceCode);
-        var arguments = call.Arguments.Select(arg => Evaluate(arg, _sourceCode)).ToArray();
+        var arguments = call.Arguments.Select(arg => Evaluate(arg, _sourceCode)).ToList();
 
         if (function is ConsoleLogFunction)
         {
@@ -195,10 +203,82 @@ public class Interpreter
             return null; // console.log returns undefined
         }
 
+        if (function is Function userFunction)
+        {
+            return CallUserFunction(userFunction, arguments);
+        }
+
         var token = call.Token;
         throw new ECEngineException($"Cannot call {function?.GetType().Name}",
             token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
             "Attempted to call a non-function value");
+    }
+
+    private object? EvaluateFunctionDeclaration(FunctionDeclaration funcDecl)
+    {
+        var function = new Function(funcDecl.Name, funcDecl.Parameters, funcDecl.Body, _variables);
+        _variables[funcDecl.Name] = new VariableInfo("function", function);
+        return function;
+    }
+
+    private object? EvaluateReturnStatement(ReturnStatement returnStmt)
+    {
+        var value = returnStmt.Argument != null ? Evaluate(returnStmt.Argument) : null;
+        throw new ReturnException(value);
+    }
+
+    private object? EvaluateBlockStatement(BlockStatement blockStmt)
+    {
+        object? lastValue = null;
+        
+        foreach (var statement in blockStmt.Body)
+        {
+            lastValue = Evaluate(statement);
+        }
+        
+        return lastValue;
+    }
+
+    private object? CallUserFunction(Function function, List<object?> arguments)
+    {
+        // Create new scope with function parameters
+        var originalVariables = new Dictionary<string, VariableInfo>(_variables);
+        
+        try
+        {
+            // Add closure variables to current scope
+            foreach (var variable in function.Closure)
+            {
+                _variables[variable.Key] = variable.Value;
+            }
+            
+            // Bind arguments to parameters
+            for (int i = 0; i < function.Parameters.Count; i++)
+            {
+                var paramName = function.Parameters[i];
+                var paramValue = i < arguments.Count ? arguments[i] : null;
+                _variables[paramName] = new VariableInfo("var", paramValue);
+            }
+            
+            // Execute function body
+            try
+            {
+                foreach (var statement in function.Body)
+                {
+                    Evaluate(statement);
+                }
+                return null; // No explicit return
+            }
+            catch (ReturnException returnEx)
+            {
+                return returnEx.Value;
+            }
+        }
+        finally
+        {
+            // Restore original scope
+            _variables = originalVariables;
+        }
     }
 }
 
