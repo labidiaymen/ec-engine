@@ -1,6 +1,11 @@
 # ECEngine
 
-A lightweight JavaScript/TypeScript engine written in C# - a mini V8-style engine that can parse, interpret, and execute JavaScript code.
+[![CI/CD Pipeline](https://github.com/labidiaymen/ec-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/labidiaymen/ec-engine/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/labidiaymen/ec-engine/actions/workflows/quality.yml/badge.svg)](https://github.com/labidiaymen/ec-engine/actions/workflows/quality.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET 7.0](https://img.shields.io/badge/.NET-7.0-purple.svg)](https://dotnet.microsoft.com/download/dotnet/7.0)
+
+A lightweight JavaScript interpreter engine written in C# - a mini V8-style engine that can parse, interpret, and execute JavaScript code.
 
 ## Overview
 
@@ -114,17 +119,64 @@ ECEngine follows a traditional interpreter architecture:
 3. **Interpreter**: Walks the AST and evaluates expressions
 4. **Runtime**: Provides built-in functions and environment
 
-## Contributing
+## 🔄 CI/CD & Automation
 
-This is an educational project demonstrating JavaScript engine concepts. Contributions are welcome!
+ECEngine uses GitHub Actions for continuous integration and deployment:
 
+### Workflows
+- **CI/CD Pipeline** (`ci.yml`): Runs tests on every push/PR across multiple .NET versions
+- **Code Quality** (`quality.yml`): Performs static analysis, formatting checks, and coverage reporting  
+- **Release** (`release.yml`): Automated releases with cross-platform binaries when tags are pushed
+
+### Features
+- ✅ **Multi-platform Testing**: Tests run on Ubuntu with .NET 7.0 and 8.0
+- ✅ **Security Scanning**: CodeQL analysis and dependency vulnerability checks
+- ✅ **Code Coverage**: Automated coverage reporting with Codecov integration
+- ✅ **Automated Releases**: Cross-platform binaries (Linux, Windows, macOS) on version tags
+- ✅ **Dependency Management**: Dependabot automatically updates dependencies weekly
+
+### Release Process
+To create a new release:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+This triggers automatic building and publishing of release artifacts.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Quick Start
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes and add tests
+4. Ensure all tests pass (`dotnet test`)
 5. Submit a pull request
 
-## License
+### Development Workflow
+- **All PRs** trigger automated testing and quality checks
+- **Code formatting** is enforced with `dotnet format`
+- **Test coverage** is tracked and reported
+- **Security scanning** runs on all commits
+
+### Areas for Contribution
+- 🚀 **JavaScript Features**: Variables, functions, control flow
+- 🐛 **Bug Fixes**: Parser edge cases, runtime improvements  
+- 📚 **Documentation**: Component guides, usage examples
+- 🧪 **Testing**: Additional test cases, performance tests
+
+## 🔒 Security
+
+ECEngine is designed with security in mind:
+- **No File System Access**: Cannot read/write files
+- **No Network Access**: Cannot make external requests
+- **Memory Safe**: Uses .NET's memory management
+- **Input Validation**: Handles malicious input gracefully
+
+For security concerns, please see our [Security Policy](SECURITY.md).
+
+## 📄 License
 
 MIT License - see LICENSE file for details.
 
