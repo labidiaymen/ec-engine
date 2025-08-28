@@ -110,6 +110,41 @@ public class Lexer
         return _code.Substring(start, _position - start);
     }
 
+    private string ReadString()
+    {
+        Advance(); // Skip opening quote
+        var start = _position;
+        
+        while (_currentChar != '\0' && _currentChar != '"')
+        {
+            if (_currentChar == '\\') // Handle escape sequences
+            {
+                Advance(); // Skip backslash
+                if (_currentChar != '\0')
+                {
+                    Advance(); // Skip escaped character
+                }
+            }
+            else
+            {
+                Advance();
+            }
+        }
+        
+        var stringValue = _code.Substring(start, _position - start);
+        
+        if (_currentChar == '"')
+        {
+            Advance(); // Skip closing quote
+        }
+        else
+        {
+            throw new Exception($"Unterminated string literal at line {_line}, column {_column}");
+        }
+        
+        return stringValue;
+    }
+
     private TokenType GetKeywordTokenType(string identifier)
     {
         return identifier switch
@@ -117,6 +152,8 @@ public class Lexer
             "var" => TokenType.Var,
             "let" => TokenType.Let,
             "const" => TokenType.Const,
+            "function" => TokenType.Function,
+            "return" => TokenType.Return,
             _ => TokenType.Identifier
         };
     }
@@ -154,6 +191,10 @@ public class Lexer
 
             switch (_currentChar)
             {
+                case '"':
+                    var stringValue = ReadString();
+                    tokens.Add(new Token(TokenType.String, stringValue, _position, tokenLine, tokenColumn));
+                    break;
                 case '+':
                     tokens.Add(new Token(TokenType.Plus, "+", _position, tokenLine, tokenColumn));
                     Advance();
@@ -211,6 +252,10 @@ public class Lexer
                     break;
                 case '.':
                     tokens.Add(new Token(TokenType.Dot, ".", _position, tokenLine, tokenColumn));
+                    Advance();
+                    break;
+                case ',':
+                    tokens.Add(new Token(TokenType.Comma, ",", _position, tokenLine, tokenColumn));
                     Advance();
                     break;
                 case '=':

@@ -73,10 +73,28 @@ public class Parser
 
     private Statement ParseStatement()
     {
+        // Check for function declarations
+        if (_currentToken.Type == TokenType.Function)
+        {
+            return ParseFunctionDeclaration();
+        }
+        
+        // Check for return statements
+        if (_currentToken.Type == TokenType.Return)
+        {
+            return ParseReturnStatement();
+        }
+        
         // Check for variable declarations
         if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
         {
             return ParseVariableDeclaration();
+        }
+        
+        // Check for block statements
+        if (_currentToken.Type == TokenType.LeftBrace)
+        {
+            return ParseBlockStatement();
         }
         
         // Otherwise, it's an expression statement
@@ -172,7 +190,7 @@ public class Parser
             if (_currentToken.Type != TokenType.RightParen)
             {
                 arguments.Add(ParseExpression());
-                while (Match(TokenType.Semicolon)) // In a real parser, this would be comma
+                while (Match(TokenType.Comma))
                 {
                     arguments.Add(ParseExpression());
                 }
@@ -209,6 +227,14 @@ public class Parser
             return new NumberLiteral(value, token);
         }
 
+        if (_currentToken.Type == TokenType.String)
+        {
+            var value = _currentToken.Value;
+            var token = _currentToken;
+            Advance();
+            return new StringLiteral(value, token);
+        }
+
         if (_currentToken.Type == TokenType.Identifier)
         {
             var name = _currentToken.Value;
@@ -228,5 +254,65 @@ public class Parser
         throw new ECEngineException($"Unexpected token: {_currentToken.Type}",
             _currentToken.Line, _currentToken.Column, _sourceCode,
             $"Cannot parse expression starting with {_currentToken.Type}");
+    }
+
+    private FunctionDeclaration ParseFunctionDeclaration()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Function, "Expected 'function' keyword");
+        
+        var name = Consume(TokenType.Identifier, "Expected function name").Value;
+        
+        Consume(TokenType.LeftParen, "Expected '(' after function name");
+        
+        var parameters = new List<string>();
+        if (_currentToken.Type != TokenType.RightParen)
+        {
+            parameters.Add(Consume(TokenType.Identifier, "Expected parameter name").Value);
+            
+            while (Match(TokenType.Comma))
+            {
+                parameters.Add(Consume(TokenType.Identifier, "Expected parameter name after ','").Value);
+            }
+        }
+        
+        Consume(TokenType.RightParen, "Expected ')' after parameters");
+        
+        var body = ParseBlockStatement();
+        
+        return new FunctionDeclaration(name, parameters, body.Body, token);
+    }
+
+    private ReturnStatement ParseReturnStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Return, "Expected 'return' keyword");
+        
+        Expression? argument = null;
+        if (_currentToken.Type != TokenType.Semicolon && _currentToken.Type != TokenType.EOF)
+        {
+            argument = ParseExpression();
+        }
+        
+        Match(TokenType.Semicolon); // Optional semicolon
+        
+        return new ReturnStatement(argument, token);
+    }
+
+    private BlockStatement ParseBlockStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.LeftBrace, "Expected '{'");
+        
+        var statements = new List<Statement>();
+        
+        while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF)
+        {
+            statements.Add(ParseStatement());
+        }
+        
+        Consume(TokenType.RightBrace, "Expected '}'");
+        
+        return new BlockStatement(statements, token);
     }
 }

@@ -5,6 +5,7 @@ public enum TokenType
 {
     Identifier,
     Number,
+    String,         // string literals like "hello"
     Plus,
     Minus,
     Multiply,
@@ -15,10 +16,13 @@ public enum TokenType
     RightBrace,
     Semicolon,
     Dot,
-    Assign,        // =
-    Var,           // var keyword
-    Let,           // let keyword
-    Const,         // const keyword
+    Comma,          // ,
+    Assign,         // =
+    Var,            // var keyword
+    Let,            // let keyword
+    Const,          // const keyword
+    Function,       // function keyword
+    Return,         // return keyword
     EOF
 }
 
