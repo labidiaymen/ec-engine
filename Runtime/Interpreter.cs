@@ -40,6 +40,8 @@ public class Interpreter
             return EvaluateReturnStatement(returnStmt);
         if (node is BlockStatement blockStmt)
             return EvaluateBlockStatement(blockStmt);
+        if (node is ObserveStatement observeStmt)
+            return EvaluateObserveStatement(observeStmt);
         if (node is NumberLiteral literal)
             return literal.Value;
         if (node is StringLiteral stringLiteral)
@@ -146,8 +148,16 @@ public class Interpreter
                 $"const variables cannot be reassigned after declaration");
         }
         
+        var oldValue = variableInfo.Value;
         var value = Evaluate(assignment.Right, _sourceCode);
         variableInfo.Value = value;
+        
+        // Trigger observers if value changed
+        if (!Equals(oldValue, value))
+        {
+            TriggerObservers(assignment.Left.Name, oldValue, value, variableInfo.Observers);
+        }
+        
         return value;
     }
 
@@ -245,6 +255,44 @@ public class Interpreter
         }
         
         return lastValue;
+    }
+
+    private object? EvaluateObserveStatement(ObserveStatement observeStmt)
+    {
+        // Check if variable exists
+        if (!_variables.TryGetValue(observeStmt.VariableName, out var variableInfo))
+        {
+            var token = observeStmt.Token;
+            throw new ECEngineException($"Cannot observe undeclared variable '{observeStmt.VariableName}'",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                $"Variable '{observeStmt.VariableName}' must be declared before observing");
+        }
+        
+        // Create observer function
+        var observerFunction = new Function(null, observeStmt.Handler.Parameters, observeStmt.Handler.Body, _variables);
+        
+        // Add observer to the variable
+        variableInfo.Observers.Add(observerFunction);
+        
+        return null; // observe statements don't return a value
+    }
+
+    private void TriggerObservers(string variableName, object? oldValue, object? newValue, List<Function> observers)
+    {
+        foreach (var observer in observers)
+        {
+            try
+            {
+                // Call observer with oldValue, newValue, and variableName as arguments
+                var arguments = new List<object?> { oldValue, newValue, variableName };
+                CallUserFunction(observer, arguments);
+            }
+            catch (Exception ex)
+            {
+                // Log observer error but don't stop execution
+                Console.WriteLine($"Warning: Observer for variable '{variableName}' threw an error: {ex.Message}");
+            }
+        }
     }
 
     private object? CallUserFunction(Function function, List<object?> arguments)

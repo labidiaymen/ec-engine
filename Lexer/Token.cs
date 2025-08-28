@@ -23,6 +23,7 @@ public enum TokenType
     Const,          // const keyword
     Function,       // function keyword
     Return,         // return keyword
+    Observe,        // observe keyword
     EOF
 }
 

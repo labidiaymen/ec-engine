@@ -85,6 +85,12 @@ public class Parser
             return ParseReturnStatement();
         }
         
+        // Check for observe statements
+        if (_currentToken.Type == TokenType.Observe)
+        {
+            return ParseObserveStatement();
+        }
+        
         // Check for variable declarations
         if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
         {
@@ -327,6 +333,48 @@ public class Parser
         Match(TokenType.Semicolon); // Optional semicolon
         
         return new ReturnStatement(argument, token);
+    }
+
+    private ObserveStatement ParseObserveStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Observe, "Expected 'observe' keyword");
+        
+        // Parse variable name to observe
+        var variableName = Consume(TokenType.Identifier, "Expected variable name").Value;
+        
+        // Parse function expression handler
+        Consume(TokenType.Function, "Expected 'function' keyword");
+        
+        // Parse parameters (optional)
+        Consume(TokenType.LeftParen, "Expected '(' after 'function'");
+        var parameters = new List<string>();
+        
+        while (_currentToken.Type == TokenType.Identifier)
+        {
+            parameters.Add(_currentToken.Value);
+            Advance();
+            
+            if (_currentToken.Type == TokenType.Comma)
+            {
+                Advance();
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        Consume(TokenType.RightParen, "Expected ')' after function parameters");
+        
+        // Parse function body
+        var body = ParseBlockStatement().Body;
+        
+        var handler = new FunctionExpression(parameters, body, token);
+        
+        Match(TokenType.Semicolon); // Optional semicolon
+        
+        return new ObserveStatement(variableName, handler, token);
     }
 
     private BlockStatement ParseBlockStatement()

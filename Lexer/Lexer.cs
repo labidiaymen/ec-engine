@@ -154,6 +154,7 @@ public class Lexer
             "const" => TokenType.Const,
             "function" => TokenType.Function,
             "return" => TokenType.Return,
+            "observe" => TokenType.Observe,
             _ => TokenType.Identifier
         };
     }
