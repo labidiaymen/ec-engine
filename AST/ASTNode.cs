@@ -87,3 +87,33 @@ public class ProgramNode : ASTNode
     public List<Statement> Body { get; }
     public ProgramNode(List<Statement> body) => Body = body;
 }
+
+// Variable declaration statement node (e.g., var x = 5;)
+public class VariableDeclaration : Statement
+{
+    public string Kind { get; }  // "var", "let", or "const"
+    public string Name { get; }
+    public Expression? Initializer { get; }
+    
+    public VariableDeclaration(string kind, string name, Expression? initializer = null, Token? token = null)
+    {
+        Kind = kind;
+        Name = name;
+        Initializer = initializer;
+        Token = token;
+    }
+}
+
+// Assignment expression node (e.g., x = 5)
+public class AssignmentExpression : Expression
+{
+    public Identifier Left { get; }
+    public Expression Right { get; }
+    
+    public AssignmentExpression(Identifier left, Expression right, Token? token = null)
+    {
+        Left = left;
+        Right = right;
+        Token = token;
+    }
+}

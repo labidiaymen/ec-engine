@@ -73,14 +73,61 @@ public class Parser
 
     private Statement ParseStatement()
     {
+        // Check for variable declarations
+        if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
+        {
+            return ParseVariableDeclaration();
+        }
+        
+        // Otherwise, it's an expression statement
         var expression = ParseExpression();
         Match(TokenType.Semicolon); // Optional semicolon
         return new ExpressionStatement(expression);
     }
 
+    private VariableDeclaration ParseVariableDeclaration()
+    {
+        var kind = _currentToken.Value; // "var", "let", or "const"
+        var token = _currentToken;
+        Advance();
+        
+        var name = Consume(TokenType.Identifier, "Expected identifier after variable declaration").Value;
+        
+        Expression? initializer = null;
+        if (Match(TokenType.Assign))
+        {
+            initializer = ParseExpression();
+        }
+        
+        Match(TokenType.Semicolon); // Optional semicolon
+        return new VariableDeclaration(kind, name, initializer, token);
+    }
+
     private Expression ParseExpression()
     {
-        return ParseAdditive();
+        return ParseAssignment();
+    }
+
+    private Expression ParseAssignment()
+    {
+        var expression = ParseAdditive();
+        
+        if (_currentToken.Type == TokenType.Assign)
+        {
+            var token = _currentToken;
+            Advance();
+            var right = ParseAssignment(); // Right-associative
+            
+            if (expression is Identifier identifier)
+            {
+                return new AssignmentExpression(identifier, right, token);
+            }
+            
+            throw new ECEngineException("Invalid assignment target", 
+                token.Line, token.Column, _sourceCode, "Only identifiers can be assigned to");
+        }
+        
+        return expression;
     }
 
     private Expression ParseAdditive()

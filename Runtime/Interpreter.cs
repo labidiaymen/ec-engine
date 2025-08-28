@@ -6,6 +6,7 @@ namespace ECEngine.Runtime;
 public class Interpreter
 {
     private string _sourceCode = "";
+    private Dictionary<string, object?> _variables = new Dictionary<string, object?>();
 
     public object? Evaluate(ASTNode node, string sourceCode = "")
     {
@@ -15,10 +16,14 @@ public class Interpreter
             return EvaluateProgram(program);
         if (node is ExpressionStatement stmt)
             return Evaluate(stmt.Expression, sourceCode);
+        if (node is VariableDeclaration varDecl)
+            return EvaluateVariableDeclaration(varDecl);
         if (node is NumberLiteral literal)
             return literal.Value;
         if (node is Identifier identifier)
             return EvaluateIdentifier(identifier);
+        if (node is AssignmentExpression assignment)
+            return EvaluateAssignmentExpression(assignment);
         if (node is BinaryExpression binary)
             return EvaluateBinaryExpression(binary);
         if (node is MemberExpression member)
@@ -42,7 +47,13 @@ public class Interpreter
 
     private object? EvaluateIdentifier(Identifier identifier)
     {
-        // For now, we only support 'console' identifier
+        // Check if it's a variable
+        if (_variables.TryGetValue(identifier.Name, out var value))
+        {
+            return value;
+        }
+        
+        // Check for built-in identifiers
         var result = identifier.Name switch
         {
             "console" => new ConsoleObject(),
@@ -58,6 +69,45 @@ public class Interpreter
         }
 
         return result;
+    }
+
+    private object? EvaluateVariableDeclaration(VariableDeclaration varDecl)
+    {
+        object? value = null;
+        
+        if (varDecl.Initializer != null)
+        {
+            value = Evaluate(varDecl.Initializer, _sourceCode);
+        }
+        
+        // Check if variable already exists
+        if (_variables.ContainsKey(varDecl.Name))
+        {
+            var token = varDecl.Token;
+            throw new ECEngineException($"Variable '{varDecl.Name}' already declared",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                $"Cannot redeclare variable '{varDecl.Name}'");
+        }
+        
+        _variables[varDecl.Name] = value;
+        return value;
+    }
+
+    private object? EvaluateAssignmentExpression(AssignmentExpression assignment)
+    {
+        var value = Evaluate(assignment.Right, _sourceCode);
+        
+        // Check if variable exists
+        if (!_variables.ContainsKey(assignment.Left.Name))
+        {
+            var token = assignment.Token;
+            throw new ECEngineException($"Variable '{assignment.Left.Name}' not declared",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                $"Cannot assign to undeclared variable '{assignment.Left.Name}'");
+        }
+        
+        _variables[assignment.Left.Name] = value;
+        return value;
     }
 
     private object? EvaluateBinaryExpression(BinaryExpression binary)
