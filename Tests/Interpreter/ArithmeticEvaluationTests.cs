@@ -14,10 +14,10 @@ public class ArithmeticEvaluationTests
         var left = new NumberLiteral(1);
         var right = new NumberLiteral(2);
         var binaryExpression = new BinaryExpression(left, "+", right);
-        
+
         // Act
         var result = interpreter.Evaluate(binaryExpression, "1 + 2");
-        
+
         // Assert
         Assert.Equal(3.0, result);
     }
@@ -30,10 +30,10 @@ public class ArithmeticEvaluationTests
         var left = new NumberLiteral(5);
         var right = new NumberLiteral(3);
         var binaryExpression = new BinaryExpression(left, "-", right);
-        
+
         // Act
         var result = interpreter.Evaluate(binaryExpression, "5 - 3");
-        
+
         // Assert
         Assert.Equal(2.0, result);
     }
@@ -46,10 +46,10 @@ public class ArithmeticEvaluationTests
         var left = new NumberLiteral(4);
         var right = new NumberLiteral(3);
         var binaryExpression = new BinaryExpression(left, "*", right);
-        
+
         // Act
         var result = interpreter.Evaluate(binaryExpression, "4 * 3");
-        
+
         // Assert
         Assert.Equal(12.0, result);
     }
@@ -62,10 +62,10 @@ public class ArithmeticEvaluationTests
         var left = new NumberLiteral(8);
         var right = new NumberLiteral(2);
         var binaryExpression = new BinaryExpression(left, "/", right);
-        
+
         // Act
         var result = interpreter.Evaluate(binaryExpression, "8 / 2");
-        
+
         // Assert
         Assert.Equal(4.0, result);
     }
@@ -78,10 +78,10 @@ public class ArithmeticEvaluationTests
         var left = new NumberLiteral(3.5);
         var right = new NumberLiteral(2.5);
         var binaryExpression = new BinaryExpression(left, "+", right);
-        
+
         // Act
         var result = interpreter.Evaluate(binaryExpression, "3.5 + 2.5");
-        
+
         // Assert
         Assert.Equal(6.0, result);
     }

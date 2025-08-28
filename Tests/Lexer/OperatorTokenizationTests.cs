@@ -10,10 +10,10 @@ public class OperatorTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("+");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(2, tokens.Count);
         Assert.Equal(TokenType.Plus, tokens[0].Type);
@@ -25,10 +25,10 @@ public class OperatorTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("-");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(2, tokens.Count);
         Assert.Equal(TokenType.Minus, tokens[0].Type);
@@ -40,10 +40,10 @@ public class OperatorTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("*");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(2, tokens.Count);
         Assert.Equal(TokenType.Multiply, tokens[0].Type);
@@ -55,10 +55,10 @@ public class OperatorTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("/");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(2, tokens.Count);
         Assert.Equal(TokenType.Divide, tokens[0].Type);

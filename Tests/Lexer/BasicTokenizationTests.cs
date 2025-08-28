@@ -10,10 +10,10 @@ public class BasicTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("42");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(2, tokens.Count); // Number + EOF
         Assert.Equal(TokenType.Number, tokens[0].Type);
@@ -26,10 +26,10 @@ public class BasicTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("console");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(2, tokens.Count);
         Assert.Equal(TokenType.Identifier, tokens[0].Type);
@@ -41,10 +41,10 @@ public class BasicTokenizationTests
     {
         // Arrange
         var lexer = new ECEngine.Lexer.Lexer("3.14");
-        
+
         // Act
         var tokens = lexer.Tokenize();
-        
+
         // Assert
         Assert.Equal(2, tokens.Count);
         Assert.Equal(TokenType.Number, tokens[0].Type);

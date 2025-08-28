@@ -33,7 +33,7 @@ public class Lexer
         {
             _column++;
         }
-        
+
         _position++;
         _currentChar = _position < _code.Length ? _code[_position] : '\0';
     }

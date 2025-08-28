@@ -11,15 +11,15 @@ public class LiteralParsingTests
     {
         // Arrange
         var parser = new ECEngine.Parser.Parser();
-        
+
         // Act
         var ast = parser.Parse("42");
-        
+
         // Assert
         Assert.IsType<ProgramNode>(ast);
         var program = (ProgramNode)ast;
         Assert.Single(program.Body);
-        
+
         var expressionStatement = Assert.IsType<ExpressionStatement>(program.Body[0]);
         var numberLiteral = Assert.IsType<NumberLiteral>(expressionStatement.Expression);
         Assert.Equal(42, numberLiteral.Value);
@@ -30,10 +30,10 @@ public class LiteralParsingTests
     {
         // Arrange
         var parser = new ECEngine.Parser.Parser();
-        
+
         // Act
         var ast = parser.Parse("3.14");
-        
+
         // Assert
         var program = Assert.IsType<ProgramNode>(ast);
         var expressionStatement = Assert.IsType<ExpressionStatement>(program.Body[0]);
@@ -46,10 +46,10 @@ public class LiteralParsingTests
     {
         // Arrange
         var parser = new ECEngine.Parser.Parser();
-        
+
         // Act
         var ast = parser.Parse("console");
-        
+
         // Assert
         var program = Assert.IsType<ProgramNode>(ast);
         var expressionStatement = Assert.IsType<ExpressionStatement>(program.Body[0]);
