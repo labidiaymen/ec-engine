@@ -6,6 +6,7 @@ using System.IO;
 
 namespace ECEngine.Tests.Integration;
 
+[Collection("ConsoleTests")]
 public class ConsoleLogExecutionTests
 {
     [Fact]
@@ -14,7 +15,7 @@ public class ConsoleLogExecutionTests
         // Arrange
         string code = "console.log(42)";
 
-        // Capture console output
+        // Capture console output - ensure we start with a fresh writer
         var originalConsoleOut = Console.Out;
         using var stringWriter = new StringWriter();
         Console.SetOut(stringWriter);

@@ -6,6 +6,7 @@ using RuntimeInterpreter = ECEngine.Runtime.Interpreter;
 
 namespace ECEngine.Tests.Interpreter;
 
+[Collection("ConsoleTests")]
 public class FunctionCallEvaluationTests
 {
     [Fact]
@@ -49,7 +50,7 @@ public class FunctionCallEvaluationTests
         var binaryExpression = new BinaryExpression(new NumberLiteral(1), "+", new NumberLiteral(2));
         var callExpression = new CallExpression(memberExpression, new List<Expression> { binaryExpression });
 
-        // Capture console output
+        // Capture console output - ensure we start with a fresh writer
         var originalConsoleOut = Console.Out;
         using var stringWriter = new StringWriter();
         Console.SetOut(stringWriter);
