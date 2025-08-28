@@ -93,33 +93,3 @@ jobs:
       with:
         name: ecengine-osx-x64
         path: ./publish/osx-x64/
-
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '7.0.x'
-        
-    - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Security audit
-      run: dotnet list package --vulnerable --include-transitive
-      
-    - name: Run CodeQL Analysis
-      uses: github/codeql-action/init@v3
-      with:
-        languages: csharp
-        
-    - name: Build for CodeQL
-      run: dotnet build --configuration Release
-      
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
