@@ -364,3 +364,4 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 publish-aot/
+examples/performance/results

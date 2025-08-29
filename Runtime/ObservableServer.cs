@@ -109,14 +109,27 @@ public class ObservableServerObject
             // Create an HTTP request event
             var requestEvent = new HttpRequestEvent(request, response);
             
-            // Emit to all request observers
+            // Track if any observer has handled the response
+            bool responseHandled = false;
+            
+            // Emit to all request observers synchronously to ensure proper response handling
             foreach (var observer in _requestObservers)
             {
                 Console.WriteLine($"[DEBUG] Calling observer: {observer.Name}");
                 try
                 {
-                    _interpreter.CallUserFunction(observer, new List<object?> { requestEvent });
-                    Console.WriteLine($"[DEBUG] Observer {observer.Name} completed successfully");
+                    // Only call the observer if response hasn't been handled yet
+                    if (!responseHandled && !response.HasEnded)
+                    {
+                        _interpreter.CallUserFunction(observer, new List<object?> { requestEvent });
+                        
+                        // Check if this observer handled the response
+                        if (response.HasEnded)
+                        {
+                            responseHandled = true;
+                            Console.WriteLine($"[DEBUG] Observer {observer.Name} handled the response");
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

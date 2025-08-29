@@ -983,17 +983,24 @@ public class Interpreter
     {
         foreach (var observer in observers)
         {
-            try
+            // Capture the observer in a closure for async execution
+            var currentObserver = observer;
+            
+            // Schedule observer execution on next tick to make it non-blocking
+            _eventLoop.NextTick(() =>
             {
-                // Call observer with oldValue, newValue, and variableName as arguments
-                var arguments = new List<object?> { oldValue, newValue, variableName };
-                CallUserFunction(observer, arguments);
-            }
-            catch (Exception ex)
-            {
-                // Log observer error but don't stop execution
-                Console.WriteLine($"Warning: Observer for variable '{variableName}' threw an error: {ex.Message}");
-            }
+                try
+                {
+                    // Call observer with oldValue, newValue, and variableName as arguments
+                    var arguments = new List<object?> { oldValue, newValue, variableName };
+                    CallUserFunction(currentObserver, arguments);
+                }
+                catch (Exception ex)
+                {
+                    // Log observer error but don't stop execution
+                    Console.WriteLine($"Warning: Observer for variable '{variableName}' threw an error: {ex.Message}");
+                }
+            });
         }
     }
 

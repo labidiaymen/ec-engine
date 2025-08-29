@@ -31,6 +31,7 @@ public class HttpServer
             throw new ECEngineException("Server is already running", 0, 0, "", "Runtime error");
 
         _requestHandler = handler;
+        _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
         _listener.Prefixes.Add($"http://localhost:{port}/");
         
         try
@@ -44,7 +45,9 @@ public class HttpServer
             // Keep the event loop alive while server is running
             KeepEventLoopAlive();
             
-            Console.WriteLine($"Server listening on http://localhost:{port}/");
+            Console.WriteLine($"Server listening on:");
+            Console.WriteLine($"  http://127.0.0.1:{port}/");
+            Console.WriteLine($"  http://localhost:{port}/");
         }
         catch (Exception ex)
         {
@@ -120,11 +123,24 @@ public class HttpServer
                 try
                 {
                     _interpreter.CallUserFunction(_requestHandler, new List<object?> { requestObj, responseObj });
+                    
+                    // Give a small delay to ensure proper response handling
+                    System.Threading.Thread.Sleep(1);
                 }
                 catch (Exception ex)
                 {
-                    // If user handler fails, send error response
-                    SendErrorResponse(response, 500, $"Handler error: {ex.Message}");
+                    // If user handler fails and response not sent, send error response
+                    if (!responseObj.HasEnded)
+                    {
+                        try
+                        {
+                            SendErrorResponse(response, 500, $"Handler error: {ex.Message}");
+                        }
+                        catch
+                        {
+                            // Ignore if response is already closed
+                        }
+                    }
                 }
             }
             else
@@ -133,10 +149,18 @@ public class HttpServer
                 SendTextResponse(response, "Hello from ECEngine HTTP Server!");
             }
 
-            // Ensure response is closed
+            // Only ensure response is closed if it hasn't been handled yet
             if (!responseObj.HasEnded)
             {
-                responseObj.End();
+                try
+                {
+                    // Send a default 404 response if no handler processed the request
+                    SendErrorResponse(response, 404, "Not Found");
+                }
+                catch
+                {
+                    // Ignore if response is already closed
+                }
             }
         }
         catch (Exception ex)
@@ -260,31 +284,60 @@ public class HttpResponseObject
         if (_hasEnded)
             throw new ECEngineException("Cannot write after response has ended", 0, 0, "", "Runtime error");
 
-        if (!_headersSent)
+        lock (this)
         {
-            SendHeaders();
-        }
+            if (_hasEnded) return; // Check again after acquiring lock
+            
+            if (!_headersSent)
+            {
+                SendHeaders();
+            }
 
-        byte[] buffer = Encoding.UTF8.GetBytes(data);
-        _response.OutputStream.Write(buffer, 0, buffer.Length);
+            try
+            {
+                byte[] buffer = Encoding.UTF8.GetBytes(data);
+                _response.OutputStream.Write(buffer, 0, buffer.Length);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DEBUG] Warning during response write: {ex.Message}");
+            }
+        }
     }
 
     public void End(string? data = null)
     {
         if (_hasEnded) return;
-
-        if (data != null)
+        
+        lock (this)
         {
-            Write(data);
-        }
+            if (_hasEnded) return; // Double-check after acquiring lock
+            
+            try
+            {
+                if (data != null)
+                {
+                    Write(data);
+                }
 
-        if (!_headersSent)
-        {
-            SendHeaders();
-        }
+                if (!_headersSent)
+                {
+                    SendHeaders();
+                }
 
-        _response.OutputStream.Close();
-        _hasEnded = true;
+                // Properly close the response
+                _response.OutputStream.Close();
+                _response.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DEBUG] Warning during response close: {ex.Message}");
+            }
+            finally
+            {
+                _hasEnded = true;
+            }
+        }
     }
 
     private void SendHeaders()
