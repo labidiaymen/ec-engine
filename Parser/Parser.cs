@@ -85,6 +85,12 @@ public class Parser
             return ParseReturnStatement();
         }
         
+        // Check for if statements
+        if (_currentToken.Type == TokenType.If)
+        {
+            return ParseIfStatement();
+        }
+        
         // Check for observe statements
         if (_currentToken.Type == TokenType.Observe)
         {
@@ -178,15 +184,35 @@ public class Parser
 
     private Expression ParseLogicalAnd()
     {
-        var left = ParseAdditive();
+        var left = ParseComparison();
 
         while (_currentToken.Type == TokenType.LogicalAnd)
         {
             var op = _currentToken.Value;
             var token = _currentToken;
             Advance();
-            var right = ParseAdditive();
+            var right = ParseComparison();
             left = new LogicalExpression(left, op, right, token);
+        }
+
+        return left;
+    }
+
+    private Expression ParseComparison()
+    {
+        var left = ParseAdditive();
+
+        while (_currentToken.Type == TokenType.Equal ||
+               _currentToken.Type == TokenType.NotEqual ||
+               _currentToken.Type == TokenType.LessThan ||
+               _currentToken.Type == TokenType.LessThanOrEqual ||
+               _currentToken.Type == TokenType.GreaterThan ||
+               _currentToken.Type == TokenType.GreaterThanOrEqual)
+        {
+            var op = _currentToken.Value;
+            Advance();
+            var right = ParseAdditive();
+            left = new BinaryExpression(left, op, right);
         }
 
         return left;
@@ -278,6 +304,20 @@ public class Parser
             var token = _currentToken;
             Advance();
             return new StringLiteral(value, token);
+        }
+
+        if (_currentToken.Type == TokenType.True)
+        {
+            var token = _currentToken;
+            Advance();
+            return new BooleanLiteral(true, token);
+        }
+
+        if (_currentToken.Type == TokenType.False)
+        {
+            var token = _currentToken;
+            Advance();
+            return new BooleanLiteral(false, token);
         }
 
         if (_currentToken.Type == TokenType.Identifier)
@@ -372,6 +412,27 @@ public class Parser
         Match(TokenType.Semicolon); // Optional semicolon
         
         return new ReturnStatement(argument, token);
+    }
+
+    private IfStatement ParseIfStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.If, "Expected 'if' keyword");
+        
+        Consume(TokenType.LeftParen, "Expected '(' after 'if'");
+        var condition = ParseExpression();
+        Consume(TokenType.RightParen, "Expected ')' after if condition");
+        
+        var thenStatement = ParseStatement();
+        
+        Statement? elseStatement = null;
+        if (_currentToken.Type == TokenType.Else)
+        {
+            Consume(TokenType.Else, "Expected 'else' keyword");
+            elseStatement = ParseStatement();
+        }
+        
+        return new IfStatement(condition, thenStatement, elseStatement, token);
     }
 
     private Statement ParseObserveStatement()

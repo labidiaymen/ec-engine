@@ -36,6 +36,17 @@ public class StringLiteral : Expression
     }
 }
 
+// Boolean literal node
+public class BooleanLiteral : Expression
+{
+    public bool Value { get; }
+    public BooleanLiteral(bool value, Token? token = null)
+    {
+        Value = value;
+        Token = token;
+    }
+}
+
 // Identifier node
 public class Identifier : Expression
 {
@@ -195,6 +206,22 @@ public class MultiObserveStatement : Statement
     {
         VariableNames = variableNames;
         Handler = handler;
+        Token = token;
+    }
+}
+
+// If statement node (e.g., if (condition) { ... } else { ... })
+public class IfStatement : Statement
+{
+    public Expression Condition { get; }
+    public Statement ThenStatement { get; }
+    public Statement? ElseStatement { get; }
+    
+    public IfStatement(Expression condition, Statement thenStatement, Statement? elseStatement = null, Token? token = null)
+    {
+        Condition = condition;
+        ThenStatement = thenStatement;
+        ElseStatement = elseStatement;
         Token = token;
     }
 }

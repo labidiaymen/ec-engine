@@ -156,6 +156,10 @@ public class Lexer
             "return" => TokenType.Return,
             "observe" => TokenType.Observe,
             "when" => TokenType.When,
+            "if" => TokenType.If,
+            "else" => TokenType.Else,
+            "true" => TokenType.True,
+            "false" => TokenType.False,
             _ => TokenType.Identifier
         };
     }
@@ -261,8 +265,55 @@ public class Lexer
                     Advance();
                     break;
                 case '=':
-                    tokens.Add(new Token(TokenType.Assign, "=", _position, tokenLine, tokenColumn));
-                    Advance();
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.Equal, "==", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.Assign, "=", _position, tokenLine, tokenColumn));
+                        Advance();
+                    }
+                    break;
+                case '!':
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.NotEqual, "!=", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
+                    }
+                    break;
+                case '<':
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.LessThanOrEqual, "<=", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.LessThan, "<", _position, tokenLine, tokenColumn));
+                        Advance();
+                    }
+                    break;
+                case '>':
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.GreaterThanOrEqual, ">=", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.GreaterThan, ">", _position, tokenLine, tokenColumn));
+                        Advance();
+                    }
                     break;
                 case '&':
                     if (_position + 1 < _code.Length && _code[_position + 1] == '&')
