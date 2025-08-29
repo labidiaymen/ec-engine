@@ -132,24 +132,16 @@ public class Interpreter
         // Check if variable already exists in current scope
         if (currentScope.ContainsKey(name))
         {
-            throw new ECEngineException($"Variable '{name}' has already been declared in this scope", 
+            throw new ECEngineException($"Variable '{name}' already declared", 
                 0, 0, _sourceCode, "Variable redeclaration error");
         }
         
         // For 'var', check if it exists in any scope and use function scoping rules
         if (kind == "var")
         {
-            // var has function scope, so we need to declare it in the nearest function scope
-            // For now, we'll put it in the global scope for simplicity
-            var globalScope = _scopes.Last(); // Bottom of stack is global
-            if (globalScope.ContainsKey(name))
-            {
-                globalScope[name] = new VariableInfo(kind, value);
-            }
-            else
-            {
-                globalScope[name] = new VariableInfo(kind, value);
-            }
+            // var has function scope, so declare it in the current scope
+            // (which would be the function scope when inside a function)
+            currentScope[name] = new VariableInfo(kind, value);
         }
         else
         {
@@ -740,23 +732,23 @@ public class Interpreter
 
     private object? CallUserFunction(Function function, List<object?> arguments)
     {
-        // Create new scope with function parameters
-        var originalVariables = new Dictionary<string, VariableInfo>(_variables);
+        // Push new scope for function execution
+        PushScope();
         
         try
         {
-            // Add closure variables to current scope
+            // Add closure variables to current scope first
             foreach (var variable in function.Closure)
             {
-                _variables[variable.Key] = variable.Value;
+                SetVariable(variable.Key, variable.Value.Value);
             }
             
-            // Bind arguments to parameters
+            // Bind arguments to parameters (these override closure variables)
             for (int i = 0; i < function.Parameters.Count; i++)
             {
                 var paramName = function.Parameters[i];
                 var paramValue = i < arguments.Count ? arguments[i] : null;
-                _variables[paramName] = new VariableInfo("var", paramValue);
+                SetVariable(paramName, paramValue);
             }
             
             // Execute function body
@@ -775,8 +767,8 @@ public class Interpreter
         }
         finally
         {
-            // Restore original scope
-            _variables = originalVariables;
+            // Pop function scope
+            PopScope();
         }
     }
 
