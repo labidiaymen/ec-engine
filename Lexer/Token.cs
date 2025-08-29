@@ -45,6 +45,14 @@ public enum TokenType
     Do,             // do keyword
     Break,          // break keyword
     Continue,       // continue keyword
+    Switch,         // switch keyword
+    Case,           // case keyword
+    Default,        // default keyword
+    Try,            // try keyword
+    Catch,          // catch keyword
+    Finally,        // finally keyword
+    Throw,          // throw keyword
+    Colon,          // :
     
     // Unary operators
     Increment,      // ++

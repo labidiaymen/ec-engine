@@ -375,3 +375,73 @@ public class ContinueStatement : Statement
         Token = token;
     }
 }
+
+// Switch statement node
+public class SwitchStatement : Statement
+{
+    public Expression Discriminant { get; }
+    public List<SwitchCase> Cases { get; }
+    
+    public SwitchStatement(Expression discriminant, List<SwitchCase> cases, Token? token = null)
+    {
+        Discriminant = discriminant;
+        Cases = cases;
+        Token = token;
+    }
+}
+
+// Switch case node (includes both case and default)
+public class SwitchCase : ASTNode
+{
+    public Expression? Test { get; }  // null for default case
+    public List<Statement> Consequent { get; }
+    
+    public SwitchCase(Expression? test, List<Statement> consequent, Token? token = null)
+    {
+        Test = test;
+        Consequent = consequent;
+        Token = token;
+    }
+}
+
+// Try statement node
+public class TryStatement : Statement
+{
+    public BlockStatement Block { get; }
+    public CatchClause? Handler { get; }
+    public BlockStatement? Finalizer { get; }
+    
+    public TryStatement(BlockStatement block, CatchClause? handler = null, BlockStatement? finalizer = null, Token? token = null)
+    {
+        Block = block;
+        Handler = handler;
+        Finalizer = finalizer;
+        Token = token;
+    }
+}
+
+// Catch clause node
+public class CatchClause : ASTNode
+{
+    public Identifier? Param { get; }  // catch parameter (e.g., 'e' in catch(e))
+    public BlockStatement Body { get; }
+    
+    public CatchClause(BlockStatement body, Identifier? param = null, Token? token = null)
+    {
+        Param = param;
+        Body = body;
+        Token = token;
+    }
+}
+
+// Throw statement node
+public class ThrowStatement : Statement
+{
+    public Expression Argument { get; }
+    
+    public ThrowStatement(Expression argument, Token? token = null)
+    {
+        Argument = argument;
+        Token = token;
+    }
+}
