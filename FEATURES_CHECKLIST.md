@@ -4,9 +4,9 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 
 ## 📊 Overall Progress Summary
 
-- **✅ Implemented**: 62 features
+- **✅ Implemented**: 72 features
 - **🔄 Partial**: 3 features  
-- **❌ Not Implemented**: 70+ features
+- **❌ Not Implemented**: 60+ features
 - **🎯 ECEngine Extensions**: 3 features
 
 ---
@@ -25,7 +25,7 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ Logical: `&&`, `||`
 - ✅ Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
 - ❌ Strict comparison: `===`, `!==`
-- ❌ Unary: `!`, `++`, `--`, `+x`, `-x`
+- ✅ Unary: `!`, `++`, `--`, `+x`, `-x`
 - ❌ Compound Assignment: `+=`, `-=`, `*=`, `/=`
 - ❌ Bitwise: `&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`
 - ❌ Ternary: `? :`
@@ -47,7 +47,7 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ Boolean literals: `true`, `false`
 - ✅ Modules: `import`, `export`, `from`
 - ✅ ECEngine extensions: `observe`, `when`
-- ❌ Loop control: `for`, `while`, `do`, `break`, `continue`
+- ✅ Loop control: `for`, `while`, `do`, `break`, `continue`
 - ❌ Switch statements: `switch`, `case`, `default`
 - ❌ Exception handling: `try`, `catch`, `finally`, `throw`
 - ❌ Classes: `class`, `extends`, `super`, `static`
@@ -77,8 +77,8 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ `LogicalExpression` - Logical AND/OR operations
 - ❌ `ArrayExpression` - Array literals `[1, 2, 3]`
 - ❌ `ObjectExpression` - Object literals `{key: value}`
-- ❌ `UpdateExpression` - Increment/decrement `++`, `--`
-- ❌ `UnaryExpression` - Unary operators `!`, `-`, `+`
+- ✅ `UpdateExpression` - Increment/decrement `++`, `--`
+- ✅ `UnaryExpression` - Unary operators `!`, `-`, `+`
 - ❌ `ConditionalExpression` - Ternary operator
 - ❌ `TemplateLiteral` - Template strings
 - ❌ `ArrowFunctionExpression` - Arrow functions
@@ -91,14 +91,14 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ `IfStatement` - Conditional statements (`if`, `else`, `else if`)
 - ✅ `ExportStatement` - Module exports
 - ✅ `ImportStatement` - Module imports
-- ❌ `WhileStatement` - While loops
-- ❌ `ForStatement` - For loops
-- ❌ `DoWhileStatement` - Do-while loops
+- ✅ `WhileStatement` - While loops
+- ✅ `ForStatement` - For loops
+- ✅ `DoWhileStatement` - Do-while loops
 - ❌ `SwitchStatement` - Switch statements
 - ❌ `TryStatement` - Try-catch statements
 - ❌ `ThrowStatement` - Throw statements
-- ❌ `BreakStatement` - Break statements
-- ❌ `ContinueStatement` - Continue statements
+- ✅ `BreakStatement` - Break statements
+- ✅ `ContinueStatement` - Continue statements
 
 ### 🎯 **ECEngine Extensions**
 - ✅ `ObserveStatement` - Variable observation
@@ -208,14 +208,14 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ❌ `switch` statements
 - ❌ `case` and `default` clauses
 
-### ❌ **Loops**
-- ❌ `for` loops
+### ✅ **Loops**
+- ✅ `for` loops
 - ❌ `for...in` loops
 - ❌ `for...of` loops  
-- ❌ `while` loops
-- ❌ `do...while` loops
-- ❌ `break` statements
-- ❌ `continue` statements
+- ✅ `while` loops
+- ✅ `do...while` loops
+- ✅ `break` statements
+- ✅ `continue` statements
 
 ### ❌ **Exception Handling**
 - ❌ `try...catch` statements
@@ -442,7 +442,7 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 2. ✅ Conditional statements (`if`, `else`, `else if`)
 3. ✅ Boolean literals (`true`, `false`)
 4. ✅ String concatenation with automatic type conversion
-5. ❌ Loop statements (`for`, `while`)
+5. ✅ Loop statements (`for`, `while`)
 6. ❌ Array literals and indexing
 7. ❌ Object literals and property access
 
@@ -473,28 +473,30 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 
 | Category | Implemented | Partial | Not Implemented | Total |
 |----------|------------|---------|-----------------|-------|
-| **Lexical Analysis** | 28 | 2 | 12 | 42 |
-| **AST Nodes** | 18 | 0 | 20 | 38 |
+| **Lexical Analysis** | 31 | 2 | 9 | 42 |
+| **AST Nodes** | 21 | 0 | 17 | 38 |
 | **Parser Features** | 15 | 2 | 15 | 32 |
 | **Runtime Features** | 22 | 1 | 35 | 58 |
-| **Control Flow** | 3 | 0 | 12 | 15 |
+| **Control Flow** | 8 | 0 | 7 | 15 |
 | **Data Types** | 4 | 1 | 9 | 14 |
 | **Module System** | 8 | 0 | 6 | 14 |
 | **Modern JS** | 1 | 0 | 19 | 20 |
 | **OOP Features** | 0 | 0 | 25 | 25 |
 | **Extensions** | 3 | 0 | 3 | 6 |
-| **TOTAL** | **102** | **6** | **156** | **264** |
+| **TOTAL** | **112** | **6** | **146** | **264** |
 
-**Overall Implementation Progress: ~42%** (considering partial implementations)
+**Overall Implementation Progress: ~47%** (considering partial implementations)
 
 ---
 
 ## 🏁 **Conclusion**
 
-ECEngine currently implements a solid foundation of ECMAScript features with about **42% completion**. The engine successfully handles:
+ECEngine currently implements a solid foundation of ECMAScript features with about **47% completion**. The engine successfully handles:
 
 - ✅ **Core language mechanics**: Variables, functions, expressions, conditionals
+- ✅ **Control flow**: Complete loop support (for, while, do-while) with break/continue
 - ✅ **Comparison and logic**: Full comparison operators and boolean operations
+- ✅ **Unary operators**: Logical not, increment/decrement, positive/negative
 - ✅ **Module system**: Complete import/export functionality
 - ✅ **String operations**: Concatenation with automatic type conversion
 - ✅ **Basic runtime**: Evaluation, scoping, error handling  
@@ -502,7 +504,7 @@ ECEngine currently implements a solid foundation of ECMAScript features with abo
 - ✅ **Innovative features**: Reactive programming with the observe pattern
 
 **Next major milestones**:
-1. **Loop statements** (for/while) - would bring completion to ~50%
+1. ✅ **Loop statements** (for/while) - ✅ COMPLETED - brings completion to ~47%
 2. **Object and array support** - would bring completion to ~65%  
 3. **Modern JavaScript features** - would bring completion to ~80%+
 
