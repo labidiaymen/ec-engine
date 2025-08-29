@@ -18,6 +18,12 @@ public enum TokenType
     Dot,
     Comma,          // ,
     Assign,         // =
+    Equal,          // ==
+    NotEqual,       // !=
+    LessThan,       // <
+    LessThanOrEqual, // <=
+    GreaterThan,    // >
+    GreaterThanOrEqual, // >=
     LogicalAnd,     // &&
     LogicalOr,      // ||
     Var,            // var keyword
@@ -27,6 +33,10 @@ public enum TokenType
     Return,         // return keyword
     Observe,        // observe keyword
     When,           // when keyword
+    If,             // if keyword
+    Else,           // else keyword
+    True,           // true keyword
+    False,          // false keyword
     EOF
 }
 

@@ -46,6 +46,8 @@ public class Interpreter
             return EvaluateMultiObserveStatement(multiObserveStmt);
         if (node is WhenStatement whenStmt)
             return EvaluateWhenStatement(whenStmt);
+        if (node is IfStatement ifStmt)
+            return EvaluateIfStatement(ifStmt);
         if (node is MemberExpression memberExpr)
             return EvaluateMemberExpression(memberExpr);
         if (node is LogicalExpression logicalExpr)
@@ -54,6 +56,8 @@ public class Interpreter
             return literal.Value;
         if (node is StringLiteral stringLiteral)
             return stringLiteral.Value;
+        if (node is BooleanLiteral booleanLiteral)
+            return booleanLiteral.Value;
         if (node is Identifier identifier)
             return EvaluateIdentifier(identifier);
         if (node is AssignmentExpression assignment)
@@ -174,24 +178,111 @@ public class Interpreter
         var left = Evaluate(binary.Left, _sourceCode);
         var right = Evaluate(binary.Right, _sourceCode);
 
-        if (left is double leftNum && right is double rightNum)
+        // Handle comparison operators (work with any comparable types)
+        switch (binary.Operator)
+        {
+            case "==":
+                return AreEqual(left, right);
+            case "!=":
+                return !AreEqual(left, right);
+            case "<":
+                return IsLessThan(left, right);
+            case "<=":
+                return IsLessThan(left, right) || AreEqual(left, right);
+            case ">":
+                return IsGreaterThan(left, right);
+            case ">=":
+                return IsGreaterThan(left, right) || AreEqual(left, right);
+        }
+
+        // Handle string concatenation and arithmetic addition
+        if (binary.Operator == "+")
+        {
+            // String concatenation: if either operand is a string, convert both to strings and concatenate
+            if (left is string || right is string)
+            {
+                var leftStr = left?.ToString() ?? "null";
+                var rightStr = right?.ToString() ?? "null";
+                return leftStr + rightStr;
+            }
+            
+            // Numeric addition: both operands must be numbers
+            if (left is double leftNum && right is double rightNum)
+            {
+                return leftNum + rightNum;
+            }
+            
+            // If we reach here, it's an invalid + operation
+            var token = binary.Token;
+            throw new ECEngineException($"Cannot perform + on {left?.GetType().Name} and {right?.GetType().Name}",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "The + operator can only be used for string concatenation or numeric addition");
+        }
+
+        // Handle other arithmetic operators (numbers only)
+        if (left is double leftNum2 && right is double rightNum2)
         {
             return binary.Operator switch
             {
-                "+" => leftNum + rightNum,
-                "-" => leftNum - rightNum,
-                "*" => leftNum * rightNum,
-                "/" => leftNum / rightNum,
+                "-" => leftNum2 - rightNum2,
+                "*" => leftNum2 * rightNum2,
+                "/" => leftNum2 / rightNum2,
                 _ => throw new ECEngineException($"Unknown operator: {binary.Operator}",
                     binary.Token?.Line ?? 1, binary.Token?.Column ?? 1, _sourceCode,
                     $"The operator '{binary.Operator}' is not supported")
             };
         }
 
-        var token = binary.Token;
+        var token2 = binary.Token;
         throw new ECEngineException($"Cannot perform {binary.Operator} on {left?.GetType().Name} and {right?.GetType().Name}",
-            token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+            token2?.Line ?? 1, token2?.Column ?? 1, _sourceCode,
             "Type mismatch in binary operation");
+    }
+
+    private bool AreEqual(object? left, object? right)
+    {
+        if (left == null && right == null) return true;
+        if (left == null || right == null) return false;
+        
+        // Convert numbers to the same type for comparison
+        if (left is double || right is double)
+        {
+            var leftNum = Convert.ToDouble(left);
+            var rightNum = Convert.ToDouble(right);
+            return Math.Abs(leftNum - rightNum) < double.Epsilon;
+        }
+        
+        return left.Equals(right);
+    }
+
+    private bool IsLessThan(object? left, object? right)
+    {
+        if (left is double leftNum && right is double rightNum)
+        {
+            return leftNum < rightNum;
+        }
+        if (left is string leftStr && right is string rightStr)
+        {
+            return string.Compare(leftStr, rightStr, StringComparison.Ordinal) < 0;
+        }
+        
+        throw new ECEngineException("Cannot compare these types",
+            1, 1, _sourceCode, "Only numbers and strings can be compared with < operator");
+    }
+
+    private bool IsGreaterThan(object? left, object? right)
+    {
+        if (left is double leftNum && right is double rightNum)
+        {
+            return leftNum > rightNum;
+        }
+        if (left is string leftStr && right is string rightStr)
+        {
+            return string.Compare(leftStr, rightStr, StringComparison.Ordinal) > 0;
+        }
+        
+        throw new ECEngineException("Cannot compare these types",
+            1, 1, _sourceCode, "Only numbers and strings can be compared with > operator");
     }
 
     private object? EvaluateMemberExpression(MemberExpression member)
@@ -273,6 +364,32 @@ public class Interpreter
         }
         
         return lastValue;
+    }
+
+    private object? EvaluateIfStatement(IfStatement ifStmt)
+    {
+        var conditionValue = Evaluate(ifStmt.Condition);
+        
+        // Check if condition is truthy
+        if (IsTruthy(conditionValue))
+        {
+            return Evaluate(ifStmt.ThenStatement);
+        }
+        else if (ifStmt.ElseStatement != null)
+        {
+            return Evaluate(ifStmt.ElseStatement);
+        }
+        
+        return null; // if statement with false condition and no else returns null
+    }
+
+    private bool IsTruthy(object? value)
+    {
+        if (value == null) return false;
+        if (value is bool boolValue) return boolValue;
+        if (value is double doubleValue) return doubleValue != 0.0;
+        if (value is string stringValue) return !string.IsNullOrEmpty(stringValue);
+        return true; // All other values are truthy
     }
 
     private object? EvaluateObserveStatement(ObserveStatement observeStmt)
@@ -418,15 +535,6 @@ public class Interpreter
         throw new ECEngineException($"Unknown logical operator: {logicalExpr.Operator}",
             logicalExpr.Token?.Line ?? 1, logicalExpr.Token?.Column ?? 1, _sourceCode,
             "Supported logical operators are && and ||");
-    }
-
-    private bool IsTruthy(object? value)
-    {
-        if (value == null) return false;
-        if (value is bool b) return b;
-        if (value is double d) return d != 0;
-        if (value is string s) return s.Length > 0;
-        return true;
     }
 
     private object? GetChangeInfoProperty(ChangeInfo changeInfo, string property)
