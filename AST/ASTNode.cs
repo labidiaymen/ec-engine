@@ -269,3 +269,29 @@ public class LogicalExpression : Expression
         Token = token;
     }
 }
+
+// Export statement node
+public class ExportStatement : Statement
+{
+    public Statement Declaration { get; }
+    
+    public ExportStatement(Statement declaration, Token? token = null)
+    {
+        Declaration = declaration;
+        Token = token;
+    }
+}
+
+// Import statement node
+public class ImportStatement : Statement
+{
+    public List<string> ImportedNames { get; }
+    public string ModulePath { get; }
+    
+    public ImportStatement(List<string> importedNames, string modulePath, Token? token = null)
+    {
+        ImportedNames = importedNames;
+        ModulePath = modulePath;
+        Token = token;
+    }
+}

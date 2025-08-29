@@ -160,6 +160,9 @@ public class Lexer
             "else" => TokenType.Else,
             "true" => TokenType.True,
             "false" => TokenType.False,
+            "export" => TokenType.Export,
+            "import" => TokenType.Import,
+            "from" => TokenType.From,
             _ => TokenType.Identifier
         };
     }

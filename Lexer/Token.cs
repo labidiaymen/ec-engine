@@ -37,6 +37,9 @@ public enum TokenType
     Else,           // else keyword
     True,           // true keyword
     False,          // false keyword
+    Export,         // export keyword
+    Import,         // import keyword
+    From,           // from keyword
     EOF
 }
 
