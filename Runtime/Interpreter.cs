@@ -78,6 +78,12 @@ public class Interpreter
             return EvaluateBreakStatement(breakStmt);
         if (node is ContinueStatement continueStmt)
             return EvaluateContinueStatement(continueStmt);
+        if (node is SwitchStatement switchStmt)
+            return EvaluateSwitchStatement(switchStmt);
+        if (node is TryStatement tryStmt)
+            return EvaluateTryStatement(tryStmt);
+        if (node is ThrowStatement throwStmt)
+            return EvaluateThrowStatement(throwStmt);
         if (node is MemberExpression memberExpr)
             return EvaluateMemberExpression(memberExpr);
         if (node is LogicalExpression logicalExpr)
@@ -939,6 +945,167 @@ public class Interpreter
     private object? EvaluateContinueStatement(ContinueStatement continueStmt)
     {
         throw new ContinueException();
+    }
+    
+    private object? EvaluateSwitchStatement(SwitchStatement switchStmt)
+    {
+        var discriminantValue = Evaluate(switchStmt.Discriminant, _sourceCode);
+        bool foundMatch = false;
+        bool executeDefault = false;
+        object? result = null;
+        
+        try
+        {
+            foreach (var switchCase in switchStmt.Cases)
+            {
+                if (switchCase.Test == null) // default case
+                {
+                    if (!foundMatch)
+                    {
+                        executeDefault = true;
+                    }
+                    
+                    if (foundMatch || executeDefault)
+                    {
+                        foreach (var stmt in switchCase.Consequent)
+                        {
+                            result = Evaluate(stmt, _sourceCode);
+                        }
+                    }
+                }
+                else // case with test value
+                {
+                    var testValue = Evaluate(switchCase.Test, _sourceCode);
+                    
+                    if (!foundMatch && IsEqual(discriminantValue, testValue))
+                    {
+                        foundMatch = true;
+                    }
+                    
+                    if (foundMatch)
+                    {
+                        foreach (var stmt in switchCase.Consequent)
+                        {
+                            result = Evaluate(stmt, _sourceCode);
+                        }
+                    }
+                }
+            }
+        }
+        catch (BreakException)
+        {
+            // Break out of switch statement
+        }
+        
+        return result;
+    }
+    
+    private object? EvaluateTryStatement(TryStatement tryStmt)
+    {
+        object? result = null;
+        
+        try
+        {
+            result = Evaluate(tryStmt.Block, _sourceCode);
+        }
+        catch (ECEngineException ex) when (tryStmt.Handler != null)
+        {
+            // Bind exception to catch parameter if provided
+            if (tryStmt.Handler.Param != null)
+            {
+                var errorInfo = new VariableInfo("var", ex.Message);
+                var originalValue = _variables.ContainsKey(tryStmt.Handler.Param.Name) ? 
+                    _variables[tryStmt.Handler.Param.Name] : null;
+                
+                _variables[tryStmt.Handler.Param.Name] = errorInfo;
+                
+                try
+                {
+                    result = Evaluate(tryStmt.Handler.Body, _sourceCode);
+                }
+                finally
+                {
+                    // Restore original value or remove if it didn't exist
+                    if (originalValue != null)
+                        _variables[tryStmt.Handler.Param.Name] = originalValue;
+                    else
+                        _variables.Remove(tryStmt.Handler.Param.Name);
+                }
+            }
+            else
+            {
+                result = Evaluate(tryStmt.Handler.Body, _sourceCode);
+            }
+        }
+        catch (Exception ex) when (tryStmt.Handler != null)
+        {
+            // Handle other .NET exceptions
+            if (tryStmt.Handler.Param != null)
+            {
+                var errorInfo = new VariableInfo("var", ex.Message);
+                var originalValue = _variables.ContainsKey(tryStmt.Handler.Param.Name) ? 
+                    _variables[tryStmt.Handler.Param.Name] : null;
+                
+                _variables[tryStmt.Handler.Param.Name] = errorInfo;
+                
+                try
+                {
+                    result = Evaluate(tryStmt.Handler.Body, _sourceCode);
+                }
+                finally
+                {
+                    // Restore original value or remove if it didn't exist
+                    if (originalValue != null)
+                        _variables[tryStmt.Handler.Param.Name] = originalValue;
+                    else
+                        _variables.Remove(tryStmt.Handler.Param.Name);
+                }
+            }
+            else
+            {
+                result = Evaluate(tryStmt.Handler.Body, _sourceCode);
+            }
+        }
+        finally
+        {
+            // Execute finally block if present
+            if (tryStmt.Finalizer != null)
+            {
+                Evaluate(tryStmt.Finalizer, _sourceCode);
+            }
+        }
+        
+        return result;
+    }
+    
+    private object? EvaluateThrowStatement(ThrowStatement throwStmt)
+    {
+        var value = Evaluate(throwStmt.Argument, _sourceCode);
+        var message = value?.ToString() ?? "Unspecified error";
+        
+        throw new ECEngineException($"Thrown: {message}", 
+            throwStmt.Token?.Line ?? 0, throwStmt.Token?.Column ?? 0, _sourceCode, "User thrown exception");
+    }
+    
+    // Helper method for switch case equality comparison
+    private bool IsEqual(object? left, object? right)
+    {
+        if (left == null && right == null) return true;
+        if (left == null || right == null) return false;
+        
+        // Handle numeric comparisons
+        if (left is double leftNum && right is double rightNum)
+            return Math.Abs(leftNum - rightNum) < double.Epsilon;
+            
+        // Handle string comparisons
+        if (left is string && right is string)
+            return left.Equals(right);
+            
+        // Handle boolean comparisons
+        if (left is bool && right is bool)
+            return left.Equals(right);
+            
+        return left.Equals(right);
     }
 }
 

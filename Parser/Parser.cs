@@ -133,6 +133,24 @@ public class Parser
             return ParseContinueStatement();
         }
         
+        // Check for switch statements
+        if (_currentToken.Type == TokenType.Switch)
+        {
+            return ParseSwitchStatement();
+        }
+        
+        // Check for try statements
+        if (_currentToken.Type == TokenType.Try)
+        {
+            return ParseTryStatement();
+        }
+        
+        // Check for throw statements
+        if (_currentToken.Type == TokenType.Throw)
+        {
+            return ParseThrowStatement();
+        }
+        
         // Check for observe statements
         if (_currentToken.Type == TokenType.Observe)
         {
@@ -814,5 +832,119 @@ public class Parser
         Match(TokenType.Semicolon); // Optional semicolon
         
         return new ImportStatement(importedNames, modulePath, token);
+    }
+
+    // Parse switch statement: switch (expr) { case value: ... default: ... }
+    private Statement ParseSwitchStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Switch, "Expected 'switch'");
+        Consume(TokenType.LeftParen, "Expected '(' after 'switch'");
+        var discriminant = ParseExpression();
+        Consume(TokenType.RightParen, "Expected ')' after switch discriminant");
+        Consume(TokenType.LeftBrace, "Expected '{' after switch condition");
+        
+        var cases = new List<SwitchCase>();
+        
+        while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF)
+        {
+            if (_currentToken.Type == TokenType.Case)
+            {
+                Advance(); // consume 'case'
+                var test = ParseExpression();
+                Consume(TokenType.Colon, "Expected ':' after case value");
+                
+                var consequent = new List<Statement>();
+                while (_currentToken.Type != TokenType.Case && 
+                       _currentToken.Type != TokenType.Default && 
+                       _currentToken.Type != TokenType.RightBrace && 
+                       _currentToken.Type != TokenType.EOF)
+                {
+                    consequent.Add(ParseStatement());
+                }
+                
+                cases.Add(new SwitchCase(test, consequent));
+            }
+            else if (_currentToken.Type == TokenType.Default)
+            {
+                Advance(); // consume 'default'
+                Consume(TokenType.Colon, "Expected ':' after 'default'");
+                
+                var consequent = new List<Statement>();
+                while (_currentToken.Type != TokenType.Case && 
+                       _currentToken.Type != TokenType.Default && 
+                       _currentToken.Type != TokenType.RightBrace && 
+                       _currentToken.Type != TokenType.EOF)
+                {
+                    consequent.Add(ParseStatement());
+                }
+                
+                cases.Add(new SwitchCase(null, consequent)); // null test indicates default case
+            }
+            else
+            {
+                throw new ECEngineException($"Expected 'case' or 'default' in switch statement, got {_currentToken.Type}",
+                    _currentToken.Line, _currentToken.Column, _sourceCode, "Switch statement syntax error");
+            }
+        }
+        
+        Consume(TokenType.RightBrace, "Expected '}' to close switch statement");
+        
+        return new SwitchStatement(discriminant, cases, token);
+    }
+
+    // Parse try statement: try { ... } catch (e) { ... } finally { ... }
+    private Statement ParseTryStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Try, "Expected 'try'");
+        
+        var tryBlock = ParseBlockStatement();
+        
+        CatchClause? catchClause = null;
+        BlockStatement? finallyBlock = null;
+        
+        if (_currentToken.Type == TokenType.Catch)
+        {
+            Advance(); // consume 'catch'
+            
+            Identifier? param = null;
+            if (_currentToken.Type == TokenType.LeftParen)
+            {
+                Advance(); // consume '('
+                param = new Identifier(Consume(TokenType.Identifier, "Expected identifier in catch clause").Value);
+                Consume(TokenType.RightParen, "Expected ')' after catch parameter");
+            }
+            
+            var catchBody = ParseBlockStatement();
+            catchClause = new CatchClause(catchBody, param);
+        }
+        
+        if (_currentToken.Type == TokenType.Finally)
+        {
+            Advance(); // consume 'finally'
+            finallyBlock = ParseBlockStatement();
+        }
+        
+        if (catchClause == null && finallyBlock == null)
+        {
+            throw new ECEngineException("Try statement must have either a catch or finally block",
+                token.Line, token.Column, _sourceCode, "Try statement requires catch or finally");
+        }
+        
+        return new TryStatement(tryBlock, catchClause, finallyBlock, token);
+    }
+
+    // Parse throw statement: throw expression;
+    private Statement ParseThrowStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Throw, "Expected 'throw'");
+        
+        var argument = ParseExpression();
+        
+        Match(TokenType.Semicolon); // Optional semicolon
+        
+        return new ThrowStatement(argument, token);
     }
 }

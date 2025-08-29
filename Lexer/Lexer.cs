@@ -168,6 +168,13 @@ public class Lexer
             "do" => TokenType.Do,
             "break" => TokenType.Break,
             "continue" => TokenType.Continue,
+            "switch" => TokenType.Switch,
+            "case" => TokenType.Case,
+            "default" => TokenType.Default,
+            "try" => TokenType.Try,
+            "catch" => TokenType.Catch,
+            "finally" => TokenType.Finally,
+            "throw" => TokenType.Throw,
             _ => TokenType.Identifier
         };
     }
@@ -367,6 +374,10 @@ public class Lexer
                     {
                         throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
                     }
+                    break;
+                case ':':
+                    tokens.Add(new Token(TokenType.Colon, ":", _position, tokenLine, tokenColumn));
+                    Advance();
                     break;
                 default:
                     throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
