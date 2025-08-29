@@ -68,6 +68,11 @@ class Program
             Console.WriteLine();
             
             var interpreter = new Interpreter();
+            
+            // Set up module system with the directory of the current file as root
+            var moduleSystem = new ModuleSystem(Path.GetDirectoryName(Path.GetFullPath(filePath)) ?? Directory.GetCurrentDirectory());
+            interpreter.SetModuleSystem(moduleSystem);
+            
             var result = ExecuteCode(code, interpreter);
             
             if (result != null)

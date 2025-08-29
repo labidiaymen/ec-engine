@@ -7,6 +7,8 @@ public class Interpreter
 {
     private string _sourceCode = "";
     private Dictionary<string, VariableInfo> _variables = new Dictionary<string, VariableInfo>();
+    private Dictionary<string, object?> _exports = new Dictionary<string, object?>();
+    private ModuleSystem? _moduleSystem;
 
     /// <summary>
     /// Get read-only access to current variables
@@ -14,11 +16,25 @@ public class Interpreter
     public IReadOnlyDictionary<string, VariableInfo> Variables => _variables;
 
     /// <summary>
+    /// Get read-only access to current exports
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> GetExports() => _exports;
+
+    /// <summary>
+    /// Set the module system for this interpreter
+    /// </summary>
+    public void SetModuleSystem(ModuleSystem moduleSystem)
+    {
+        _moduleSystem = moduleSystem;
+    }
+
+    /// <summary>
     /// Clear all variables and reset interpreter state
     /// </summary>
     public void ClearState()
     {
         _variables.Clear();
+        _exports.Clear();
         _sourceCode = "";
     }
 
@@ -40,6 +56,10 @@ public class Interpreter
             return EvaluateReturnStatement(returnStmt);
         if (node is BlockStatement blockStmt)
             return EvaluateBlockStatement(blockStmt);
+        if (node is ExportStatement exportStmt)
+            return EvaluateExportStatement(exportStmt);
+        if (node is ImportStatement importStmt)
+            return EvaluateImportStatement(importStmt);
         if (node is ObserveStatement observeStmt)
             return EvaluateObserveStatement(observeStmt);
         if (node is MultiObserveStatement multiObserveStmt)
@@ -637,6 +657,73 @@ public class Interpreter
         {
             // Restore original scope
             _variables = originalVariables;
+        }
+    }
+
+    private object? EvaluateExportStatement(ExportStatement exportStmt)
+    {
+        // Evaluate the declaration first
+        var result = Evaluate(exportStmt.Declaration, _sourceCode);
+        
+        // Extract the exported name and value
+        if (exportStmt.Declaration is VariableDeclaration varDecl)
+        {
+            var value = _variables.ContainsKey(varDecl.Name) ? _variables[varDecl.Name].Value : null;
+            _exports[varDecl.Name] = value;
+        }
+        else if (exportStmt.Declaration is FunctionDeclaration funcDecl)
+        {
+            var value = _variables.ContainsKey(funcDecl.Name) ? _variables[funcDecl.Name].Value : null;
+            _exports[funcDecl.Name] = value;
+        }
+        
+        return result;
+    }
+
+    private object? EvaluateImportStatement(ImportStatement importStmt)
+    {
+        if (_moduleSystem == null)
+        {
+            var token = importStmt.Token;
+            throw new ECEngineException("Module system not available",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "Import statements require a module system to be configured");
+        }
+        
+        try
+        {
+            // Load the module
+            var module = _moduleSystem.LoadModule(importStmt.ModulePath, this);
+            
+            // Import the requested names
+            foreach (var name in importStmt.ImportedNames)
+            {
+                if (module.Exports.ContainsKey(name))
+                {
+                    var value = module.Exports[name];
+                    _variables[name] = new VariableInfo("const", value);
+                }
+                else
+                {
+                    var token = importStmt.Token;
+                    throw new ECEngineException($"'{name}' is not exported by module '{importStmt.ModulePath}'",
+                        token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                        $"Module '{importStmt.ModulePath}' does not export '{name}'");
+                }
+            }
+            
+            return null;
+        }
+        catch (ECEngineException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            var token = importStmt.Token;
+            throw new ECEngineException($"Failed to import module '{importStmt.ModulePath}': {ex.Message}",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                ex.Message);
         }
     }
 }

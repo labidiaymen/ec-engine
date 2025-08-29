@@ -18,6 +18,7 @@ For a comprehensive overview of implemented and planned features, see the **[ðŸ“
 ECEngine is a modern JavaScript interpreter that implements core ECMAScript features while introducing innovative design patterns for reactive programming. The engine supports:
 
 - **Standard ECMAScript** - Full JavaScript syntax compatibility (variables, functions, expressions, etc.)
+- **Module System** - Complete `import`/`export` support for code organization
 - **Reactive Programming** - Built-in `observe` pattern for variable change detection
 - **Interactive REPL** - Advanced console with cursor navigation and command history
 - **Modern Architecture** - Clean separation of lexing, parsing, and interpretation phases
@@ -65,6 +66,17 @@ ECEngine/
   - Function declarations and calls
   - Anonymous and higher-order functions
   - Comprehensive operator support
+  - Comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`)
+  - Conditional statements (`if`, `else`, `else if`)
+  - Boolean literals (`true`, `false`)
+  - String concatenation with automatic type conversion
+
+- **Module System**
+  - **Export statements**: Export variables, constants, and functions
+  - **Import statements**: Import specific exports with destructuring syntax
+  - **Module resolution**: Automatic `.ec` extension and relative path support
+  - **Error handling**: Comprehensive error messages for missing modules/exports
+  - **Module caching**: Prevents re-execution of already loaded modules
 
 - **Advanced Design Patterns**
   - **Observe Pattern**: `observe variable function() { ... }` for reactive programming
@@ -85,10 +97,10 @@ ECEngine/
   - Error reporting with location information
 
 ### ðŸ”„ Planned Enhancements
-- Control flow statements (if/else, loops)
+- Control flow statements (loops, switch)
 - Object and array literal support
-- Advanced error handling
-- Module system
+- Advanced error handling (try/catch)
+- Default exports and imports
 - More reactive programming patterns
 
 ## Getting Started
