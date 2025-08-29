@@ -18,12 +18,15 @@ public enum TokenType
     Dot,
     Comma,          // ,
     Assign,         // =
+    LogicalAnd,     // &&
+    LogicalOr,      // ||
     Var,            // var keyword
     Let,            // let keyword
     Const,          // const keyword
     Function,       // function keyword
     Return,         // return keyword
     Observe,        // observe keyword
+    When,           // when keyword
     EOF
 }
 

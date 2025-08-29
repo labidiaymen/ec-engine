@@ -2,7 +2,7 @@ using ECEngine.Lexer;
 
 namespace ECEngine.AST;
 
-// Base class for AST nodes
+// Base class for all AST nodes
 public abstract class ASTNode
 {
     public Token? Token { get; set; }
@@ -58,18 +58,6 @@ public class BinaryExpression : Expression
         Left = left;
         Operator = op;
         Right = right;
-    }
-}
-
-// Member expression node (e.g., console.log)
-public class MemberExpression : Expression
-{
-    public Expression Object { get; }
-    public string Property { get; }
-    public MemberExpression(Expression obj, string property)
-    {
-        Object = obj;
-        Property = property;
     }
 }
 
@@ -193,6 +181,64 @@ public class ObserveStatement : Statement
     {
         VariableName = variableName;
         Handler = handler;
+        Token = token;
+    }
+}
+
+// Multi-variable observe statement node (e.g., observe (x, y) function(changes) { ... })
+public class MultiObserveStatement : Statement
+{
+    public List<string> VariableNames { get; }
+    public FunctionExpression Handler { get; }
+    
+    public MultiObserveStatement(List<string> variableNames, FunctionExpression handler, Token? token = null)
+    {
+        VariableNames = variableNames;
+        Handler = handler;
+        Token = token;
+    }
+}
+
+// When statement node (e.g., when x { ... })
+public class WhenStatement : Statement
+{
+    public Expression Condition { get; }
+    public BlockStatement Body { get; }
+    
+    public WhenStatement(Expression condition, BlockStatement body, Token? token = null)
+    {
+        Condition = condition;
+        Body = body;
+        Token = token;
+    }
+}
+
+// Member access expression node (e.g., changes.x.old)
+public class MemberExpression : Expression
+{
+    public Expression Object { get; }
+    public string Property { get; }
+    
+    public MemberExpression(Expression objectExpr, string property, Token? token = null)
+    {
+        Object = objectExpr;
+        Property = property;
+        Token = token;
+    }
+}
+
+// Logical expression node (e.g., x && y)
+public class LogicalExpression : Expression
+{
+    public Expression Left { get; }
+    public string Operator { get; }
+    public Expression Right { get; }
+    
+    public LogicalExpression(Expression left, string op, Expression right, Token? token = null)
+    {
+        Left = left;
+        Operator = op;
+        Right = right;
         Token = token;
     }
 }

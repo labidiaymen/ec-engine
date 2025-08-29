@@ -42,6 +42,14 @@ public class Interpreter
             return EvaluateBlockStatement(blockStmt);
         if (node is ObserveStatement observeStmt)
             return EvaluateObserveStatement(observeStmt);
+        if (node is MultiObserveStatement multiObserveStmt)
+            return EvaluateMultiObserveStatement(multiObserveStmt);
+        if (node is WhenStatement whenStmt)
+            return EvaluateWhenStatement(whenStmt);
+        if (node is MemberExpression memberExpr)
+            return EvaluateMemberExpression(memberExpr);
+        if (node is LogicalExpression logicalExpr)
+            return EvaluateLogicalExpression(logicalExpr);
         if (node is NumberLiteral literal)
             return literal.Value;
         if (node is StringLiteral stringLiteral)
@@ -194,6 +202,16 @@ public class Interpreter
         {
             return new ConsoleLogFunction();
         }
+        
+        if (obj is ChangeInfo changeInfo)
+        {
+            return GetChangeInfoProperty(changeInfo, member.Property);
+        }
+        
+        if (obj is Dictionary<string, object?> dict)
+        {
+            return dict.ContainsKey(member.Property) ? dict[member.Property] : null;
+        }
 
         var token = member.Token;
         throw new ECEngineException($"Property {member.Property} not found on {obj?.GetType().Name}",
@@ -328,6 +346,183 @@ public class Interpreter
             catch (ReturnException returnEx)
             {
                 return returnEx.Value;
+            }
+        }
+        finally
+        {
+            // Restore original scope
+            _variables = originalVariables;
+        }
+    }
+
+    private object? EvaluateMultiObserveStatement(MultiObserveStatement multiObserveStmt)
+    {
+        // For each variable, add this multi-observer
+        foreach (var variableName in multiObserveStmt.VariableNames)
+        {
+            if (!_variables.ContainsKey(variableName))
+            {
+                throw new ECEngineException($"Variable '{variableName}' is not defined",
+                    multiObserveStmt.Token?.Line ?? 1, multiObserveStmt.Token?.Column ?? 1, _sourceCode,
+                    "Cannot observe undefined variable");
+            }
+
+            var variable = _variables[variableName];
+            
+            // Create a special multi-observer entry
+            var multiObserver = new MultiVariableObserver
+            {
+                VariableNames = multiObserveStmt.VariableNames,
+                Handler = multiObserveStmt.Handler,
+                Statement = multiObserveStmt
+            };
+            
+            variable.MultiObservers.Add(multiObserver);
+        }
+
+        return null;
+    }
+
+    private object? EvaluateWhenStatement(WhenStatement whenStmt)
+    {
+        // When statements are only evaluated within observer context
+        // This should only be called when we're inside an observer function
+        var conditionValue = Evaluate(whenStmt.Condition);
+        
+        if (IsTruthy(conditionValue))
+        {
+            return EvaluateBlockStatement(whenStmt.Body);
+        }
+        
+        return null;
+    }
+
+    private object? EvaluateLogicalExpression(LogicalExpression logicalExpr)
+    {
+        var left = Evaluate(logicalExpr.Left);
+        
+        if (logicalExpr.Operator == "&&")
+        {
+            if (!IsTruthy(left))
+                return left; // Short-circuit: return left if falsy
+            return Evaluate(logicalExpr.Right);
+        }
+        
+        if (logicalExpr.Operator == "||")
+        {
+            if (IsTruthy(left))
+                return left; // Short-circuit: return left if truthy
+            return Evaluate(logicalExpr.Right);
+        }
+        
+        throw new ECEngineException($"Unknown logical operator: {logicalExpr.Operator}",
+            logicalExpr.Token?.Line ?? 1, logicalExpr.Token?.Column ?? 1, _sourceCode,
+            "Supported logical operators are && and ||");
+    }
+
+    private bool IsTruthy(object? value)
+    {
+        if (value == null) return false;
+        if (value is bool b) return b;
+        if (value is double d) return d != 0;
+        if (value is string s) return s.Length > 0;
+        return true;
+    }
+
+    private object? GetChangeInfoProperty(ChangeInfo changeInfo, string property)
+    {
+        return property switch
+        {
+            "triggered" => changeInfo.Triggered,
+            "values" => changeInfo.Values,
+            _ => changeInfo.Variables.ContainsKey(property) ? changeInfo.Variables[property] : null
+        };
+    }
+
+    // Helper class for change information
+    public class ChangeInfo
+    {
+        public List<string> Triggered { get; set; } = new();
+        public Dictionary<string, object?> Values { get; set; } = new();
+        public Dictionary<string, VariableChangeInfo> Variables { get; set; } = new();
+    }
+
+    public class VariableChangeInfo
+    {
+        public object? Old { get; set; }
+        public object? New { get; set; }
+    }
+
+    // Helper class for multi-variable observers
+    public class MultiVariableObserver
+    {
+        public List<string> VariableNames { get; set; } = new();
+        public FunctionExpression Handler { get; set; } = null!;
+        public MultiObserveStatement Statement { get; set; } = null!;
+    }
+
+    // Update TriggerObservers to handle multi-variable observers
+    private void TriggerMultiObservers(string triggeredVariable, object? oldValue, object? newValue)
+    {
+        var triggeredObservers = new HashSet<MultiVariableObserver>();
+        
+        // Find all multi-observers that watch this variable
+        foreach (var kvp in _variables)
+        {
+            foreach (var multiObserver in kvp.Value.MultiObservers)
+            {
+                if (multiObserver.VariableNames.Contains(triggeredVariable))
+                {
+                    triggeredObservers.Add(multiObserver);
+                }
+            }
+        }
+        
+        // Execute each multi-observer
+        foreach (var observer in triggeredObservers)
+        {
+            ExecuteMultiObserver(observer, triggeredVariable, oldValue, newValue);
+        }
+    }
+
+    private void ExecuteMultiObserver(MultiVariableObserver observer, string triggeredVariable, object? oldValue, object? newValue)
+    {
+        // Create the changes object
+        var changeInfo = new ChangeInfo();
+        changeInfo.Triggered.Add(triggeredVariable);
+        
+        // Add current values for all observed variables
+        foreach (var varName in observer.VariableNames)
+        {
+            if (_variables.ContainsKey(varName))
+            {
+                changeInfo.Values[varName] = _variables[varName].Value;
+            }
+        }
+        
+        // Add specific change information for the triggered variable
+        changeInfo.Variables[triggeredVariable] = new VariableChangeInfo
+        {
+            Old = oldValue,
+            New = newValue
+        };
+        
+        // Create a new scope with the changes parameter
+        var originalVariables = new Dictionary<string, VariableInfo>(_variables);
+        
+        try
+        {
+            // Add the changes parameter if the function expects it
+            if (observer.Handler.Parameters.Count > 0)
+            {
+                var paramName = observer.Handler.Parameters[0];
+                _variables[paramName] = new VariableInfo("const", changeInfo);
+            }
+            
+            // Execute the handler body
+            foreach (var statement in observer.Handler.Body)
+            {
+                Evaluate(statement);
             }
         }
         finally
