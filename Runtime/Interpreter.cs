@@ -10,6 +10,7 @@ public class Interpreter
     private Dictionary<string, VariableInfo> _variables = new Dictionary<string, VariableInfo>(); // Backwards compatibility
     private Dictionary<string, object?> _exports = new Dictionary<string, object?>();
     private ModuleSystem? _moduleSystem;
+    private EventLoop? _eventLoop;
 
     public Interpreter()
     {
@@ -52,6 +53,14 @@ public class Interpreter
     public void SetModuleSystem(ModuleSystem moduleSystem)
     {
         _moduleSystem = moduleSystem;
+    }
+
+    /// <summary>
+    /// Set the event loop for this interpreter
+    /// </summary>
+    public void SetEventLoop(EventLoop eventLoop)
+    {
+        _eventLoop = eventLoop;
     }
 
     /// <summary>
@@ -271,7 +280,12 @@ public class Interpreter
         // Check for built-in identifiers
         var result = identifier.Name switch
         {
-            "console" => new ConsoleObject(),
+            "console" => (object?)new ConsoleObject(),
+            "setTimeout" => _eventLoop != null ? new SetTimeoutFunction(_eventLoop, this) : null,
+            "setInterval" => _eventLoop != null ? new SetIntervalFunction(_eventLoop, this) : null,
+            "clearTimeout" => _eventLoop != null ? new ClearTimeoutFunction(_eventLoop) : null,
+            "clearInterval" => _eventLoop != null ? new ClearIntervalFunction(_eventLoop) : null,
+            "nextTick" => _eventLoop != null ? new NextTickFunction(_eventLoop, this) : null,
             _ => null
         };
 
@@ -573,6 +587,32 @@ public class Interpreter
             return null; // console.log returns undefined
         }
 
+        // Handle async functions
+        if (function is SetTimeoutFunction setTimeoutFunc)
+        {
+            return setTimeoutFunc.Call(arguments);
+        }
+
+        if (function is SetIntervalFunction setIntervalFunc)
+        {
+            return setIntervalFunc.Call(arguments);
+        }
+
+        if (function is ClearTimeoutFunction clearTimeoutFunc)
+        {
+            return clearTimeoutFunc.Call(arguments);
+        }
+
+        if (function is ClearIntervalFunction clearIntervalFunc)
+        {
+            return clearIntervalFunc.Call(arguments);
+        }
+
+        if (function is NextTickFunction nextTickFunc)
+        {
+            return nextTickFunc.Call(arguments);
+        }
+
         if (function is Function userFunction)
         {
             return CallUserFunction(userFunction, arguments);
@@ -730,7 +770,7 @@ public class Interpreter
         }
     }
 
-    private object? CallUserFunction(Function function, List<object?> arguments)
+    public object? CallUserFunction(Function function, List<object?> arguments)
     {
         // Push new scope for function execution
         PushScope();

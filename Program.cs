@@ -68,16 +68,21 @@ class Program
             Console.WriteLine();
             
             var interpreter = new Interpreter();
+            var eventLoop = new EventLoop();
             
             // Set up module system with the directory of the current file as root
             var moduleSystem = new ModuleSystem(Path.GetDirectoryName(Path.GetFullPath(filePath)) ?? Directory.GetCurrentDirectory());
             interpreter.SetModuleSystem(moduleSystem);
+            interpreter.SetEventLoop(eventLoop);
             
             var result = ExecuteCode(code, interpreter);
             
+            // Run the event loop to handle async operations
+            eventLoop.Run();
+            
             if (result != null)
             {
-                Console.WriteLine($"Final result: {result}");
+                Console.WriteLine($"Result: {result}");
             }
         }
         catch (Exception ex)
