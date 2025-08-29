@@ -34,6 +34,10 @@ public class Function
     public List<string> Parameters { get; }
     public List<Statement> Body { get; }
     public Dictionary<string, VariableInfo> Closure { get; }
+    
+    // Properties for observable server proxy support
+    public bool IsObservableProxy { get; set; } = false;
+    public object? ObservableServer { get; set; }
 
     public Function(string? name, List<string> parameters, List<Statement> body, Dictionary<string, VariableInfo> closure)
     {
