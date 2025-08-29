@@ -6,14 +6,40 @@ namespace ECEngine.Runtime;
 public class Interpreter
 {
     private string _sourceCode = "";
-    private Dictionary<string, VariableInfo> _variables = new Dictionary<string, VariableInfo>();
+    private Stack<Dictionary<string, VariableInfo>> _scopes = new Stack<Dictionary<string, VariableInfo>>();
+    private Dictionary<string, VariableInfo> _variables = new Dictionary<string, VariableInfo>(); // Backwards compatibility
     private Dictionary<string, object?> _exports = new Dictionary<string, object?>();
     private ModuleSystem? _moduleSystem;
 
+    public Interpreter()
+    {
+        // Initialize with global scope
+        _scopes.Push(new Dictionary<string, VariableInfo>());
+        SyncVariables();
+    }
+
     /// <summary>
-    /// Get read-only access to current variables
+    /// Get read-only access to current variables (flattened view of all scopes)
     /// </summary>
-    public IReadOnlyDictionary<string, VariableInfo> Variables => _variables;
+    public IReadOnlyDictionary<string, VariableInfo> Variables 
+    {
+        get
+        {
+            var flattened = new Dictionary<string, VariableInfo>();
+            // Traverse scopes from bottom to top (global to current)
+            foreach (var scope in _scopes.Reverse())
+            {
+                foreach (var kvp in scope)
+                {
+                    if (!flattened.ContainsKey(kvp.Key))
+                    {
+                        flattened[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+            return flattened;
+        }
+    }
 
     /// <summary>
     /// Get read-only access to current exports
@@ -33,9 +59,129 @@ public class Interpreter
     /// </summary>
     public void ClearState()
     {
-        _variables.Clear();
+        _scopes.Clear();
+        _scopes.Push(new Dictionary<string, VariableInfo>()); // Reset to global scope
         _exports.Clear();
         _sourceCode = "";
+        SyncVariables();
+    }
+
+    /// <summary>
+    /// Sync the backwards compatibility _variables with current scopes
+    /// </summary>
+    private void SyncVariables()
+    {
+        _variables.Clear();
+        // Traverse scopes from bottom to top (global to current)
+        foreach (var scope in _scopes.Reverse())
+        {
+            foreach (var kvp in scope)
+            {
+                if (!_variables.ContainsKey(kvp.Key))
+                {
+                    _variables[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Push a new scope onto the stack
+    /// </summary>
+    private void PushScope()
+    {
+        _scopes.Push(new Dictionary<string, VariableInfo>());
+        SyncVariables();
+    }
+
+    /// <summary>
+    /// Pop the current scope from the stack
+    /// </summary>
+    private void PopScope()
+    {
+        if (_scopes.Count > 1) // Always keep at least the global scope
+        {
+            _scopes.Pop();
+            SyncVariables();
+        }
+    }
+
+    /// <summary>
+    /// Find a variable in the scope chain
+    /// </summary>
+    private VariableInfo? FindVariable(string name)
+    {
+        // Search from current scope up to global scope
+        foreach (var scope in _scopes)
+        {
+            if (scope.ContainsKey(name))
+            {
+                return scope[name];
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Declare a variable in the appropriate scope
+    /// </summary>
+    private void DeclareVariable(string kind, string name, object? value)
+    {
+        var currentScope = _scopes.Peek();
+        
+        // Check if variable already exists in current scope
+        if (currentScope.ContainsKey(name))
+        {
+            throw new ECEngineException($"Variable '{name}' has already been declared in this scope", 
+                0, 0, _sourceCode, "Variable redeclaration error");
+        }
+        
+        // For 'var', check if it exists in any scope and use function scoping rules
+        if (kind == "var")
+        {
+            // var has function scope, so we need to declare it in the nearest function scope
+            // For now, we'll put it in the global scope for simplicity
+            var globalScope = _scopes.Last(); // Bottom of stack is global
+            if (globalScope.ContainsKey(name))
+            {
+                globalScope[name] = new VariableInfo(kind, value);
+            }
+            else
+            {
+                globalScope[name] = new VariableInfo(kind, value);
+            }
+        }
+        else
+        {
+            // let and const have block scope
+            currentScope[name] = new VariableInfo(kind, value);
+        }
+    }
+
+    /// <summary>
+    /// Set a variable value (for assignments)
+    /// </summary>
+    private void SetVariable(string name, object? value)
+    {
+        // Search from current scope up to global scope
+        foreach (var scope in _scopes)
+        {
+            if (scope.ContainsKey(name))
+            {
+                var variable = scope[name];
+                if (variable.IsConstant)
+                {
+                    throw new ECEngineException($"Cannot assign to const variable '{name}'", 
+                        0, 0, _sourceCode, "Const assignment error");
+                }
+                variable.Value = value;
+                return;
+            }
+        }
+        
+        // Variable not found, create in global scope (like JavaScript's implicit global behavior)
+        var globalScope = _scopes.Last();
+        globalScope[name] = new VariableInfo("var", value);
     }
 
     public object? Evaluate(ASTNode node, string sourceCode = "")
@@ -123,8 +269,9 @@ public class Interpreter
 
     private object? EvaluateIdentifier(Identifier identifier)
     {
-        // Check if it's a variable
-        if (_variables.TryGetValue(identifier.Name, out var variableInfo))
+        // Check if it's a variable using scope-aware lookup
+        var variableInfo = FindVariable(identifier.Name);
+        if (variableInfo != null)
         {
             return variableInfo.Value;
         }
@@ -165,23 +312,19 @@ public class Interpreter
             value = Evaluate(varDecl.Initializer, _sourceCode);
         }
         
-        // Check if variable already exists
-        if (_variables.ContainsKey(varDecl.Name))
-        {
-            var token = varDecl.Token;
-            throw new ECEngineException($"Variable '{varDecl.Name}' already declared",
-                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
-                $"Cannot redeclare variable '{varDecl.Name}'");
-        }
-        
-        _variables[varDecl.Name] = new VariableInfo(varDecl.Kind, value);
+        // Use new scope-aware declaration method
+        DeclareVariable(varDecl.Kind, varDecl.Name, value);
         return value;
     }
 
     private object? EvaluateAssignmentExpression(AssignmentExpression assignment)
     {
-        // Check if variable exists
-        if (!_variables.TryGetValue(assignment.Left.Name, out var variableInfo))
+        // Use scope-aware variable lookup and assignment
+        var value = Evaluate(assignment.Right, _sourceCode);
+        
+        // Find the variable in the scope chain
+        var variableInfo = FindVariable(assignment.Left.Name);
+        if (variableInfo == null)
         {
             var token = assignment.Token;
             throw new ECEngineException($"Variable '{assignment.Left.Name}' not declared",
@@ -199,8 +342,7 @@ public class Interpreter
         }
         
         var oldValue = variableInfo.Value;
-        var value = Evaluate(assignment.Right, _sourceCode);
-        variableInfo.Value = value;
+        SetVariable(assignment.Left.Name, value);
         
         // Trigger observers if value changed
         if (!Equals(oldValue, value))
@@ -325,7 +467,8 @@ public class Interpreter
                 "Increment/decrement operators require a variable");
         }
 
-        if (!_variables.TryGetValue(identifier.Name, out var variableInfo))
+        var variableInfo = FindVariable(identifier.Name);
+        if (variableInfo == null)
         {
             throw new ECEngineException($"Variable '{identifier.Name}' is not defined",
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
@@ -347,7 +490,7 @@ public class Interpreter
         }
 
         var newValue = isIncrement ? currentValue + 1 : currentValue - 1;
-        _variables[identifier.Name] = new VariableInfo(variableInfo.Type, newValue);
+        SetVariable(identifier.Name, newValue);
 
         // Return old value for postfix, new value for prefix
         return unary.IsPrefix ? newValue : currentValue;
@@ -451,15 +594,41 @@ public class Interpreter
 
     private object? EvaluateFunctionDeclaration(FunctionDeclaration funcDecl)
     {
-        var function = new Function(funcDecl.Name, funcDecl.Parameters, funcDecl.Body, _variables);
-        _variables[funcDecl.Name] = new VariableInfo("function", function);
+        // Create closure with current scope variables (flattened view)
+        var closure = new Dictionary<string, VariableInfo>();
+        foreach (var scope in _scopes.Reverse())
+        {
+            foreach (var kvp in scope)
+            {
+                if (!closure.ContainsKey(kvp.Key))
+                {
+                    closure[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+        
+        var function = new Function(funcDecl.Name, funcDecl.Parameters, funcDecl.Body, closure);
+        DeclareVariable("function", funcDecl.Name, function);
         return function;
     }
 
     private object? EvaluateFunctionExpression(FunctionExpression funcExpr)
     {
+        // Create closure with current scope variables (flattened view)
+        var closure = new Dictionary<string, VariableInfo>();
+        foreach (var scope in _scopes.Reverse())
+        {
+            foreach (var kvp in scope)
+            {
+                if (!closure.ContainsKey(kvp.Key))
+                {
+                    closure[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+        
         // Anonymous function - no name, just return the function object
-        return new Function(null, funcExpr.Parameters, funcExpr.Body, _variables);
+        return new Function(null, funcExpr.Parameters, funcExpr.Body, closure);
     }
 
     private object? EvaluateReturnStatement(ReturnStatement returnStmt)
@@ -470,14 +639,25 @@ public class Interpreter
 
     private object? EvaluateBlockStatement(BlockStatement blockStmt)
     {
-        object? lastValue = null;
+        // Push new scope for block-scoped variables (let, const)
+        PushScope();
         
-        foreach (var statement in blockStmt.Body)
+        try
         {
-            lastValue = Evaluate(statement);
+            object? lastValue = null;
+            
+            foreach (var statement in blockStmt.Body)
+            {
+                lastValue = Evaluate(statement);
+            }
+            
+            return lastValue;
         }
-        
-        return lastValue;
+        finally
+        {
+            // Always pop the scope, even if an exception occurred
+            PopScope();
+        }
     }
 
     private object? EvaluateIfStatement(IfStatement ifStmt)
@@ -509,7 +689,8 @@ public class Interpreter
     private object? EvaluateObserveStatement(ObserveStatement observeStmt)
     {
         // Check if variable exists
-        if (!_variables.TryGetValue(observeStmt.VariableName, out var variableInfo))
+        var variableInfo = FindVariable(observeStmt.VariableName);
+        if (variableInfo == null)
         {
             var token = observeStmt.Token;
             throw new ECEngineException($"Cannot observe undeclared variable '{observeStmt.VariableName}'",
@@ -517,8 +698,21 @@ public class Interpreter
                 $"Variable '{observeStmt.VariableName}' must be declared before observing");
         }
         
+        // Create closure with current scope variables (flattened view)
+        var closure = new Dictionary<string, VariableInfo>();
+        foreach (var scope in _scopes.Reverse())
+        {
+            foreach (var kvp in scope)
+            {
+                if (!closure.ContainsKey(kvp.Key))
+                {
+                    closure[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+        
         // Create observer function
-        var observerFunction = new Function(null, observeStmt.Handler.Parameters, observeStmt.Handler.Body, _variables);
+        var observerFunction = new Function(null, observeStmt.Handler.Parameters, observeStmt.Handler.Body, closure);
         
         // Add observer to the variable
         variableInfo.Observers.Add(observerFunction);
