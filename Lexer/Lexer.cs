@@ -155,6 +155,7 @@ public class Lexer
             "function" => TokenType.Function,
             "return" => TokenType.Return,
             "observe" => TokenType.Observe,
+            "when" => TokenType.When,
             _ => TokenType.Identifier
         };
     }
@@ -262,6 +263,30 @@ public class Lexer
                 case '=':
                     tokens.Add(new Token(TokenType.Assign, "=", _position, tokenLine, tokenColumn));
                     Advance();
+                    break;
+                case '&':
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '&')
+                    {
+                        tokens.Add(new Token(TokenType.LogicalAnd, "&&", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
+                    }
+                    break;
+                case '|':
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '|')
+                    {
+                        tokens.Add(new Token(TokenType.LogicalOr, "||", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
+                    }
                     break;
                 default:
                     throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");

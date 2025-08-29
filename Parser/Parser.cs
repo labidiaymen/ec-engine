@@ -91,6 +91,12 @@ public class Parser
             return ParseObserveStatement();
         }
         
+        // Check for when statements
+        if (_currentToken.Type == TokenType.When)
+        {
+            return ParseWhenStatement();
+        }
+        
         // Check for variable declarations
         if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
         {
@@ -134,7 +140,7 @@ public class Parser
 
     private Expression ParseAssignment()
     {
-        var expression = ParseAdditive();
+        var expression = ParseLogicalOr();
         
         if (_currentToken.Type == TokenType.Assign)
         {
@@ -152,6 +158,38 @@ public class Parser
         }
         
         return expression;
+    }
+
+    private Expression ParseLogicalOr()
+    {
+        var left = ParseLogicalAnd();
+
+        while (_currentToken.Type == TokenType.LogicalOr)
+        {
+            var op = _currentToken.Value;
+            var token = _currentToken;
+            Advance();
+            var right = ParseLogicalAnd();
+            left = new LogicalExpression(left, op, right, token);
+        }
+
+        return left;
+    }
+
+    private Expression ParseLogicalAnd()
+    {
+        var left = ParseAdditive();
+
+        while (_currentToken.Type == TokenType.LogicalAnd)
+        {
+            var op = _currentToken.Value;
+            var token = _currentToken;
+            Advance();
+            var right = ParseAdditive();
+            left = new LogicalExpression(left, op, right, token);
+        }
+
+        return left;
     }
 
     private Expression ParseAdditive()
@@ -215,9 +253,10 @@ public class Parser
 
         while (_currentToken.Type == TokenType.Dot)
         {
+            var token = _currentToken;
             Advance(); // consume '.'
             var property = Consume(TokenType.Identifier, "Expected property name after '.'");
-            expression = new MemberExpression(expression, property.Value);
+            expression = new MemberExpression(expression, property.Value, token);
         }
 
         return expression;
@@ -335,12 +374,18 @@ public class Parser
         return new ReturnStatement(argument, token);
     }
 
-    private ObserveStatement ParseObserveStatement()
+    private Statement ParseObserveStatement()
     {
         var token = _currentToken;
         Consume(TokenType.Observe, "Expected 'observe' keyword");
         
-        // Parse variable name to observe
+        // Check if it's multi-variable syntax: observe (x, y)
+        if (_currentToken.Type == TokenType.LeftParen)
+        {
+            return ParseMultiObserveStatement(token);
+        }
+        
+        // Single variable syntax: observe x
         var variableName = Consume(TokenType.Identifier, "Expected variable name").Value;
         
         // Parse function expression handler
@@ -375,6 +420,91 @@ public class Parser
         Match(TokenType.Semicolon); // Optional semicolon
         
         return new ObserveStatement(variableName, handler, token);
+    }
+
+    private MultiObserveStatement ParseMultiObserveStatement(Token token)
+    {
+        Consume(TokenType.LeftParen, "Expected '('");
+        
+        var variableNames = new List<string>();
+        
+        // Parse variable list: x, y, z
+        while (_currentToken.Type == TokenType.Identifier)
+        {
+            variableNames.Add(_currentToken.Value);
+            Advance();
+            
+            if (_currentToken.Type == TokenType.Comma)
+            {
+                Advance();
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        Consume(TokenType.RightParen, "Expected ')' after variable list");
+        
+        // Parse function expression handler
+        Consume(TokenType.Function, "Expected 'function' keyword");
+        
+        // Parse parameters (optional)
+        Consume(TokenType.LeftParen, "Expected '(' after 'function'");
+        var parameters = new List<string>();
+        
+        while (_currentToken.Type == TokenType.Identifier)
+        {
+            parameters.Add(_currentToken.Value);
+            Advance();
+            
+            if (_currentToken.Type == TokenType.Comma)
+            {
+                Advance();
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        Consume(TokenType.RightParen, "Expected ')' after function parameters");
+        
+        // Parse function body
+        var body = ParseBlockStatement().Body;
+        
+        var handler = new FunctionExpression(parameters, body, token);
+        
+        Match(TokenType.Semicolon); // Optional semicolon
+        
+        return new MultiObserveStatement(variableNames, handler, token);
+    }
+
+    private WhenStatement ParseWhenStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.When, "Expected 'when' keyword");
+        
+        // Parse condition expression
+        Expression condition;
+        
+        // Handle parenthesized expressions: when (x && y)
+        if (_currentToken.Type == TokenType.LeftParen)
+        {
+            Advance();
+            condition = ParseExpression();
+            Consume(TokenType.RightParen, "Expected ')' after when condition");
+        }
+        else
+        {
+            // Simple identifier: when x
+            condition = ParseExpression();
+        }
+        
+        // Parse body block
+        var body = ParseBlockStatement();
+        
+        return new WhenStatement(condition, body, token);
     }
 
     private BlockStatement ParseBlockStatement()

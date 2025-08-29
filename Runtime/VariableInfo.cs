@@ -11,6 +11,7 @@ public class VariableInfo
     public object? Value { get; set; }
     public bool IsConstant => Type == "const";
     public List<Function> Observers { get; } = new List<Function>();
+    public List<Interpreter.MultiVariableObserver> MultiObservers { get; } = new List<Interpreter.MultiVariableObserver>();
 
     public VariableInfo(string type, object? value)
     {
