@@ -72,6 +72,22 @@ public class BinaryExpression : Expression
     }
 }
 
+// Unary expression node (e.g., !x, ++x, --x, +x, -x)
+public class UnaryExpression : Expression
+{
+    public string Operator { get; }
+    public Expression Operand { get; }
+    public bool IsPrefix { get; }  // true for ++x, false for x++
+    
+    public UnaryExpression(string op, Expression operand, bool isPrefix = true, Token? token = null)
+    {
+        Operator = op;
+        Operand = operand;
+        IsPrefix = isPrefix;
+        Token = token;
+    }
+}
+
 // Call expression node (e.g., function calls)
 public class CallExpression : Expression
 {
@@ -292,6 +308,70 @@ public class ImportStatement : Statement
     {
         ImportedNames = importedNames;
         ModulePath = modulePath;
+        Token = token;
+    }
+}
+
+// For loop statement node
+public class ForStatement : Statement
+{
+    public Statement? Init { get; }       // for (init; condition; update)
+    public Expression? Condition { get; }
+    public Expression? Update { get; }
+    public Statement Body { get; }
+    
+    public ForStatement(Statement? init, Expression? condition, Expression? update, Statement body, Token? token = null)
+    {
+        Init = init;
+        Condition = condition;
+        Update = update;
+        Body = body;
+        Token = token;
+    }
+}
+
+// While loop statement node
+public class WhileStatement : Statement
+{
+    public Expression Condition { get; }
+    public Statement Body { get; }
+    
+    public WhileStatement(Expression condition, Statement body, Token? token = null)
+    {
+        Condition = condition;
+        Body = body;
+        Token = token;
+    }
+}
+
+// Do-while loop statement node
+public class DoWhileStatement : Statement
+{
+    public Statement Body { get; }
+    public Expression Condition { get; }
+    
+    public DoWhileStatement(Statement body, Expression condition, Token? token = null)
+    {
+        Body = body;
+        Condition = condition;
+        Token = token;
+    }
+}
+
+// Break statement node
+public class BreakStatement : Statement
+{
+    public BreakStatement(Token? token = null)
+    {
+        Token = token;
+    }
+}
+
+// Continue statement node
+public class ContinueStatement : Statement
+{
+    public ContinueStatement(Token? token = null)
+    {
         Token = token;
     }
 }

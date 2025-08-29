@@ -163,6 +163,11 @@ public class Lexer
             "export" => TokenType.Export,
             "import" => TokenType.Import,
             "from" => TokenType.From,
+            "for" => TokenType.For,
+            "while" => TokenType.While,
+            "do" => TokenType.Do,
+            "break" => TokenType.Break,
+            "continue" => TokenType.Continue,
             _ => TokenType.Identifier
         };
     }
@@ -205,12 +210,32 @@ public class Lexer
                     tokens.Add(new Token(TokenType.String, stringValue, _position, tokenLine, tokenColumn));
                     break;
                 case '+':
-                    tokens.Add(new Token(TokenType.Plus, "+", _position, tokenLine, tokenColumn));
-                    Advance();
+                    // Check for ++
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '+')
+                    {
+                        tokens.Add(new Token(TokenType.Increment, "++", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.Plus, "+", _position, tokenLine, tokenColumn));
+                        Advance();
+                    }
                     break;
                 case '-':
-                    tokens.Add(new Token(TokenType.Minus, "-", _position, tokenLine, tokenColumn));
-                    Advance();
+                    // Check for --
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '-')
+                    {
+                        tokens.Add(new Token(TokenType.Decrement, "--", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.Minus, "-", _position, tokenLine, tokenColumn));
+                        Advance();
+                    }
                     break;
                 case '*':
                     tokens.Add(new Token(TokenType.Multiply, "*", _position, tokenLine, tokenColumn));
@@ -289,7 +314,8 @@ public class Lexer
                     }
                     else
                     {
-                        throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
+                        tokens.Add(new Token(TokenType.LogicalNot, "!", _position, tokenLine, tokenColumn));
+                        Advance();
                     }
                     break;
                 case '<':

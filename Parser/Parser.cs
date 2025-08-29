@@ -103,6 +103,36 @@ public class Parser
             return ParseIfStatement();
         }
         
+        // Check for for loops
+        if (_currentToken.Type == TokenType.For)
+        {
+            return ParseForStatement();
+        }
+        
+        // Check for while loops
+        if (_currentToken.Type == TokenType.While)
+        {
+            return ParseWhileStatement();
+        }
+        
+        // Check for do-while loops
+        if (_currentToken.Type == TokenType.Do)
+        {
+            return ParseDoWhileStatement();
+        }
+        
+        // Check for break statements
+        if (_currentToken.Type == TokenType.Break)
+        {
+            return ParseBreakStatement();
+        }
+        
+        // Check for continue statements
+        if (_currentToken.Type == TokenType.Continue)
+        {
+            return ParseContinueStatement();
+        }
+        
         // Check for observe statements
         if (_currentToken.Type == TokenType.Observe)
         {
@@ -247,17 +277,52 @@ public class Parser
 
     private Expression ParseMultiplicative()
     {
-        var left = ParseCall();
+        var left = ParseUnary();
 
         while (_currentToken.Type == TokenType.Multiply || _currentToken.Type == TokenType.Divide)
         {
             var op = _currentToken.Value;
             Advance();
-            var right = ParseCall();
+            var right = ParseUnary();
             left = new BinaryExpression(left, op, right);
         }
 
         return left;
+    }
+
+    private Expression ParseUnary()
+    {
+        // Handle prefix unary operators
+        if (_currentToken.Type == TokenType.LogicalNot ||
+            _currentToken.Type == TokenType.Increment ||
+            _currentToken.Type == TokenType.Decrement ||
+            _currentToken.Type == TokenType.Plus ||
+            _currentToken.Type == TokenType.Minus)
+        {
+            var op = _currentToken.Value;
+            var token = _currentToken;
+            Advance();
+            var operand = ParseUnary(); // Right-associative
+            
+            // Convert Plus/Minus to UnaryPlus/UnaryMinus for clarity
+            if (op == "+") op = "unary+";
+            if (op == "-") op = "unary-";
+            
+            return new UnaryExpression(op, operand, true, token);
+        }
+
+        // Handle postfix unary operators (++ and --)
+        var expression = ParseCall();
+        
+        if (_currentToken.Type == TokenType.Increment || _currentToken.Type == TokenType.Decrement)
+        {
+            var op = _currentToken.Value;
+            var token = _currentToken;
+            Advance();
+            return new UnaryExpression(op, expression, false, token);
+        }
+
+        return expression;
     }
 
     private Expression ParseCall()
@@ -445,6 +510,96 @@ public class Parser
         }
         
         return new IfStatement(condition, thenStatement, elseStatement, token);
+    }
+    
+    private ForStatement ParseForStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.For, "Expected 'for' keyword");
+        Consume(TokenType.LeftParen, "Expected '(' after 'for'");
+        
+        // Parse initialization (can be variable declaration or expression)
+        Statement? init = null;
+        if (_currentToken.Type != TokenType.Semicolon)
+        {
+            if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
+            {
+                init = ParseVariableDeclaration();
+            }
+            else
+            {
+                var expr = ParseExpression();
+                Consume(TokenType.Semicolon, "Expected ';' after for loop initialization");
+                init = new ExpressionStatement(expr);
+            }
+        }
+        else
+        {
+            Consume(TokenType.Semicolon, "Expected ';' after for loop initialization");
+        }
+        
+        // Parse condition
+        Expression? condition = null;
+        if (_currentToken.Type != TokenType.Semicolon)
+        {
+            condition = ParseExpression();
+        }
+        Consume(TokenType.Semicolon, "Expected ';' after for loop condition");
+        
+        // Parse update expression
+        Expression? update = null;
+        if (_currentToken.Type != TokenType.RightParen)
+        {
+            update = ParseExpression();
+        }
+        Consume(TokenType.RightParen, "Expected ')' after for loop header");
+        
+        // Parse body
+        var body = ParseStatement();
+        
+        return new ForStatement(init, condition, update, body, token);
+    }
+    
+    private WhileStatement ParseWhileStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.While, "Expected 'while' keyword");
+        Consume(TokenType.LeftParen, "Expected '(' after 'while'");
+        var condition = ParseExpression();
+        Consume(TokenType.RightParen, "Expected ')' after while condition");
+        var body = ParseStatement();
+        
+        return new WhileStatement(condition, body, token);
+    }
+    
+    private DoWhileStatement ParseDoWhileStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Do, "Expected 'do' keyword");
+        var body = ParseStatement();
+        Consume(TokenType.While, "Expected 'while' after do body");
+        Consume(TokenType.LeftParen, "Expected '(' after 'while'");
+        var condition = ParseExpression();
+        Consume(TokenType.RightParen, "Expected ')' after while condition");
+        Consume(TokenType.Semicolon, "Expected ';' after do-while statement");
+        
+        return new DoWhileStatement(body, condition, token);
+    }
+    
+    private BreakStatement ParseBreakStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Break, "Expected 'break' keyword");
+        Consume(TokenType.Semicolon, "Expected ';' after break statement");
+        return new BreakStatement(token);
+    }
+    
+    private ContinueStatement ParseContinueStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Continue, "Expected 'continue' keyword");
+        Consume(TokenType.Semicolon, "Expected ';' after continue statement");
+        return new ContinueStatement(token);
     }
 
     private Statement ParseObserveStatement()

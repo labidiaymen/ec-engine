@@ -40,6 +40,19 @@ public enum TokenType
     Export,         // export keyword
     Import,         // import keyword
     From,           // from keyword
+    For,            // for keyword
+    While,          // while keyword
+    Do,             // do keyword
+    Break,          // break keyword
+    Continue,       // continue keyword
+    
+    // Unary operators
+    Increment,      // ++
+    Decrement,      // --
+    LogicalNot,     // !
+    UnaryPlus,      // +x (when used as unary)
+    UnaryMinus,     // -x (when used as unary)
+    
     EOF
 }
 

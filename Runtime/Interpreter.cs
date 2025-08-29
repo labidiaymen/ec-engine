@@ -68,6 +68,16 @@ public class Interpreter
             return EvaluateWhenStatement(whenStmt);
         if (node is IfStatement ifStmt)
             return EvaluateIfStatement(ifStmt);
+        if (node is ForStatement forStmt)
+            return EvaluateForStatement(forStmt);
+        if (node is WhileStatement whileStmt)
+            return EvaluateWhileStatement(whileStmt);
+        if (node is DoWhileStatement doWhileStmt)
+            return EvaluateDoWhileStatement(doWhileStmt);
+        if (node is BreakStatement breakStmt)
+            return EvaluateBreakStatement(breakStmt);
+        if (node is ContinueStatement continueStmt)
+            return EvaluateContinueStatement(continueStmt);
         if (node is MemberExpression memberExpr)
             return EvaluateMemberExpression(memberExpr);
         if (node is LogicalExpression logicalExpr)
@@ -84,6 +94,8 @@ public class Interpreter
             return EvaluateAssignmentExpression(assignment);
         if (node is BinaryExpression binary)
             return EvaluateBinaryExpression(binary);
+        if (node is UnaryExpression unary)
+            return EvaluateUnaryExpression(unary);
         if (node is MemberExpression member)
             return EvaluateMemberExpression(member);
         if (node is CallExpression call)
@@ -257,6 +269,82 @@ public class Interpreter
         throw new ECEngineException($"Cannot perform {binary.Operator} on {left?.GetType().Name} and {right?.GetType().Name}",
             token2?.Line ?? 1, token2?.Column ?? 1, _sourceCode,
             "Type mismatch in binary operation");
+    }
+
+    private object? EvaluateUnaryExpression(UnaryExpression unary)
+    {
+        var operand = Evaluate(unary.Operand, _sourceCode);
+        var token = unary.Token;
+
+        switch (unary.Operator)
+        {
+            case "!":
+                return !IsTruthy(operand);
+                
+            case "unary+":
+                if (operand is double num)
+                    return num;
+                throw new ECEngineException($"Unary + can only be applied to numbers",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"Cannot apply unary + to {operand?.GetType().Name}");
+                    
+            case "unary-":
+                if (operand is double num2)
+                    return -num2;
+                throw new ECEngineException($"Unary - can only be applied to numbers",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"Cannot apply unary - to {operand?.GetType().Name}");
+                    
+            case "++":
+                return EvaluateIncrementDecrement(unary, true);
+                
+            case "--":
+                return EvaluateIncrementDecrement(unary, false);
+                
+            default:
+                throw new ECEngineException($"Unknown unary operator: {unary.Operator}",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"The unary operator '{unary.Operator}' is not supported");
+        }
+    }
+
+    private object? EvaluateIncrementDecrement(UnaryExpression unary, bool isIncrement)
+    {
+        var token = unary.Token;
+        
+        if (unary.Operand is not Identifier identifier)
+        {
+            throw new ECEngineException($"++ and -- can only be applied to variables",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "Increment/decrement operators require a variable");
+        }
+
+        if (!_variables.TryGetValue(identifier.Name, out var variableInfo))
+        {
+            throw new ECEngineException($"Variable '{identifier.Name}' is not defined",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                $"Cannot increment/decrement undefined variable '{identifier.Name}'");
+        }
+
+        if (variableInfo.Type == "const")
+        {
+            throw new ECEngineException($"Cannot modify const variable '{identifier.Name}'",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "Const variables cannot be modified");
+        }
+
+        if (variableInfo.Value is not double currentValue)
+        {
+            throw new ECEngineException($"++ and -- can only be applied to numbers",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                $"Cannot increment/decrement {variableInfo.Value?.GetType().Name}");
+        }
+
+        var newValue = isIncrement ? currentValue + 1 : currentValue - 1;
+        _variables[identifier.Name] = new VariableInfo(variableInfo.Type, newValue);
+
+        // Return old value for postfix, new value for prefix
+        return unary.IsPrefix ? newValue : currentValue;
     }
 
     private bool AreEqual(object? left, object? right)
@@ -725,6 +813,132 @@ public class Interpreter
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
                 ex.Message);
         }
+    }
+    
+    private object? EvaluateForStatement(ForStatement forStmt)
+    {
+        // Create new scope for the for loop (similar to function scope)
+        var originalVariables = new Dictionary<string, VariableInfo>(_variables);
+        
+        try
+        {
+            // Initialize (if present)
+            if (forStmt.Init != null)
+            {
+                Evaluate(forStmt.Init, _sourceCode);
+            }
+            
+            object? result = null;
+            
+            // Loop
+            while (true)
+            {
+                // Check condition (if present)
+                if (forStmt.Condition != null)
+                {
+                    var conditionResult = Evaluate(forStmt.Condition, _sourceCode);
+                    if (!IsTruthy(conditionResult))
+                        break;
+                }
+                
+                try
+                {
+                    // Execute body
+                    result = Evaluate(forStmt.Body, _sourceCode);
+                }
+                catch (BreakException)
+                {
+                    break;
+                }
+                catch (ContinueException)
+                {
+                    // Continue to update step
+                }
+                
+                // Update (if present)
+                if (forStmt.Update != null)
+                {
+                    Evaluate(forStmt.Update, _sourceCode);
+                }
+            }
+            
+            return result;
+        }
+        finally
+        {
+            // Restore original scope
+            _variables = originalVariables;
+        }
+    }
+    
+    private object? EvaluateWhileStatement(WhileStatement whileStmt)
+    {
+        object? result = null;
+        
+        while (true)
+        {
+            // Check condition
+            var conditionResult = Evaluate(whileStmt.Condition, _sourceCode);
+            if (!IsTruthy(conditionResult))
+                break;
+                
+            try
+            {
+                // Execute body
+                result = Evaluate(whileStmt.Body, _sourceCode);
+            }
+            catch (BreakException)
+            {
+                break;
+            }
+            catch (ContinueException)
+            {
+                // Continue to next iteration
+                continue;
+            }
+        }
+        
+        return result;
+    }
+    
+    private object? EvaluateDoWhileStatement(DoWhileStatement doWhileStmt)
+    {
+        object? result = null;
+        
+        do
+        {
+            try
+            {
+                // Execute body
+                result = Evaluate(doWhileStmt.Body, _sourceCode);
+            }
+            catch (BreakException)
+            {
+                break;
+            }
+            catch (ContinueException)
+            {
+                // Continue to condition check
+            }
+            
+            // Check condition
+            var conditionResult = Evaluate(doWhileStmt.Condition, _sourceCode);
+            if (!IsTruthy(conditionResult))
+                break;
+                
+        } while (true);
+        
+        return result;
+    }
+    
+    private object? EvaluateBreakStatement(BreakStatement breakStmt)
+    {
+        throw new BreakException();
+    }
+    
+    private object? EvaluateContinueStatement(ContinueStatement continueStmt)
+    {
+        throw new ContinueException();
     }
 }
 

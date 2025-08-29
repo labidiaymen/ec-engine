@@ -66,3 +66,14 @@ public class ECEngineException : Exception
         return result.ToString();
     }
 }
+
+// Special control flow exceptions for loop control
+public class BreakException : Exception
+{
+    public BreakException() : base("break") { }
+}
+
+public class ContinueException : Exception
+{
+    public ContinueException() : base("continue") { }
+}
