@@ -7,6 +7,12 @@
 
 A lightweight ECMAScript (JavaScript) interpreter engine written in C# that supports standard JavaScript syntax plus additional design patterns and reactive programming features.
 
+> **📚 Educational Purpose**: ECEngine is designed primarily for educational purposes to demonstrate JavaScript engine implementation concepts, language design patterns, and reactive programming techniques. It serves as a learning tool for understanding how interpreters work and exploring innovative language features.
+
+## 📋 Features & Progress
+
+For a comprehensive overview of implemented and planned features, see the **[📊 Features Checklist](FEATURES_CHECKLIST.md)** which tracks ECMAScript compatibility and implementation progress.
+
 ## Overview
 
 ECEngine is a modern JavaScript interpreter that implements core ECMAScript features while introducing innovative design patterns for reactive programming. The engine supports:
@@ -335,6 +341,16 @@ ECEngine is designed with security in mind:
 - **Input Validation**: Handles malicious input gracefully
 
 For security concerns, please see our [Security Policy](SECURITY.md).
+
+## 🎓 Educational Focus
+
+ECEngine is specifically designed as an educational tool for:
+- **Learning Language Implementation**: Understanding how interpreters, lexers, and parsers work
+- **Exploring Language Design**: Experimenting with new language features like the observe pattern
+- **Teaching Reactive Programming**: Demonstrating reactive programming concepts in a simple environment
+- **Academic Research**: Studying language design and implementation techniques
+
+While functional and feature-rich, ECEngine prioritizes educational value and clear code structure over production performance.
 
 ## 📄 License
 
