@@ -163,6 +163,12 @@ public partial class Parser
             return ParseWhenStatement();
         }
         
+        // Check for otherwise statements
+        if (_currentToken.Type == TokenType.Otherwise)
+        {
+            return ParseOtherwiseStatement();
+        }
+        
         // Check for variable declarations
         if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
         {
