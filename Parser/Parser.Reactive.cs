@@ -24,15 +24,34 @@ public partial class Parser
             return ParseMultiObserveStatement(token);
         }
         
-        // Single variable syntax: observe x
-        var variableName = Consume(TokenType.Identifier, "Expected variable name").Value;
+        // Parse the target expression (could be simple identifier or property chain)
+        var targetExpression = ParseObserveTarget();
         
         // Parse function expression handler
         var handler = ParseFunctionExpressionHandler();
         
         Match(TokenType.Semicolon); // Optional semicolon
         
-        return new ObserveStatement(variableName, handler, token);
+        return new ObserveStatement(targetExpression, handler, token);
+    }
+
+    /// <summary>
+    /// Parse the target of an observe statement (identifier or property chain)
+    /// </summary>
+    private Expression ParseObserveTarget()
+    {
+        var identifier = new Identifier(Consume(TokenType.Identifier, "Expected identifier").Value, _currentToken);
+        Expression target = identifier;
+        
+        // Handle property chains: server.requests, server.connection.data, etc.
+        while (_currentToken.Type == TokenType.Dot)
+        {
+            Advance(); // consume dot
+            var property = Consume(TokenType.Identifier, "Expected property name").Value;
+            target = new MemberExpression(target, property, _currentToken);
+        }
+        
+        return target;
     }
 
     /// <summary>
@@ -98,5 +117,19 @@ public partial class Parser
         var body = ParseBlockStatement();
         
         return new WhenStatement(condition, body, token);
+    }
+
+    /// <summary>
+    /// Parse an otherwise statement: otherwise { ... } - used as a fallback within observe handlers
+    /// </summary>
+    private OtherwiseStatement ParseOtherwiseStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Otherwise, "Expected 'otherwise' keyword");
+        
+        // Parse body block
+        var body = ParseBlockStatement();
+        
+        return new OtherwiseStatement(body, token);
     }
 }

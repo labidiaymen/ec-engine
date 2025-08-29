@@ -156,6 +156,7 @@ public class Lexer
             "return" => TokenType.Return,
             "observe" => TokenType.Observe,
             "when" => TokenType.When,
+            "otherwise" => TokenType.Otherwise,
             "if" => TokenType.If,
             "else" => TokenType.Else,
             "true" => TokenType.True,

@@ -33,6 +33,7 @@ public enum TokenType
     Return,         // return keyword
     Observe,        // observe keyword
     When,           // when keyword
+    Otherwise,      // otherwise keyword
     If,             // if keyword
     Else,           // else keyword
     True,           // true keyword
