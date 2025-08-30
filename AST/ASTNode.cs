@@ -47,6 +47,15 @@ public class BooleanLiteral : Expression
     }
 }
 
+// Null literal node
+public class NullLiteral : Expression
+{
+    public NullLiteral(Token? token = null)
+    {
+        Token = token;
+    }
+}
+
 // Object literal node  
 public class ObjectLiteral : Expression
 {

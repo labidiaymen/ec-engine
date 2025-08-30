@@ -258,6 +258,13 @@ public partial class Parser
             return new BooleanLiteral(false, token);
         }
 
+        if (_currentToken.Type == TokenType.Null)
+        {
+            var token = _currentToken;
+            Advance();
+            return new NullLiteral(token);
+        }
+
         if (_currentToken.Type == TokenType.Identifier)
         {
             var name = _currentToken.Value;

@@ -112,28 +112,65 @@ public class Lexer
 
     private string ReadString()
     {
+        char quote = _currentChar; // Store the opening quote (either ' or ")
         Advance(); // Skip opening quote
-        var start = _position;
+        var result = new System.Text.StringBuilder();
         
-        while (_currentChar != '\0' && _currentChar != '"')
+        while (_currentChar != '\0' && _currentChar != quote)
         {
             if (_currentChar == '\\') // Handle escape sequences
             {
                 Advance(); // Skip backslash
                 if (_currentChar != '\0')
                 {
+                    switch (_currentChar)
+                    {
+                        case 'n':
+                            result.Append('\n');
+                            break;
+                        case 't':
+                            result.Append('\t');
+                            break;
+                        case 'r':
+                            result.Append('\r');
+                            break;
+                        case '\\':
+                            result.Append('\\');
+                            break;
+                        case '"':
+                            result.Append('"');
+                            break;
+                        case '\'':
+                            result.Append('\'');
+                            break;
+                        case 'b':
+                            result.Append('\b');
+                            break;
+                        case 'f':
+                            result.Append('\f');
+                            break;
+                        case 'v':
+                            result.Append('\v');
+                            break;
+                        case '0':
+                            result.Append('\0');
+                            break;
+                        default:
+                            // For unrecognized escape sequences, just include the character as-is
+                            result.Append(_currentChar);
+                            break;
+                    }
                     Advance(); // Skip escaped character
                 }
             }
             else
             {
+                result.Append(_currentChar);
                 Advance();
             }
         }
         
-        var stringValue = _code.Substring(start, _position - start);
-        
-        if (_currentChar == '"')
+        if (_currentChar == quote)
         {
             Advance(); // Skip closing quote
         }
@@ -142,7 +179,7 @@ public class Lexer
             throw new Exception($"Unterminated string literal at line {_line}, column {_column}");
         }
         
-        return stringValue;
+        return result.ToString();
     }
 
     private TokenType GetKeywordTokenType(string identifier)
@@ -161,6 +198,7 @@ public class Lexer
             "else" => TokenType.Else,
             "true" => TokenType.True,
             "false" => TokenType.False,
+            "null" => TokenType.Null,
             "export" => TokenType.Export,
             "import" => TokenType.Import,
             "from" => TokenType.From,
@@ -214,6 +252,7 @@ public class Lexer
             switch (_currentChar)
             {
                 case '"':
+                case '\'':
                     var stringValue = ReadString();
                     tokens.Add(new Token(TokenType.String, stringValue, _position, tokenLine, tokenColumn));
                     break;

@@ -244,6 +244,8 @@ public class Interpreter
             return stringLiteral.Value;
         if (node is BooleanLiteral booleanLiteral)
             return booleanLiteral.Value;
+        if (node is NullLiteral nullLiteral)
+            return null;
         if (node is ObjectLiteral objectLiteral)
             return EvaluateObjectLiteral(objectLiteral);
         if (node is Identifier identifier)
@@ -308,6 +310,7 @@ public class Interpreter
             "createServer" => _eventLoop != null ? new CreateServerFunction(_eventLoop, this) : null,
             "Date" => (object?)new DateModule(),
             "Math" => (object?)new MathModule(),
+            "JSON" => (object?)new JsonModule(),
             _ => null
         };
 
@@ -676,6 +679,19 @@ public class Interpreter
             };
         }
         
+        // Handle JSON static methods
+        if (obj is JsonModule jsonModule)
+        {
+            return member.Property switch
+            {
+                "parse" => new JsonMethodFunction(jsonModule.Parse, "parse"),
+                "stringify" => new JsonMethodFunction(jsonModule.Stringify, "stringify"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on JSON",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the JSON object")
+            };
+        }
+        
         if (obj is ServerObject serverObj)
         {
             return member.Property switch
@@ -780,7 +796,7 @@ public class Interpreter
         {
             foreach (var arg in arguments)
             {
-                Console.WriteLine(arg);
+                Console.WriteLine(FormatObjectForConsole(arg));
             }
             return null; // console.log returns undefined
         }
@@ -872,6 +888,11 @@ public class Interpreter
         if (function is MathMethodFunction mathMethodFunc)
         {
             return mathMethodFunc.Call(arguments);
+        }
+
+        if (function is JsonMethodFunction jsonMethodFunc)
+        {
+            return jsonMethodFunc.Call(arguments);
         }
 
         if (function is Function userFunction)
@@ -1735,6 +1756,83 @@ public class Interpreter
             return left.Equals(right);
             
         return left.Equals(right);
+    }
+    
+    /// <summary>
+    /// Format an object for console output in a JavaScript-like way
+    /// </summary>
+    private string FormatObjectForConsole(object? obj)
+    {
+        if (obj == null)
+            return "";
+            
+        if (obj is string str)
+            return str;
+            
+        if (obj is Dictionary<string, object?> dict)
+        {
+            var pairs = dict.Select(kvp => $"{kvp.Key}: {FormatValueForConsole(kvp.Value)}");
+            return "{ " + string.Join(", ", pairs) + " }";
+        }
+        
+        if (obj is List<object?> list)
+        {
+            var items = list.Select(FormatValueForConsole);
+            return "[ " + string.Join(", ", items) + " ]";
+        }
+        
+        if (obj is DateObject dateObj)
+        {
+            return dateObj.DateTime.ToString();
+        }
+        
+        return obj.ToString() ?? "";
+    }
+    
+    /// <summary>
+    /// Format a value for console output (used recursively)
+    /// </summary>
+    private string FormatValueForConsole(object? value)
+    {
+        if (value == null)
+            return "null";
+            
+        if (value is string str)
+            return $"\"{EscapeStringForConsole(str)}\"";
+            
+        if (value is bool b)
+            return b ? "true" : "false";
+            
+        if (value is Dictionary<string, object?> dict)
+        {
+            var pairs = dict.Select(kvp => $"{kvp.Key}: {FormatValueForConsole(kvp.Value)}");
+            return "{ " + string.Join(", ", pairs) + " }";
+        }
+        
+        if (value is List<object?> list)
+        {
+            var items = list.Select(FormatValueForConsole);
+            return "[ " + string.Join(", ", items) + " ]";
+        }
+        
+        return value.ToString() ?? "";
+    }
+    
+    /// <summary>
+    /// Escape a string for console display (showing escape sequences)
+    /// </summary>
+    private string EscapeStringForConsole(string str)
+    {
+        return str
+            .Replace("\\", "\\\\")  // Backslash first (to avoid double-escaping)
+            .Replace("\n", "\\n")   // Newline
+            .Replace("\t", "\\t")   // Tab
+            .Replace("\r", "\\r")   // Carriage return
+            .Replace("\"", "\\\"")  // Double quote
+            .Replace("\b", "\\b")   // Backspace
+            .Replace("\f", "\\f")   // Form feed
+            .Replace("\v", "\\v")   // Vertical tab
+            .Replace("\0", "\\0");  // Null character
     }
 }
 
