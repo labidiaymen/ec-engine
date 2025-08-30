@@ -307,6 +307,7 @@ public class Interpreter
             "http" => _eventLoop != null ? new HttpModule(_eventLoop, this) : null,
             "createServer" => _eventLoop != null ? new CreateServerFunction(_eventLoop, this) : null,
             "Date" => (object?)new DateModule(),
+            "Math" => (object?)new MathModule(),
             _ => null
         };
 
@@ -634,6 +635,47 @@ public class Interpreter
             };
         }
         
+        // Handle Math static methods and constants
+        if (obj is MathModule mathModule)
+        {
+            return member.Property switch
+            {
+                // Constants
+                "E" => mathModule.E,
+                "PI" => mathModule.PI,
+                "LN2" => mathModule.LN2,
+                "LN10" => mathModule.LN10,
+                "LOG2E" => mathModule.LOG2E,
+                "LOG10E" => mathModule.LOG10E,
+                "SQRT1_2" => mathModule.SQRT1_2,
+                "SQRT2" => mathModule.SQRT2,
+                
+                // Functions
+                "abs" => new MathMethodFunction(mathModule.Abs, "abs"),
+                "acos" => new MathMethodFunction(mathModule.Acos, "acos"),
+                "asin" => new MathMethodFunction(mathModule.Asin, "asin"),
+                "atan" => new MathMethodFunction(mathModule.Atan, "atan"),
+                "atan2" => new MathMethodFunction(mathModule.Atan2, "atan2"),
+                "ceil" => new MathMethodFunction(mathModule.Ceil, "ceil"),
+                "cos" => new MathMethodFunction(mathModule.Cos, "cos"),
+                "exp" => new MathMethodFunction(mathModule.Exp, "exp"),
+                "floor" => new MathMethodFunction(mathModule.Floor, "floor"),
+                "log" => new MathMethodFunction(mathModule.Log, "log"),
+                "max" => new MathMethodFunction(mathModule.Max, "max"),
+                "min" => new MathMethodFunction(mathModule.Min, "min"),
+                "pow" => new MathMethodFunction(mathModule.Pow, "pow"),
+                "random" => new MathMethodFunction(mathModule.Random, "random"),
+                "round" => new MathMethodFunction(mathModule.Round, "round"),
+                "sin" => new MathMethodFunction(mathModule.Sin, "sin"),
+                "sqrt" => new MathMethodFunction(mathModule.Sqrt, "sqrt"),
+                "tan" => new MathMethodFunction(mathModule.Tan, "tan"),
+                "trunc" => new MathMethodFunction(mathModule.Trunc, "trunc"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on Math",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the Math object")
+            };
+        }
+        
         if (obj is ServerObject serverObj)
         {
             return member.Property switch
@@ -825,6 +867,11 @@ public class Interpreter
         if (function is DateMethodFunction dateMethodFunc)
         {
             return dateMethodFunc.Call(arguments);
+        }
+
+        if (function is MathMethodFunction mathMethodFunc)
+        {
+            return mathMethodFunc.Call(arguments);
         }
 
         if (function is Function userFunction)
