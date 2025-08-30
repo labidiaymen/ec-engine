@@ -19,13 +19,33 @@ public enum TokenType
     Comma,          // ,
     Assign,         // =
     Equal,          // ==
+    StrictEqual,    // ===
     NotEqual,       // !=
+    StrictNotEqual, // !==
     LessThan,       // <
     LessThanOrEqual, // <=
     GreaterThan,    // >
     GreaterThanOrEqual, // >=
     LogicalAnd,     // &&
     LogicalOr,      // ||
+    
+    // Compound Assignment operators
+    PlusAssign,     // +=
+    MinusAssign,    // -=
+    MultiplyAssign, // *=
+    DivideAssign,   // /=
+    
+    // Bitwise operators
+    BitwiseAnd,     // &
+    BitwiseOr,      // |
+    BitwiseXor,     // ^
+    BitwiseNot,     // ~
+    LeftShift,      // <<
+    RightShift,     // >>
+    UnsignedRightShift, // >>>
+    
+    // Ternary operator
+    Question,       // ?
     Var,            // var keyword
     Let,            // let keyword
     Const,          // const keyword

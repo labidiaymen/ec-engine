@@ -14,7 +14,35 @@ public partial class Parser
     /// </summary>
     private Expression ParseExpression()
     {
-        return ParseAssignment();
+        return ParseConditional();
+    }
+
+    /// <summary>
+    /// Parse conditional (ternary) expressions (condition ? true : false)
+    /// </summary>
+    private Expression ParseConditional()
+    {
+        var expression = ParseAssignment();
+        
+        if (_currentToken.Type == TokenType.Question)
+        {
+            var token = _currentToken;
+            Advance();
+            var consequent = ParseAssignment();
+            
+            if (_currentToken.Type != TokenType.Colon)
+            {
+                throw new ECEngineException("Expected ':' in ternary expression", 
+                    _currentToken.Line, _currentToken.Column, _sourceCode, "Ternary operator requires both '?' and ':'");
+            }
+            
+            Advance(); // consume ':'
+            var alternate = ParseConditional(); // Right-associative
+            
+            return new ConditionalExpression(expression, consequent, alternate, token);
+        }
+        
+        return expression;
     }
 
     /// <summary>
@@ -37,6 +65,24 @@ public partial class Parser
             
             throw new ECEngineException("Invalid assignment target", 
                 token.Line, token.Column, _sourceCode, "Only identifiers can be assigned to");
+        }
+        else if (_currentToken.Type == TokenType.PlusAssign ||
+                 _currentToken.Type == TokenType.MinusAssign ||
+                 _currentToken.Type == TokenType.MultiplyAssign ||
+                 _currentToken.Type == TokenType.DivideAssign)
+        {
+            var op = _currentToken.Value;
+            var token = _currentToken;
+            Advance();
+            var right = ParseConditional(); // Parse ternary expressions properly
+            
+            if (expression is Identifier identifier)
+            {
+                return new CompoundAssignmentExpression(identifier, op, right, token);
+            }
+            
+            throw new ECEngineException("Invalid compound assignment target", 
+                token.Line, token.Column, _sourceCode, "Only identifiers can be used in compound assignment");
         }
         
         return expression;
@@ -66,14 +112,14 @@ public partial class Parser
     /// </summary>
     private Expression ParseLogicalAnd()
     {
-        var left = ParseComparison();
+        var left = ParseBitwiseOr();
 
         while (_currentToken.Type == TokenType.LogicalAnd)
         {
             var op = _currentToken.Value;
             var token = _currentToken;
             Advance();
-            var right = ParseComparison();
+            var right = ParseBitwiseOr();
             left = new LogicalExpression(left, op, right, token);
         }
 
@@ -81,18 +127,111 @@ public partial class Parser
     }
 
     /// <summary>
-    /// Parse comparison expressions (==, !=, <, <=, >, >=)
+    /// Parse bitwise OR expressions (|)
     /// </summary>
-    private Expression ParseComparison()
+    private Expression ParseBitwiseOr()
     {
-        var left = ParseAdditive();
+        var left = ParseBitwiseXor();
+
+        while (_currentToken.Type == TokenType.BitwiseOr)
+        {
+            var op = _currentToken.Value;
+            Advance();
+            var right = ParseBitwiseXor();
+            left = new BinaryExpression(left, op, right);
+        }
+
+        return left;
+    }
+
+    /// <summary>
+    /// Parse bitwise XOR expressions (^)
+    /// </summary>
+    private Expression ParseBitwiseXor()
+    {
+        var left = ParseBitwiseAnd();
+
+        while (_currentToken.Type == TokenType.BitwiseXor)
+        {
+            var op = _currentToken.Value;
+            Advance();
+            var right = ParseBitwiseAnd();
+            left = new BinaryExpression(left, op, right);
+        }
+
+        return left;
+    }
+
+    /// <summary>
+    /// Parse bitwise AND expressions (&)
+    /// </summary>
+    private Expression ParseBitwiseAnd()
+    {
+        var left = ParseEquality();
+
+        while (_currentToken.Type == TokenType.BitwiseAnd)
+        {
+            var op = _currentToken.Value;
+            Advance();
+            var right = ParseEquality();
+            left = new BinaryExpression(left, op, right);
+        }
+
+        return left;
+    }
+
+    /// <summary>
+    /// Parse equality expressions (==, !=, ===, !==)
+    /// </summary>
+    private Expression ParseEquality()
+    {
+        var left = ParseRelational();
 
         while (_currentToken.Type == TokenType.Equal ||
                _currentToken.Type == TokenType.NotEqual ||
-               _currentToken.Type == TokenType.LessThan ||
+               _currentToken.Type == TokenType.StrictEqual ||
+               _currentToken.Type == TokenType.StrictNotEqual)
+        {
+            var op = _currentToken.Value;
+            Advance();
+            var right = ParseRelational();
+            left = new BinaryExpression(left, op, right);
+        }
+
+        return left;
+    }
+
+    /// <summary>
+    /// Parse relational expressions (<, <=, >, >=)
+    /// </summary>
+    private Expression ParseRelational()
+    {
+        var left = ParseBitwiseShift();
+
+        while (_currentToken.Type == TokenType.LessThan ||
                _currentToken.Type == TokenType.LessThanOrEqual ||
                _currentToken.Type == TokenType.GreaterThan ||
                _currentToken.Type == TokenType.GreaterThanOrEqual)
+        {
+            var op = _currentToken.Value;
+            Advance();
+            var right = ParseBitwiseShift();
+            left = new BinaryExpression(left, op, right);
+        }
+
+        return left;
+    }
+
+    /// <summary>
+    /// Parse bitwise shift expressions (<<, >>, >>>)
+    /// </summary>
+    private Expression ParseBitwiseShift()
+    {
+        var left = ParseAdditive();
+
+        while (_currentToken.Type == TokenType.LeftShift ||
+               _currentToken.Type == TokenType.RightShift ||
+               _currentToken.Type == TokenType.UnsignedRightShift)
         {
             var op = _currentToken.Value;
             Advance();
@@ -140,7 +279,7 @@ public partial class Parser
     }
 
     /// <summary>
-    /// Parse unary expressions (!, +, -, ++, --) - HIGHEST PRECEDENCE
+    /// Parse unary expressions (!, +, -, ++, --, ~) - HIGHEST PRECEDENCE
     /// </summary>
     private Expression ParseUnary()
     {
@@ -149,7 +288,8 @@ public partial class Parser
             _currentToken.Type == TokenType.Increment ||
             _currentToken.Type == TokenType.Decrement ||
             _currentToken.Type == TokenType.Plus ||
-            _currentToken.Type == TokenType.Minus)
+            _currentToken.Type == TokenType.Minus ||
+            _currentToken.Type == TokenType.BitwiseNot)
         {
             var op = _currentToken.Value;
             var token = _currentToken;

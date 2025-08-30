@@ -257,10 +257,16 @@ public class Lexer
                     tokens.Add(new Token(TokenType.String, stringValue, _position, tokenLine, tokenColumn));
                     break;
                 case '+':
-                    // Check for ++
+                    // Check for ++ or +=
                     if (_position + 1 < _code.Length && _code[_position + 1] == '+')
                     {
                         tokens.Add(new Token(TokenType.Increment, "++", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.PlusAssign, "+=", _position, tokenLine, tokenColumn));
                         Advance();
                         Advance();
                     }
@@ -271,10 +277,16 @@ public class Lexer
                     }
                     break;
                 case '-':
-                    // Check for --
+                    // Check for -- or -=
                     if (_position + 1 < _code.Length && _code[_position + 1] == '-')
                     {
                         tokens.Add(new Token(TokenType.Decrement, "--", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.MinusAssign, "-=", _position, tokenLine, tokenColumn));
                         Advance();
                         Advance();
                     }
@@ -285,11 +297,21 @@ public class Lexer
                     }
                     break;
                 case '*':
-                    tokens.Add(new Token(TokenType.Multiply, "*", _position, tokenLine, tokenColumn));
-                    Advance();
+                    // Check for *=
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.MultiplyAssign, "*=", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else
+                    {
+                        tokens.Add(new Token(TokenType.Multiply, "*", _position, tokenLine, tokenColumn));
+                        Advance();
+                    }
                     break;
                 case '/':
-                    // Check for comments
+                    // Check for comments first
                     if (_position + 1 < _code.Length)
                     {
                         var nextChar = _code[_position + 1];
@@ -304,6 +326,14 @@ public class Lexer
                             // Multi-line comment
                             SkipMultiLineComment();
                             continue;
+                        }
+                        else if (nextChar == '=')
+                        {
+                            // /= operator
+                            tokens.Add(new Token(TokenType.DivideAssign, "/=", _position, tokenLine, tokenColumn));
+                            Advance();
+                            Advance();
+                            break;
                         }
                     }
                     
@@ -340,7 +370,14 @@ public class Lexer
                     Advance();
                     break;
                 case '=':
-                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    if (_position + 2 < _code.Length && _code[_position + 1] == '=' && _code[_position + 2] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.StrictEqual, "===", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                        Advance();
+                    }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '=')
                     {
                         tokens.Add(new Token(TokenType.Equal, "==", _position, tokenLine, tokenColumn));
                         Advance();
@@ -353,7 +390,14 @@ public class Lexer
                     }
                     break;
                 case '!':
-                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    if (_position + 2 < _code.Length && _code[_position + 1] == '=' && _code[_position + 2] == '=')
+                    {
+                        tokens.Add(new Token(TokenType.StrictNotEqual, "!==", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                        Advance();
+                    }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '=')
                     {
                         tokens.Add(new Token(TokenType.NotEqual, "!=", _position, tokenLine, tokenColumn));
                         Advance();
@@ -366,7 +410,13 @@ public class Lexer
                     }
                     break;
                 case '<':
-                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    if (_position + 1 < _code.Length && _code[_position + 1] == '<')
+                    {
+                        tokens.Add(new Token(TokenType.LeftShift, "<<", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '=')
                     {
                         tokens.Add(new Token(TokenType.LessThanOrEqual, "<=", _position, tokenLine, tokenColumn));
                         Advance();
@@ -379,7 +429,20 @@ public class Lexer
                     }
                     break;
                 case '>':
-                    if (_position + 1 < _code.Length && _code[_position + 1] == '=')
+                    if (_position + 2 < _code.Length && _code[_position + 1] == '>' && _code[_position + 2] == '>')
+                    {
+                        tokens.Add(new Token(TokenType.UnsignedRightShift, ">>>", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                        Advance();
+                    }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '>')
+                    {
+                        tokens.Add(new Token(TokenType.RightShift, ">>", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '=')
                     {
                         tokens.Add(new Token(TokenType.GreaterThanOrEqual, ">=", _position, tokenLine, tokenColumn));
                         Advance();
@@ -400,7 +463,8 @@ public class Lexer
                     }
                     else
                     {
-                        throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
+                        tokens.Add(new Token(TokenType.BitwiseAnd, "&", _position, tokenLine, tokenColumn));
+                        Advance();
                     }
                     break;
                 case '|':
@@ -412,8 +476,21 @@ public class Lexer
                     }
                     else
                     {
-                        throw new Exception($"Unexpected character: {_currentChar} at line {_line}, column {_column}");
+                        tokens.Add(new Token(TokenType.BitwiseOr, "|", _position, tokenLine, tokenColumn));
+                        Advance();
                     }
+                    break;
+                case '^':
+                    tokens.Add(new Token(TokenType.BitwiseXor, "^", _position, tokenLine, tokenColumn));
+                    Advance();
+                    break;
+                case '~':
+                    tokens.Add(new Token(TokenType.BitwiseNot, "~", _position, tokenLine, tokenColumn));
+                    Advance();
+                    break;
+                case '?':
+                    tokens.Add(new Token(TokenType.Question, "?", _position, tokenLine, tokenColumn));
+                    Advance();
                     break;
                 case ':':
                     tokens.Add(new Token(TokenType.Colon, ":", _position, tokenLine, tokenColumn));

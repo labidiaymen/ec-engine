@@ -121,6 +121,22 @@ public class UnaryExpression : Expression
     }
 }
 
+// Conditional expression node (ternary operator: condition ? trueExpr : falseExpr)
+public class ConditionalExpression : Expression
+{
+    public Expression Test { get; }
+    public Expression Consequent { get; }
+    public Expression Alternate { get; }
+    
+    public ConditionalExpression(Expression test, Expression consequent, Expression alternate, Token? token = null)
+    {
+        Test = test;
+        Consequent = consequent;
+        Alternate = alternate;
+        Token = token;
+    }
+}
+
 // Call expression node (e.g., function calls)
 public class CallExpression : Expression
 {
@@ -172,6 +188,22 @@ public class AssignmentExpression : Expression
     public AssignmentExpression(Identifier left, Expression right, Token? token = null)
     {
         Left = left;
+        Right = right;
+        Token = token;
+    }
+}
+
+// Compound assignment expression node (e.g., x += 5, y *= 2)
+public class CompoundAssignmentExpression : Expression
+{
+    public Identifier Left { get; }
+    public string Operator { get; }  // +=, -=, *=, /=
+    public Expression Right { get; }
+    
+    public CompoundAssignmentExpression(Identifier left, string op, Expression right, Token? token = null)
+    {
+        Left = left;
+        Operator = op;
         Right = right;
         Token = token;
     }

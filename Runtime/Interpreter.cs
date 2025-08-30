@@ -252,6 +252,10 @@ public class Interpreter
             return EvaluateIdentifier(identifier);
         if (node is AssignmentExpression assignment)
             return EvaluateAssignmentExpression(assignment);
+        if (node is CompoundAssignmentExpression compoundAssignment)
+            return EvaluateCompoundAssignmentExpression(compoundAssignment);
+        if (node is ConditionalExpression conditional)
+            return EvaluateConditionalExpression(conditional);
         if (node is BinaryExpression binary)
             return EvaluateBinaryExpression(binary);
         if (node is UnaryExpression unary)
@@ -384,6 +388,79 @@ public class Interpreter
         return value;
     }
 
+    private object? EvaluateCompoundAssignmentExpression(CompoundAssignmentExpression assignment)
+    {
+        var variableInfo = FindVariable(assignment.Left.Name);
+        if (variableInfo == null)
+        {
+            var token = assignment.Token;
+            throw new ECEngineException($"Variable '{assignment.Left.Name}' is not defined",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "Cannot perform compound assignment on undefined variable");
+        }
+
+        var oldValue = variableInfo.Value;
+        var rightValue = Evaluate(assignment.Right, _sourceCode);  // Evaluate right side first
+
+        // Create the binary operation
+        var binaryOp = assignment.Operator[..^1]; // Remove '=' from operator (e.g., "+=" -> "+")
+        var value = EvaluateCompoundOperation(oldValue, rightValue, binaryOp, assignment.Token);
+
+        SetVariable(assignment.Left.Name, value);
+        
+        // Trigger observers if value changed
+        if (!Equals(oldValue, value))
+        {
+            TriggerObservers(assignment.Left.Name, oldValue, value, variableInfo.Observers);
+        }
+        
+        return value;
+    }
+
+    private object? EvaluateConditionalExpression(ConditionalExpression conditional)
+    {
+        var testValue = Evaluate(conditional.Test, _sourceCode);
+        
+        if (IsTruthy(testValue))
+        {
+            return Evaluate(conditional.Consequent, _sourceCode);
+        }
+        else
+        {
+            return Evaluate(conditional.Alternate, _sourceCode);
+        }
+    }
+
+    private object? EvaluateCompoundOperation(object? left, object? right, string op, Token? token)
+    {
+        // Handle string concatenation for +=
+        if (op == "+" && (left is string || right is string))
+        {
+            var leftStr = left?.ToString() ?? "null";
+            var rightStr = right?.ToString() ?? "null";
+            return leftStr + rightStr;
+        }
+
+        // Handle numeric operations
+        if (left is double leftNum && right is double rightNum)
+        {
+            return op switch
+            {
+                "+" => leftNum + rightNum,
+                "-" => leftNum - rightNum,
+                "*" => leftNum * rightNum,
+                "/" => leftNum / rightNum,
+                _ => throw new ECEngineException($"Unknown compound operator: {op}",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"The compound operator '{op}=' is not supported")
+            };
+        }
+
+        throw new ECEngineException($"Cannot perform {op}= on {left?.GetType().Name} and {right?.GetType().Name}",
+            token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+            "Type mismatch in compound assignment operation");
+    }
+
     private object? EvaluateBinaryExpression(BinaryExpression binary)
     {
         var left = Evaluate(binary.Left, _sourceCode);
@@ -396,6 +473,10 @@ public class Interpreter
                 return AreEqual(left, right);
             case "!=":
                 return !AreEqual(left, right);
+            case "===":
+                return IsStrictEqual(left, right);
+            case "!==":
+                return !IsStrictEqual(left, right);
             case "<":
                 return IsLessThan(left, right);
             case "<=":
@@ -428,6 +509,26 @@ public class Interpreter
             throw new ECEngineException($"Cannot perform + on {left?.GetType().Name} and {right?.GetType().Name}",
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
                 "The + operator can only be used for string concatenation or numeric addition");
+        }
+
+        // Handle bitwise operators (convert values to integers for bitwise operations)
+        if (IsBitwiseOperator(binary.Operator))
+        {
+            var leftInt = ConvertToInt(left);
+            var rightInt = ConvertToInt(right);
+            
+            return binary.Operator switch
+            {
+                "&" => (double)(leftInt & rightInt),
+                "|" => (double)(leftInt | rightInt),
+                "^" => (double)(leftInt ^ rightInt),
+                "<<" => (double)(leftInt << (rightInt & 0x1F)), // Mask to 5 bits like JavaScript
+                ">>" => (double)(leftInt >> (rightInt & 0x1F)),
+                ">>>" => (double)((uint)leftInt >> (rightInt & 0x1F)), // Unsigned right shift
+                _ => throw new ECEngineException($"Unknown bitwise operator: {binary.Operator}",
+                    binary.Token?.Line ?? 1, binary.Token?.Column ?? 1, _sourceCode,
+                    $"The bitwise operator '{binary.Operator}' is not supported")
+            };
         }
 
         // Handle other arithmetic operators (numbers only)
@@ -479,6 +580,10 @@ public class Interpreter
                 
             case "--":
                 return EvaluateIncrementDecrement(unary, false);
+                
+            case "~":
+                var intValue = ConvertToInt(operand);
+                return (double)(~intValue);
                 
             default:
                 throw new ECEngineException($"Unknown unary operator: {unary.Operator}",
@@ -1833,6 +1938,42 @@ public class Interpreter
             .Replace("\f", "\\f")   // Form feed
             .Replace("\v", "\\v")   // Vertical tab
             .Replace("\0", "\\0");  // Null character
+    }
+
+    /// <summary>
+    /// Check if two values are strictly equal (===)
+    /// </summary>
+    private bool IsStrictEqual(object? left, object? right)
+    {
+        // Strict equality: same type and same value
+        if (left == null && right == null) return true;
+        if (left == null || right == null) return false;
+        if (left.GetType() != right.GetType()) return false;
+        return left.Equals(right);
+    }
+
+    /// <summary>
+    /// Check if an operator is a bitwise operator
+    /// </summary>
+    private bool IsBitwiseOperator(string op)
+    {
+        return op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>" || op == ">>>";
+    }
+
+    /// <summary>
+    /// Convert a value to integer for bitwise operations (JavaScript-like conversion)
+    /// </summary>
+    private int ConvertToInt(object? value)
+    {
+        return value switch
+        {
+            double d => (int)d,
+            int i => i,
+            bool b => b ? 1 : 0,
+            null => 0,
+            string s => int.TryParse(s, out var result) ? result : 0,
+            _ => 0
+        };
     }
 }
 
