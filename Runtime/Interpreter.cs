@@ -306,6 +306,7 @@ public class Interpreter
             "nextTick" => _eventLoop != null ? new NextTickFunction(_eventLoop, this) : null,
             "http" => _eventLoop != null ? new HttpModule(_eventLoop, this) : null,
             "createServer" => _eventLoop != null ? new CreateServerFunction(_eventLoop, this) : null,
+            "Date" => (object?)new DateModule(),
             _ => null
         };
 
@@ -582,6 +583,57 @@ public class Interpreter
             return httpModule.CreateServer;
         }
         
+        // Handle Date static methods
+        if (obj is DateModule dateModule)
+        {
+            return member.Property switch
+            {
+                "now" => dateModule.Now,
+                "parse" => dateModule.Parse,
+                "UTC" => dateModule.UTC,
+                _ => throw new ECEngineException($"Property {member.Property} not found on Date",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the Date object")
+            };
+        }
+        
+        // Handle Date instance methods
+        if (obj is DateObject dateObj)
+        {
+            return member.Property switch
+            {
+                "getTime" => new DateMethodFunction(dateObj, "getTime"),
+                "getFullYear" => new DateMethodFunction(dateObj, "getFullYear"),
+                "getMonth" => new DateMethodFunction(dateObj, "getMonth"),
+                "getDate" => new DateMethodFunction(dateObj, "getDate"),
+                "getDay" => new DateMethodFunction(dateObj, "getDay"),
+                "getHours" => new DateMethodFunction(dateObj, "getHours"),
+                "getMinutes" => new DateMethodFunction(dateObj, "getMinutes"),
+                "getSeconds" => new DateMethodFunction(dateObj, "getSeconds"),
+                "getMilliseconds" => new DateMethodFunction(dateObj, "getMilliseconds"),
+                "getUTCFullYear" => new DateMethodFunction(dateObj, "getUTCFullYear"),
+                "getUTCMonth" => new DateMethodFunction(dateObj, "getUTCMonth"),
+                "getUTCDate" => new DateMethodFunction(dateObj, "getUTCDate"),
+                "getUTCDay" => new DateMethodFunction(dateObj, "getUTCDay"),
+                "getUTCHours" => new DateMethodFunction(dateObj, "getUTCHours"),
+                "getUTCMinutes" => new DateMethodFunction(dateObj, "getUTCMinutes"),
+                "getUTCSeconds" => new DateMethodFunction(dateObj, "getUTCSeconds"),
+                "getUTCMilliseconds" => new DateMethodFunction(dateObj, "getUTCMilliseconds"),
+                "toString" => new DateMethodFunction(dateObj, "toString"),
+                "toDateString" => new DateMethodFunction(dateObj, "toDateString"),
+                "toTimeString" => new DateMethodFunction(dateObj, "toTimeString"),
+                "toISOString" => new DateMethodFunction(dateObj, "toISOString"),
+                "toUTCString" => new DateMethodFunction(dateObj, "toUTCString"),
+                "toLocaleDateString" => new DateMethodFunction(dateObj, "toLocaleDateString"),
+                "toLocaleTimeString" => new DateMethodFunction(dateObj, "toLocaleTimeString"),
+                "toLocaleString" => new DateMethodFunction(dateObj, "toLocaleString"),
+                "valueOf" => new DateMethodFunction(dateObj, "valueOf"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on Date instance",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the Date instance")
+            };
+        }
+        
         if (obj is ServerObject serverObj)
         {
             return member.Property switch
@@ -741,6 +793,38 @@ public class Interpreter
         if (function is ResponseWrapperFunction responseWrapperFunc)
         {
             return responseWrapperFunc.Call(arguments);
+        }
+
+        // Handle Date functions
+        if (function is DateModule dateModuleAsFunc)
+        {
+            // Date() called as function (same as new Date())
+            return dateModuleAsFunc.Constructor.Call(arguments);
+        }
+
+        if (function is DateConstructorFunction dateConstructorFunc)
+        {
+            return dateConstructorFunc.Call(arguments);
+        }
+
+        if (function is DateNowFunction dateNowFunc)
+        {
+            return dateNowFunc.Call(arguments);
+        }
+
+        if (function is DateParseFunction dateParseFunc)
+        {
+            return dateParseFunc.Call(arguments);
+        }
+
+        if (function is DateUTCFunction dateUTCFunc)
+        {
+            return dateUTCFunc.Call(arguments);
+        }
+
+        if (function is DateMethodFunction dateMethodFunc)
+        {
+            return dateMethodFunc.Call(arguments);
         }
 
         if (function is Function userFunction)
@@ -986,9 +1070,27 @@ public class Interpreter
             // Capture the observer in a closure for async execution
             var currentObserver = observer;
             
-            // Schedule observer execution on next tick to make it non-blocking
-            _eventLoop.NextTick(() =>
+            // Schedule observer execution on next tick to make it non-blocking (if event loop is available)
+            if (_eventLoop != null)
             {
+                _eventLoop.NextTick(() =>
+                {
+                    try
+                    {
+                        // Call observer with oldValue, newValue, and variableName as arguments
+                        var arguments = new List<object?> { oldValue, newValue, variableName };
+                        CallUserFunction(currentObserver, arguments);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log observer error but don't stop execution
+                        Console.WriteLine($"Warning: Observer for variable '{variableName}' threw an error: {ex.Message}");
+                    }
+                });
+            }
+            else
+            {
+                // If no event loop, execute synchronously
                 try
                 {
                     // Call observer with oldValue, newValue, and variableName as arguments
@@ -1000,7 +1102,7 @@ public class Interpreter
                     // Log observer error but don't stop execution
                     Console.WriteLine($"Warning: Observer for variable '{variableName}' threw an error: {ex.Message}");
                 }
-            });
+            }
         }
     }
 

@@ -203,7 +203,15 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ `clearTimeout()` - Timer cancellation (basic implementation)
 - ✅ `clearInterval()` - Interval cancellation (basic implementation)
 - ✅ `nextTick()` - Next event loop tick scheduling
-- ❌ Global objects (`Math`, `Date`, `JSON`, etc.)
+- ✅ `Date` object with full JavaScript Date API compatibility
+  - ✅ `Date()` constructor (current time, milliseconds, date string, year/month/day)
+  - ✅ `Date.now()` static method
+  - ✅ `Date.parse()` static method  
+  - ✅ `Date.UTC()` static method
+  - ✅ Instance methods: `getTime()`, `getFullYear()`, `getMonth()`, `getDate()`, etc.
+  - ✅ UTC methods: `getUTCFullYear()`, `getUTCMonth()`, `getUTCDate()`, etc.
+  - ✅ String methods: `toString()`, `toISOString()`, `toDateString()`, etc.
+- ❌ Global objects (`Math`, `JSON`, etc.)
 - ❌ Array methods
 - ❌ String methods
 - ❌ Object methods
