@@ -62,6 +62,8 @@ ECEngine/
 - **Complete ECMAScript Support**
   - Variable declarations (`var`, `let`, `const`)
   - All data types (numbers, strings, booleans, undefined)
+  - Array literals and methods (`push`, `pop`, `slice`, `join`, `indexOf`)
+  - Array indexing and nested arrays
   - Arithmetic and assignment expressions
   - Function declarations and calls
   - Anonymous and higher-order functions
@@ -98,7 +100,7 @@ ECEngine/
 
 ### 🔄 Planned Enhancements
 - Control flow statements (loops, switch)
-- Object and array literal support
+- ✅ Object and array literal support
 - Advanced error handling (try/catch)
 - Default exports and imports
 - More reactive programming patterns
@@ -172,6 +174,28 @@ function greet(name) {
 // Expressions
 var result = x * 2 + 10;
 console.log(greet("ECEngine"));
+```
+
+### Array Support
+```javascript
+// Array literals and basic operations
+var numbers = [1, 2, 3, 4, 5];
+var mixed = [42, "hello", true, null];
+
+// Array indexing
+console.log(numbers[0]);     // 1
+console.log(numbers.length); // 5
+
+// Array methods
+numbers.push(6);             // Returns new length: 6
+var last = numbers.pop();    // Returns removed element: 6
+var subset = numbers.slice(1, 3); // [2, 3]
+var joined = numbers.join(", ");   // "1, 2, 3, 4, 5"
+var index = numbers.indexOf(3);    // 2
+
+// Nested arrays
+var matrix = [[1, 2], [3, 4]];
+console.log(matrix[1][0]);   // 3
 ```
 
 ### Observe Pattern (Reactive Programming)

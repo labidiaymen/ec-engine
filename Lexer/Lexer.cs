@@ -357,6 +357,14 @@ public class Lexer
                     tokens.Add(new Token(TokenType.RightBrace, "}", _position, tokenLine, tokenColumn));
                     Advance();
                     break;
+                case '[':
+                    tokens.Add(new Token(TokenType.LeftBracket, "[", _position, tokenLine, tokenColumn));
+                    Advance();
+                    break;
+                case ']':
+                    tokens.Add(new Token(TokenType.RightBracket, "]", _position, tokenLine, tokenColumn));
+                    Advance();
+                    break;
                 case ';':
                     tokens.Add(new Token(TokenType.Semicolon, ";", _position, tokenLine, tokenColumn));
                     Advance();

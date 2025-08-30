@@ -346,18 +346,29 @@ public partial class Parser
     }
 
     /// <summary>
-    /// Parse member access expressions (obj.property)
+    /// Parse member access expressions (dot notation and bracket notation)
     /// </summary>
     private Expression ParseMember()
     {
         var expression = ParsePrimary();
 
-        while (_currentToken.Type == TokenType.Dot)
+        while (_currentToken.Type == TokenType.Dot || _currentToken.Type == TokenType.LeftBracket)
         {
-            var token = _currentToken;
-            Advance(); // consume '.'
-            var property = Consume(TokenType.Identifier, "Expected property name after '.'");
-            expression = new MemberExpression(expression, property.Value, token);
+            if (_currentToken.Type == TokenType.Dot)
+            {
+                var token = _currentToken;
+                Advance(); // consume '.'
+                var property = Consume(TokenType.Identifier, "Expected property name after '.'");
+                expression = new MemberExpression(expression, property.Value, token);
+            }
+            else if (_currentToken.Type == TokenType.LeftBracket)
+            {
+                var token = _currentToken;
+                Advance(); // consume '['
+                var propertyExpr = ParseExpression();
+                Consume(TokenType.RightBracket, "Expected ']' after computed property");
+                expression = new MemberExpression(expression, propertyExpr, token);
+            }
         }
 
         return expression;
@@ -421,6 +432,11 @@ public partial class Parser
         if (_currentToken.Type == TokenType.LeftBrace)
         {
             return ParseObjectLiteral();
+        }
+
+        if (_currentToken.Type == TokenType.LeftBracket)
+        {
+            return ParseArrayLiteral();
         }
 
         if (_currentToken.Type == TokenType.LeftParen)
@@ -507,5 +523,56 @@ public partial class Parser
         Consume(TokenType.RightBrace, "Expected '}' to close object literal");
         
         return new ObjectLiteral(properties, startToken);
+    }
+
+    /// <summary>
+    /// Parse array literal expressions [ element1, element2, ... ]
+    /// </summary>
+    private Expression ParseArrayLiteral()
+    {
+        var startToken = _currentToken;
+        Consume(TokenType.LeftBracket, "Expected '['");
+        
+        var elements = new List<Expression>();
+        
+        // Handle empty array []
+        if (_currentToken.Type == TokenType.RightBracket)
+        {
+            Advance();
+            return new ArrayLiteral(elements, startToken);
+        }
+        
+        // Parse array elements
+        do
+        {
+            // Parse array element
+            var element = ParseExpression();
+            elements.Add(element);
+            
+            // Check for comma or end
+            if (_currentToken.Type == TokenType.Comma)
+            {
+                Advance();
+                // Allow trailing comma
+                if (_currentToken.Type == TokenType.RightBracket)
+                {
+                    break;
+                }
+            }
+            else if (_currentToken.Type == TokenType.RightBracket)
+            {
+                break;
+            }
+            else
+            {
+                throw new ECEngineException("Expected ',' or ']' after array element",
+                    _currentToken.Line, _currentToken.Column, _sourceCode,
+                    "Invalid array literal syntax");
+            }
+        } while (_currentToken.Type != TokenType.RightBracket && _currentToken.Type != TokenType.EOF);
+        
+        Consume(TokenType.RightBracket, "Expected ']' to close array literal");
+        
+        return new ArrayLiteral(elements, startToken);
     }
 }

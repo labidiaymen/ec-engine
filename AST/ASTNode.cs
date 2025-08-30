@@ -80,6 +80,17 @@ public class ObjectProperty : ASTNode
     }
 }
 
+// Array literal node
+public class ArrayLiteral : Expression
+{
+    public List<Expression> Elements { get; }
+    public ArrayLiteral(List<Expression> elements, Token? token = null)
+    {
+        Elements = elements;
+        Token = token;
+    }
+}
+
 // Identifier node
 public class Identifier : Expression
 {
@@ -342,16 +353,31 @@ public class OtherwiseStatement : Statement
     }
 }
 
-// Member access expression node (e.g., changes.x.old)
+// Member access expression node (e.g., obj.prop or obj[key])
 public class MemberExpression : Expression
 {
     public Expression Object { get; }
     public string Property { get; }
+    public Expression? ComputedProperty { get; }
+    public bool Computed { get; }
     
+    // For dot notation: obj.prop
     public MemberExpression(Expression objectExpr, string property, Token? token = null)
     {
         Object = objectExpr;
         Property = property;
+        ComputedProperty = null;
+        Computed = false;
+        Token = token;
+    }
+    
+    // For bracket notation: obj[key]
+    public MemberExpression(Expression objectExpr, Expression property, Token? token = null)
+    {
+        Object = objectExpr;
+        Property = "";
+        ComputedProperty = property;
+        Computed = true;
         Token = token;
     }
 }

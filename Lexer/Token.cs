@@ -14,6 +14,8 @@ public enum TokenType
     RightParen,
     LeftBrace,
     RightBrace,
+    LeftBracket,
+    RightBracket,
     Semicolon,
     Dot,
     Comma,          // ,

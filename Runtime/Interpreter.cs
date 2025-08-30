@@ -248,6 +248,8 @@ public class Interpreter
             return null;
         if (node is ObjectLiteral objectLiteral)
             return EvaluateObjectLiteral(objectLiteral);
+        if (node is ArrayLiteral arrayLiteral)
+            return EvaluateArrayLiteral(arrayLiteral);
         if (node is Identifier identifier)
             return EvaluateIdentifier(identifier);
         if (node is AssignmentExpression assignment)
@@ -287,6 +289,19 @@ public class Interpreter
         {
             var value = Evaluate(property.Value);
             result[property.Key] = value;
+        }
+        
+        return result;
+    }
+
+    private object? EvaluateArrayLiteral(ArrayLiteral arrayLiteral)
+    {
+        var result = new List<object?>();
+        
+        foreach (var element in arrayLiteral.Elements)
+        {
+            var value = Evaluate(element);
+            result.Add(value);
         }
         
         return result;
@@ -682,6 +697,64 @@ public class Interpreter
     {
         var obj = Evaluate(member.Object, _sourceCode);
 
+        // Handle computed properties (array indexing and dynamic object access)
+        if (member.Computed && member.ComputedProperty != null)
+        {
+            var key = Evaluate(member.ComputedProperty, _sourceCode);
+            
+            // Handle array indexing
+            if (obj is List<object?> list)
+            {
+                if (key is double index)
+                {
+                    var intIndex = (int)index;
+                    if (intIndex >= 0 && intIndex < list.Count)
+                    {
+                        return list[intIndex];
+                    }
+                    return null; // Out of bounds returns undefined in JavaScript
+                }
+                throw new ECEngineException("Array index must be a number",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    "Only numeric indices are allowed for array access");
+            }
+            
+            // Handle dictionary/object property access with computed key
+            if (obj is Dictionary<string, object?> objDict)
+            {
+                var keyStr = key?.ToString() ?? "";
+                return objDict.ContainsKey(keyStr) ? objDict[keyStr] : null;
+            }
+            
+            throw new ECEngineException($"Cannot access property on {obj?.GetType().Name}",
+                member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                "Computed property access is only supported on arrays and objects");
+        }
+
+        // Handle array properties and methods (for dot notation on arrays)
+        if (obj is List<object?> array && !member.Computed)
+        {
+            return member.Property switch
+            {
+                "length" => (double)array.Count,
+                "push" => new ArrayMethodFunction(array, "push"),
+                "pop" => new ArrayMethodFunction(array, "pop"),
+                "shift" => new ArrayMethodFunction(array, "shift"),
+                "unshift" => new ArrayMethodFunction(array, "unshift"),
+                "slice" => new ArrayMethodFunction(array, "slice"),
+                "splice" => new ArrayMethodFunction(array, "splice"),
+                "join" => new ArrayMethodFunction(array, "join"),
+                "concat" => new ArrayMethodFunction(array, "concat"),
+                "indexOf" => new ArrayMethodFunction(array, "indexOf"),
+                "lastIndexOf" => new ArrayMethodFunction(array, "lastIndexOf"),
+                "reverse" => new ArrayMethodFunction(array, "reverse"),
+                "sort" => new ArrayMethodFunction(array, "sort"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on Array",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on arrays")
+            };
+        }
+
         if (obj is ConsoleObject && member.Property == "log")
         {
             return new ConsoleLogFunction();
@@ -998,6 +1071,11 @@ public class Interpreter
         if (function is JsonMethodFunction jsonMethodFunc)
         {
             return jsonMethodFunc.Call(arguments);
+        }
+
+        if (function is ArrayMethodFunction arrayMethodFunc)
+        {
+            return arrayMethodFunc.Call(arguments);
         }
 
         if (function is Function userFunction)
