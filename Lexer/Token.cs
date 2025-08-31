@@ -81,6 +81,7 @@ public enum TokenType
     Of,             // of keyword (for...of loops)
     As,             // as keyword (for export renaming)
     Yield,          // yield keyword (for generator functions)
+    New,            // new keyword
     Colon,          // :
     
     // Template literal tokens

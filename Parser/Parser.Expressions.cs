@@ -365,6 +365,35 @@ public partial class Parser
     /// </summary>
     private Expression ParseUnary()
     {
+        // Handle new operator
+        if (_currentToken.Type == TokenType.New)
+        {
+            var token = _currentToken;
+            Advance();
+            var callee = ParseMember(); // Parse the constructor function
+            
+            // Check if there are arguments (parentheses)
+            var arguments = new List<Expression>();
+            if (_currentToken.Type == TokenType.LeftParen)
+            {
+                Advance(); // consume '('
+                
+                if (_currentToken.Type != TokenType.RightParen)
+                {
+                    arguments.Add(ParseExpression());
+                    while (_currentToken.Type == TokenType.Comma)
+                    {
+                        Advance(); // consume ','
+                        arguments.Add(ParseExpression());
+                    }
+                }
+                
+                Consume(TokenType.RightParen, "Expected ')' after arguments");
+            }
+            
+            return new NewExpression(callee, arguments, token);
+        }
+
         // Handle prefix unary operators
         if (_currentToken.Type == TokenType.LogicalNot ||
             _currentToken.Type == TokenType.Increment ||

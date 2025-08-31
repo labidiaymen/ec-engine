@@ -258,6 +258,20 @@ public class CallExpression : Expression
     }
 }
 
+// New expression node (e.g., new Object(), new Array())
+public class NewExpression : Expression
+{
+    public Expression Callee { get; }
+    public List<Expression> Arguments { get; }
+    
+    public NewExpression(Expression callee, List<Expression> arguments, Token? token = null)
+    {
+        Callee = callee;
+        Arguments = arguments;
+        Token = token;
+    }
+}
+
 // Expression statement node
 public class ExpressionStatement : Statement
 {

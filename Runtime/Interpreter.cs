@@ -337,6 +337,8 @@ public class Interpreter
             return EvaluateDynamicImportExpression(dynamicImport);
         if (node is CallExpression call)
             return EvaluateCallExpression(call);
+        if (node is NewExpression newExpr)
+            return EvaluateNewExpression(newExpr);
 
         throw new ECEngineException($"Unknown node type: {node.GetType().Name}",
             1, 1, _sourceCode, "Unsupported AST node encountered during evaluation");
@@ -553,6 +555,9 @@ public class Interpreter
             "JSON" => (object?)new JsonModule(),
             "String" => (object?)new StringModule(),
             "Object" => (object?)new ObjectModule(),
+            "Array" => (object?)"Array", // Constructor name for new operator
+            "Number" => (object?)"Number", // Constructor name for new operator
+            "Boolean" => (object?)"Boolean", // Constructor name for new operator
             "EventEmitter" => (object?)new EventEmitterModule(),
             "util" => (object?)new Runtime.UtilModule(),
             _ => null
@@ -1981,6 +1986,101 @@ public class Interpreter
         throw new ECEngineException($"Cannot call {function?.GetType().Name}",
             token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
             "Attempted to call a non-function value");
+    }
+
+    /// <summary>
+    /// Evaluates a new expression (constructor call)
+    /// </summary>
+    private object? EvaluateNewExpression(NewExpression newExpr)
+    {
+        var constructor = Evaluate(newExpr.Callee, _sourceCode);
+        var arguments = newExpr.Arguments.Select(arg => Evaluate(arg, _sourceCode)).ToList();
+        
+        // Handle identifier-based constructor names
+        string? constructorName = null;
+        if (newExpr.Callee is Identifier identifier)
+        {
+            constructorName = identifier.Name;
+        }
+        
+        // Handle string constructor names (for Array, Number, Boolean)
+        if (constructor is string strConstructor)
+        {
+            constructorName = strConstructor;
+        }
+        
+        // Handle module objects as constructors
+        if (constructor is ObjectModule)
+        {
+            constructorName = "Object";
+        }
+        else if (constructor is StringModule)
+        {
+            constructorName = "String";
+        }
+        
+        // Handle built-in constructors by name
+        if (constructorName != null)
+        {
+            switch (constructorName)
+            {
+                case "Object":
+                    if (arguments.Count == 0)
+                        return new Dictionary<string, object?>();
+                    return arguments[0]; // Object(value) returns the value
+                    
+                case "Array":
+                    if (arguments.Count == 0)
+                        return new List<object?>();
+                    if (arguments.Count == 1 && arguments[0] is double length)
+                        return new List<object?>(new object?[(int)length]);
+                    return arguments.ToList();
+                    
+                case "Date":
+                    if (arguments.Count == 0)
+                        return DateTime.Now;
+                    // Add more Date constructor logic as needed
+                    return DateTime.Now;
+                    
+                case "String":
+                    if (arguments.Count == 0)
+                        return "";
+                    return arguments[0]?.ToString() ?? "";
+                    
+                case "Number":
+                    if (arguments.Count == 0)
+                        return 0.0;
+                    // Simple number conversion - just try to parse as double
+                    if (arguments[0] is double num) return num;
+                    if (double.TryParse(arguments[0]?.ToString(), out var parsed)) return parsed;
+                    return double.NaN;
+                    
+                case "Boolean":
+                    if (arguments.Count == 0)
+                        return false;
+                    return IsTruthy(arguments[0]);
+                    
+                default:
+                    // For unknown constructor names, check if it's a user-defined function
+                    if (constructor is Function constructorFunc)
+                    {
+                        return CallUserFunction(constructorFunc, arguments);
+                    }
+                    throw new ECEngineException($"Constructor not found: {constructorName}",
+                        newExpr.Token?.Line ?? 1, newExpr.Token?.Column ?? 1, _sourceCode,
+                        $"Cannot find constructor '{constructorName}'");
+            }
+        }
+        
+        // Handle function constructors
+        if (constructor is Function constructorFunc2)
+        {
+            return CallUserFunction(constructorFunc2, arguments);
+        }
+        
+        throw new ECEngineException($"'{constructor?.GetType().Name}' is not a constructor",
+            newExpr.Token?.Line ?? 1, newExpr.Token?.Column ?? 1, _sourceCode,
+            "Cannot use 'new' with non-constructor value");
     }
 
     private object? EvaluateFunctionDeclaration(FunctionDeclaration funcDecl)
