@@ -10,14 +10,26 @@ namespace ECEngine.Parser;
 public partial class Parser
 {
     /// <summary>
-    /// Parse an export statement: export var x = 5; or export function foo() {}
+    /// Parse an export statement: export var x = 5; or export function foo() {} or export default ... or export { ... }
     /// </summary>
-    private ExportStatement ParseExportStatement()
+    private Statement ParseExportStatement()
     {
         var token = _currentToken;
         Consume(TokenType.Export, "Expected 'export'");
         
-        // Parse the declaration that follows export
+        // Check for default export
+        if (_currentToken.Type == TokenType.Default)
+        {
+            return ParseDefaultExportStatement(token);
+        }
+        
+        // Check for named export
+        if (_currentToken.Type == TokenType.LeftBrace)
+        {
+            return ParseNamedExportStatement(token);
+        }
+        
+        // Regular export with declaration
         Statement declaration;
         
         if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
@@ -30,12 +42,92 @@ public partial class Parser
         }
         else
         {
-            throw new ECEngineException("Expected variable declaration or function declaration after 'export'",
+            throw new ECEngineException("Expected variable declaration, function declaration, 'default', or '{' after 'export'",
                 _currentToken.Line, _currentToken.Column, _sourceCode,
-                "Export statements must be followed by a declaration");
+                "Export statements must be followed by a declaration, 'default', or named exports");
         }
         
         return new ExportStatement(declaration, token);
+    }
+
+    /// <summary>
+    /// Parse a default export statement: export default function() {} or export default expression;
+    /// </summary>
+    private DefaultExportStatement ParseDefaultExportStatement(Token exportToken)
+    {
+        Consume(TokenType.Default, "Expected 'default'");
+        
+        ASTNode value;
+        
+        // Check if it's a function declaration
+        if (_currentToken.Type == TokenType.Function)
+        {
+            // For default exports, we can have anonymous functions
+            value = ParseDefaultExportFunction();
+        }
+        else
+        {
+            // Parse expression and consume semicolon
+            value = ParseExpression();
+            Match(TokenType.Semicolon); // Optional semicolon
+        }
+        
+        return new DefaultExportStatement(value, exportToken);
+    }
+
+    /// <summary>
+    /// Parse named export statement: export { name1, name2 as alias } [from "module"];
+    /// </summary>
+    private Statement ParseNamedExportStatement(Token exportToken)
+    {
+        Consume(TokenType.LeftBrace, "Expected '{'");
+        
+        var exportedNames = new List<NamedExport>();
+        
+        if (_currentToken.Type != TokenType.RightBrace)
+        {
+            do
+            {
+                var localName = Consume(TokenType.Identifier, "Expected identifier in export list").Value;
+                string? exportName = null;
+                
+                // Check for 'as' renaming
+                if (_currentToken.Type == TokenType.As)
+                {
+                    Advance(); // consume 'as'
+                    exportName = Consume(TokenType.Identifier, "Expected identifier after 'as'").Value;
+                }
+                
+                exportedNames.Add(new NamedExport(localName, exportName));
+                
+                if (_currentToken.Type == TokenType.Comma)
+                {
+                    Advance();
+                }
+                else
+                {
+                    break;
+                }
+            } while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF);
+        }
+        
+        Consume(TokenType.RightBrace, "Expected '}' after export list");
+        
+        // Check for 'from' clause (re-export)
+        if (_currentToken.Type == TokenType.From)
+        {
+            Advance(); // consume 'from'
+            var modulePath = Consume(TokenType.String, "Expected string literal for module path").Value;
+            Match(TokenType.Semicolon); // Optional semicolon
+            
+            return new ReExportStatement(exportedNames, modulePath, exportToken);
+        }
+        else
+        {
+            // Regular named export
+            Match(TokenType.Semicolon); // Optional semicolon
+            return new NamedExportStatement(exportedNames, exportToken);
+        }
     }
 
     /// <summary>
@@ -77,5 +169,44 @@ public partial class Parser
         Match(TokenType.Semicolon); // Optional semicolon
         
         return new ImportStatement(importedNames, modulePath, token);
+    }
+
+    /// <summary>
+    /// Parse function for default export - can be anonymous
+    /// </summary>
+    private FunctionDeclaration ParseDefaultExportFunction()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Function, "Expected 'function' keyword");
+        
+        string name;
+        // Check if there's a name after 'function' - if not, it's anonymous
+        if (_currentToken.Type == TokenType.Identifier)
+        {
+            name = Consume(TokenType.Identifier, "Expected function name").Value;
+        }
+        else
+        {
+            name = null; // Anonymous function
+        }
+        
+        Consume(TokenType.LeftParen, "Expected '(' after function");
+        
+        var parameters = new List<string>();
+        if (_currentToken.Type != TokenType.RightParen)
+        {
+            parameters.Add(Consume(TokenType.Identifier, "Expected parameter name").Value);
+            
+            while (Match(TokenType.Comma))
+            {
+                parameters.Add(Consume(TokenType.Identifier, "Expected parameter name").Value);
+            }
+        }
+        
+        Consume(TokenType.RightParen, "Expected ')' after parameters");
+        
+        var body = ParseBlockStatement().Body;
+        
+        return new FunctionDeclaration(name, parameters, body, token);
     }
 }

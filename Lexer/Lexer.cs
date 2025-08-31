@@ -333,6 +333,7 @@ public class Lexer
             "throw" => TokenType.Throw,
             "in" => TokenType.In,
             "of" => TokenType.Of,
+            "as" => TokenType.As,
             _ => TokenType.Identifier
         };
     }

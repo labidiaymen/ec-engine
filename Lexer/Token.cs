@@ -78,6 +78,7 @@ public enum TokenType
     Throw,          // throw keyword
     In,             // in keyword (for...in loops)
     Of,             // of keyword (for...of loops)
+    As,             // as keyword (for export renaming)
     Colon,          // :
     
     // Template literal tokens

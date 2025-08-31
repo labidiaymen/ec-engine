@@ -263,11 +263,11 @@ public class CompoundAssignmentExpression : Expression
 // Function declaration node (e.g., function add(a, b) { return a + b; })
 public class FunctionDeclaration : Statement
 {
-    public string Name { get; }
+    public string? Name { get; }
     public List<string> Parameters { get; }
     public List<Statement> Body { get; }
     
-    public FunctionDeclaration(string name, List<string> parameters, List<Statement> body, Token? token = null)
+    public FunctionDeclaration(string? name, List<string> parameters, List<Statement> body, Token? token = null)
     {
         Name = name;
         Parameters = parameters;
@@ -460,6 +460,57 @@ public class ImportStatement : Statement
     {
         ImportedNames = importedNames;
         ModulePath = modulePath;
+        Token = token;
+    }
+}
+
+// Default export statement node
+public class DefaultExportStatement : Statement
+{
+    public ASTNode Value { get; }  // Can be a function, class, expression, etc.
+    
+    public DefaultExportStatement(ASTNode value, Token? token = null)
+    {
+        Value = value;
+        Token = token;
+    }
+}
+
+// Named export with optional renaming
+public class NamedExport
+{
+    public string LocalName { get; }
+    public string? ExportName { get; }  // If null, same as LocalName
+    
+    public NamedExport(string localName, string? exportName = null)
+    {
+        LocalName = localName;
+        ExportName = exportName;
+    }
+}
+
+// Re-export statement node (export { name } from "./module")
+public class ReExportStatement : Statement
+{
+    public List<NamedExport> ExportedNames { get; }
+    public string ModulePath { get; }
+    
+    public ReExportStatement(List<NamedExport> exportedNames, string modulePath, Token? token = null)
+    {
+        ExportedNames = exportedNames;
+        ModulePath = modulePath;
+        Token = token;
+    }
+}
+
+// Named export statement node (export { name as newName })
+public class NamedExportStatement : Statement
+{
+    public List<NamedExport> ExportedNames { get; }
+    
+    public NamedExportStatement(List<NamedExport> exportedNames, Token? token = null)
+    {
+        ExportedNames = exportedNames;
         Token = token;
     }
 }

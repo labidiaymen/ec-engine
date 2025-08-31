@@ -208,6 +208,12 @@ public class Interpreter
             return EvaluateExportStatement(exportStmt);
         if (node is ImportStatement importStmt)
             return EvaluateImportStatement(importStmt);
+        if (node is DefaultExportStatement defaultExportStmt)
+            return EvaluateDefaultExportStatement(defaultExportStmt);
+        if (node is NamedExportStatement namedExportStmt)
+            return EvaluateNamedExportStatement(namedExportStmt);
+        if (node is ReExportStatement reExportStmt)
+            return EvaluateReExportStatement(reExportStmt);
         if (node is ObserveStatement observeStmt)
             return EvaluateObserveStatement(observeStmt);
         if (node is MultiObserveStatement multiObserveStmt)
@@ -1662,6 +1668,9 @@ public class Interpreter
         // Evaluate the declaration first
         var result = Evaluate(exportStmt.Declaration, _sourceCode);
         
+        // Sync variables from scopes to maintain backwards compatibility
+        SyncVariables();
+        
         // Extract the exported name and value
         if (exportStmt.Declaration is VariableDeclaration varDecl)
         {
@@ -1670,8 +1679,11 @@ public class Interpreter
         }
         else if (exportStmt.Declaration is FunctionDeclaration funcDecl)
         {
-            var value = _variables.ContainsKey(funcDecl.Name) ? _variables[funcDecl.Name].Value : null;
-            _exports[funcDecl.Name] = value;
+            var value = _variables.ContainsKey(funcDecl.Name ?? "") ? _variables[funcDecl.Name ?? ""].Value : null;
+            if (funcDecl.Name != null)
+            {
+                _exports[funcDecl.Name] = value;
+            }
         }
         
         return result;
@@ -1719,6 +1731,94 @@ public class Interpreter
         {
             var token = importStmt.Token;
             throw new ECEngineException($"Failed to import module '{importStmt.ModulePath}': {ex.Message}",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                ex.Message);
+        }
+    }
+
+    private object? EvaluateDefaultExportStatement(DefaultExportStatement defaultExportStmt)
+    {
+        // Evaluate the value to be exported
+        var result = Evaluate(defaultExportStmt.Value, _sourceCode);
+        
+        // Store as default export
+        _exports["default"] = result;
+        
+        return result;
+    }
+
+    private object? EvaluateNamedExportStatement(NamedExportStatement namedExportStmt)
+    {
+        // Sync variables from scopes to maintain backwards compatibility
+        SyncVariables();
+        
+        foreach (var export in namedExportStmt.ExportedNames)
+        {
+            var localName = export.LocalName;
+            var exportName = export.ExportName ?? localName;
+            
+            // Check if the variable exists
+            if (!_variables.ContainsKey(localName))
+            {
+                var token = namedExportStmt.Token;
+                throw new ECEngineException($"Cannot export '{localName}': variable not found",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"Variable '{localName}' must be declared before it can be exported");
+            }
+            
+            // Export the variable with the specified name
+            var value = _variables[localName].Value;
+            _exports[exportName] = value;
+        }
+        
+        return null;
+    }
+
+    private object? EvaluateReExportStatement(ReExportStatement reExportStmt)
+    {
+        if (_moduleSystem == null)
+        {
+            var token = reExportStmt.Token;
+            throw new ECEngineException("Module system not available",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "Re-export statements require a module system to be configured");
+        }
+        
+        try
+        {
+            // Load the module to re-export from
+            var module = _moduleSystem.LoadModule(reExportStmt.ModulePath, this);
+            
+            // Re-export the specified names
+            foreach (var export in reExportStmt.ExportedNames)
+            {
+                var localName = export.LocalName;
+                var exportName = export.ExportName ?? localName;
+                
+                if (module.Exports.ContainsKey(localName))
+                {
+                    var value = module.Exports[localName];
+                    _exports[exportName] = value;
+                }
+                else
+                {
+                    var token = reExportStmt.Token;
+                    throw new ECEngineException($"'{localName}' is not exported by module '{reExportStmt.ModulePath}'",
+                        token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                        $"Module '{reExportStmt.ModulePath}' does not export '{localName}'");
+                }
+            }
+            
+            return null;
+        }
+        catch (ECEngineException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            var token = reExportStmt.Token;
+            throw new ECEngineException($"Failed to re-export from module '{reExportStmt.ModulePath}': {ex.Message}",
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
                 ex.Message);
         }
