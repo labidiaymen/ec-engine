@@ -71,17 +71,13 @@ jobs:
         path: ./artifacts
 
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ECEngine ${{ github.ref }}
+        name: ECEngine ${{ github.ref_name }}
         draft: false
-        prerelease: false
+        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
         body: |
-          ## ECEngine Release ${{ github.ref }}
+          ## ECEngine Release ${{ github.ref_name }}
           
           ### Installation
           
@@ -108,43 +104,8 @@ jobs:
           - macOS x64 (Intel)
           - macOS ARM64 (Apple Silicon)
           - Windows x64
-
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/ecengine-linux-x64/ecengine-linux-x64.tar.gz
-        asset_name: ecengine-linux-x64.tar.gz
-        asset_content_type: application/gzip
-
-    - name: Upload macOS x64 Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/ecengine-darwin-x64/ecengine-darwin-x64.tar.gz
-        asset_name: ecengine-darwin-x64.tar.gz
-        asset_content_type: application/gzip
-
-    - name: Upload macOS ARM64 Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/ecengine-darwin-arm64/ecengine-darwin-arm64.tar.gz
-        asset_name: ecengine-darwin-arm64.tar.gz
-        asset_content_type: application/gzip
-
-    - name: Upload Windows Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/ecengine-windows-x64/ecengine-windows-x64.zip
-        asset_name: ecengine-windows-x64.zip
-        asset_content_type: application/zip
+        files: |
+          ./artifacts/ecengine-linux-x64/ecengine-linux-x64.tar.gz
+          ./artifacts/ecengine-darwin-x64/ecengine-darwin-x64.tar.gz
+          ./artifacts/ecengine-darwin-arm64/ecengine-darwin-arm64.tar.gz
+          ./artifacts/ecengine-windows-x64/ecengine-windows-x64.zip
