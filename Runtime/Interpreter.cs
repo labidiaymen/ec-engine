@@ -12,6 +12,7 @@ public class Interpreter
     private Dictionary<string, object?> _exports = new Dictionary<string, object?>();
     private ModuleSystem? _moduleSystem;
     private EventLoop? _eventLoop;
+    private Stack<object?> _thisStack = new Stack<object?>(); // Stack for 'this' context
 
     public Interpreter()
     {
@@ -258,6 +259,8 @@ public class Interpreter
             return booleanLiteral.Value;
         if (node is NullLiteral nullLiteral)
             return null;
+        if (node is ThisExpression thisExpression)
+            return EvaluateThisExpression(thisExpression);
         if (node is ObjectLiteral objectLiteral)
             return EvaluateObjectLiteral(objectLiteral);
         if (node is ArrayLiteral arrayLiteral)
@@ -268,6 +271,8 @@ public class Interpreter
             return EvaluateAssignmentExpression(assignment);
         if (node is CompoundAssignmentExpression compoundAssignment)
             return EvaluateCompoundAssignmentExpression(compoundAssignment);
+        if (node is MemberAssignmentExpression memberAssignment)
+            return EvaluateMemberAssignmentExpression(memberAssignment);
         if (node is ConditionalExpression conditional)
             return EvaluateConditionalExpression(conditional);
         if (node is BinaryExpression binary)
@@ -304,6 +309,17 @@ public class Interpreter
         }
         
         return result;
+    }
+
+    private object? EvaluateThisExpression(ThisExpression thisExpression)
+    {
+        if (_thisStack.Count > 0)
+        {
+            return _thisStack.Peek();
+        }
+        
+        // If no 'this' context, return null (or could throw an error)
+        return null;
     }
 
     private object? EvaluateArrayLiteral(ArrayLiteral arrayLiteral)
@@ -506,6 +522,45 @@ public class Interpreter
         }
         
         return value;
+    }
+
+    private object? EvaluateMemberAssignmentExpression(MemberAssignmentExpression assignment)
+    {
+        var value = Evaluate(assignment.Right, _sourceCode);
+        var target = Evaluate(assignment.Left.Object, _sourceCode);
+        
+        if (target == null)
+        {
+            var assignmentToken = assignment.Token;
+            throw new ECEngineException("Cannot assign property on null object",
+                assignmentToken?.Line ?? 1, assignmentToken?.Column ?? 1, _sourceCode,
+                "Property assignment target cannot be null");
+        }
+        
+        if (target is Dictionary<string, object?> obj)
+        {
+            // Get property name based on member expression type
+            string propertyName;
+            if (assignment.Left.Computed)
+            {
+                // Bracket notation: obj[key]
+                var propValue = Evaluate(assignment.Left.ComputedProperty!, _sourceCode);
+                propertyName = propValue?.ToString() ?? "";
+            }
+            else
+            {
+                // Dot notation: obj.prop
+                propertyName = assignment.Left.Property;
+            }
+            
+            obj[propertyName] = value;
+            return value;
+        }
+        
+        var assignmentToken2 = assignment.Token;
+        throw new ECEngineException("Cannot assign property on non-object",
+            assignmentToken2?.Line ?? 1, assignmentToken2?.Column ?? 1, _sourceCode,
+            $"Property assignment is only supported on objects, got {target?.GetType().Name ?? "null"}");
     }
 
     private object? EvaluateConditionalExpression(ConditionalExpression conditional)
@@ -1046,6 +1101,13 @@ public class Interpreter
         var function = Evaluate(call.Callee, _sourceCode);
         var arguments = call.Arguments.Select(arg => Evaluate(arg, _sourceCode)).ToList();
 
+        // Detect if this is a method call on an object (callee is MemberExpression)
+        object? thisContext = null;
+        if (call.Callee is MemberExpression memberExpr)
+        {
+            thisContext = Evaluate(memberExpr.Object, _sourceCode);
+        }
+
         if (function is ConsoleLogFunction)
         {
             foreach (var arg in arguments)
@@ -1162,7 +1224,7 @@ public class Interpreter
 
         if (function is Function userFunction)
         {
-            return CallUserFunction(userFunction, arguments);
+            return CallUserFunction(userFunction, arguments, thisContext);
         }
 
         var token = call.Token;
@@ -1412,7 +1474,7 @@ public class Interpreter
                     {
                         // Call observer with oldValue, newValue, and variableName as arguments
                         var arguments = new List<object?> { oldValue, newValue, variableName };
-                        CallUserFunction(currentObserver, arguments);
+                        CallUserFunction(currentObserver, arguments, null);
                     }
                     catch (Exception ex)
                     {
@@ -1428,7 +1490,7 @@ public class Interpreter
                 {
                     // Call observer with oldValue, newValue, and variableName as arguments
                     var arguments = new List<object?> { oldValue, newValue, variableName };
-                    CallUserFunction(currentObserver, arguments);
+                    CallUserFunction(currentObserver, arguments, null);
                 }
                 catch (Exception ex)
                 {
@@ -1439,7 +1501,7 @@ public class Interpreter
         }
     }
 
-    public object? CallUserFunction(Function function, List<object?> arguments)
+    public object? CallUserFunction(Function function, List<object?> arguments, object? thisContext = null)
     {
         // Check if this is an observable server proxy function
         if (function.IsObservableProxy && function.ObservableServer is ObservableServerObject observableServer)
@@ -1456,6 +1518,9 @@ public class Interpreter
         
         // Push new scope for function execution
         PushScope();
+        
+        // Push 'this' context for the function call
+        _thisStack.Push(thisContext);
         
         try
         {
@@ -1491,6 +1556,12 @@ public class Interpreter
         {
             // Pop function scope
             PopScope();
+            
+            // Pop 'this' context
+            if (_thisStack.Count > 0)
+            {
+                _thisStack.Pop();
+            }
         }
     }
 

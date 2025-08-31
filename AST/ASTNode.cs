@@ -56,6 +56,15 @@ public class NullLiteral : Expression
     }
 }
 
+// This expression node
+public class ThisExpression : Expression
+{
+    public ThisExpression(Token? token = null)
+    {
+        Token = token;
+    }
+}
+
 // Object literal node  
 public class ObjectLiteral : Expression
 {
@@ -255,6 +264,20 @@ public class CompoundAssignmentExpression : Expression
     {
         Left = left;
         Operator = op;
+        Right = right;
+        Token = token;
+    }
+}
+
+// Member assignment expression node (e.g., obj.prop = value, this.x = 10)
+public class MemberAssignmentExpression : Expression
+{
+    public MemberExpression Left { get; }
+    public Expression Right { get; }
+    
+    public MemberAssignmentExpression(MemberExpression left, Expression right, Token? token = null)
+    {
+        Left = left;
         Right = right;
         Token = token;
     }

@@ -316,6 +316,7 @@ public class Lexer
             "true" => TokenType.True,
             "false" => TokenType.False,
             "null" => TokenType.Null,
+            "this" => TokenType.This,
             "export" => TokenType.Export,
             "import" => TokenType.Import,
             "from" => TokenType.From,

@@ -62,9 +62,13 @@ public partial class Parser
             {
                 return new AssignmentExpression(identifier, right, token);
             }
+            else if (expression is MemberExpression memberExpr)
+            {
+                return new MemberAssignmentExpression(memberExpr, right, token);
+            }
             
             throw new ECEngineException("Invalid assignment target", 
-                token.Line, token.Column, _sourceCode, "Only identifiers can be assigned to");
+                token.Line, token.Column, _sourceCode, "Only identifiers and member expressions can be assigned to");
         }
         else if (_currentToken.Type == TokenType.PlusAssign ||
                  _currentToken.Type == TokenType.MinusAssign ||
@@ -424,6 +428,13 @@ public partial class Parser
             var token = _currentToken;
             Advance();
             return new NullLiteral(token);
+        }
+
+        if (_currentToken.Type == TokenType.This)
+        {
+            var token = _currentToken;
+            Advance();
+            return new ThisExpression(token);
         }
 
         if (_currentToken.Type == TokenType.Identifier)

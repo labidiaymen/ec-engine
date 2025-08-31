@@ -61,6 +61,7 @@ public enum TokenType
     True,           // true keyword
     False,          // false keyword
     Null,           // null keyword
+    This,           // this keyword
     Export,         // export keyword
     Import,         // import keyword
     From,           // from keyword
