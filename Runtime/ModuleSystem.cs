@@ -74,22 +74,67 @@ public class ModuleSystem
         // Handle relative paths
         if (modulePath.StartsWith("./") || modulePath.StartsWith("../"))
         {
+            var relativePath = Path.GetFullPath(Path.Combine(_rootPath, modulePath));
+            return ResolveWithExtensions(relativePath);
+        }
+        
+        // If already has a supported extension, use as-is
+        if (HasSupportedExtension(modulePath))
+        {
+            // Resolve relative to current directory or root path
+            if (Path.IsPathRooted(modulePath))
+            {
+                return modulePath;
+            }
             return Path.GetFullPath(Path.Combine(_rootPath, modulePath));
         }
         
-        // Add .ec extension if not present
-        if (!modulePath.EndsWith(".ec"))
-        {
-            modulePath += ".ec";
-        }
-        
-        // Resolve relative to current directory or root path
+        // Try to resolve with supported extensions
+        string basePath;
         if (Path.IsPathRooted(modulePath))
         {
-            return modulePath;
+            basePath = modulePath;
+        }
+        else
+        {
+            basePath = Path.GetFullPath(Path.Combine(_rootPath, modulePath));
         }
         
-        return Path.GetFullPath(Path.Combine(_rootPath, modulePath));
+        return ResolveWithExtensions(basePath);
+    }
+    
+    private bool HasSupportedExtension(string path)
+    {
+        return path.EndsWith(".ec") || path.EndsWith(".js") || path.EndsWith(".mjs");
+    }
+    
+    private string ResolveWithExtensions(string basePath)
+    {
+        // If path already has extension and file exists, return it
+        if (HasSupportedExtension(basePath) && File.Exists(basePath))
+        {
+            return basePath;
+        }
+        
+        // If no extension, try supported extensions in order of preference
+        if (!HasSupportedExtension(basePath))
+        {
+            string[] extensions = { ".ec", ".js", ".mjs" };
+            
+            foreach (string ext in extensions)
+            {
+                string pathWithExt = basePath + ext;
+                if (File.Exists(pathWithExt))
+                {
+                    return pathWithExt;
+                }
+            }
+            
+            // Fallback: add .ec extension (for backwards compatibility)
+            return basePath + ".ec";
+        }
+        
+        return basePath;
     }
     
     public void ClearModules()

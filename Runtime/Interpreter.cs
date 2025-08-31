@@ -1710,6 +1710,10 @@ public class Interpreter
                 if (module.Exports.ContainsKey(name))
                 {
                     var value = module.Exports[name];
+                    // Add to current scope instead of _variables
+                    var currentScope = _scopes.Peek();
+                    currentScope[name] = new VariableInfo("const", value);
+                    // Also add to _variables for backwards compatibility
                     _variables[name] = new VariableInfo("const", value);
                 }
                 else

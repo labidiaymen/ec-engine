@@ -388,7 +388,8 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 
 ### ✅ **Module Resolution**
 - ✅ Relative paths: `"./module.ec"`
-- ✅ Automatic `.ec` extension
+- ✅ Multiple file extensions: `.ec`, `.js`, `.mjs`
+- ✅ Automatic extension resolution (tries .ec, .js, .mjs in order)
 - ✅ Module caching (prevents re-execution)
 - ✅ Error handling for missing modules/exports
 - ❌ Node.js-style resolution
