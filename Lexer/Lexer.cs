@@ -182,6 +182,123 @@ public class Lexer
         return result.ToString();
     }
 
+    private List<Token> ReadTemplateLiteral()
+    {
+        var tokens = new List<Token>();
+        var startLine = _line;
+        var startColumn = _column;
+        
+        Advance(); // Skip opening backtick
+        var textBuilder = new System.Text.StringBuilder();
+        
+        while (_currentChar != '\0' && _currentChar != '`')
+        {
+            if (_currentChar == '$' && _position + 1 < _code.Length && _code[_position + 1] == '{')
+            {
+                // Found interpolation start
+                var textValue = textBuilder.ToString();
+                if (textValue.Length > 0 || tokens.Count == 0)
+                {
+                    // Add text part (either TemplateStart or TemplateMiddle)
+                    var tokenType = tokens.Count == 0 ? TokenType.TemplateStart : TokenType.TemplateMiddle;
+                    tokens.Add(new Token(tokenType, textValue, _position, startLine, startColumn));
+                }
+                
+                // Skip ${ 
+                Advance(); // Skip $
+                Advance(); // Skip {
+                
+                // Find matching }
+                var braceLevel = 1;
+                var exprStart = _position;
+                var exprBuilder = new System.Text.StringBuilder();
+                
+                while (_currentChar != '\0' && braceLevel > 0)
+                {
+                    if (_currentChar == '{')
+                        braceLevel++;
+                    else if (_currentChar == '}')
+                        braceLevel--;
+                        
+                    if (braceLevel > 0)
+                    {
+                        exprBuilder.Append(_currentChar);
+                        Advance();
+                    }
+                }
+                
+                if (braceLevel == 0)
+                {
+                    // Add expression token
+                    var exprValue = exprBuilder.ToString();
+                    tokens.Add(new Token(TokenType.TemplateExpression, exprValue, exprStart, _line, _column));
+                    Advance(); // Skip closing }
+                }
+                else
+                {
+                    throw new Exception($"Unterminated template expression at line {_line}, column {_column}");
+                }
+                
+                textBuilder.Clear();
+            }
+            else
+            {
+                // Handle escape sequences in template literals
+                if (_currentChar == '\\' && _position + 1 < _code.Length)
+                {
+                    Advance(); // Skip backslash
+                    switch (_currentChar)
+                    {
+                        case 'n':
+                            textBuilder.Append('\n');
+                            break;
+                        case 't':
+                            textBuilder.Append('\t');
+                            break;
+                        case 'r':
+                            textBuilder.Append('\r');
+                            break;
+                        case '\\':
+                            textBuilder.Append('\\');
+                            break;
+                        case '`':
+                            textBuilder.Append('`');
+                            break;
+                        case '$':
+                            textBuilder.Append('$');
+                            break;
+                        default:
+                            textBuilder.Append(_currentChar);
+                            break;
+                    }
+                }
+                else
+                {
+                    textBuilder.Append(_currentChar);
+                }
+                Advance();
+            }
+        }
+        
+        if (_currentChar == '`')
+        {
+            // Add final text part only if there's text or if it's a simple template
+            var finalText = textBuilder.ToString();
+            
+            // Always add TemplateEnd for complex templates, or TemplateLiteral for simple ones
+            var tokenType = tokens.Count == 0 ? TokenType.TemplateLiteral : TokenType.TemplateEnd;
+            tokens.Add(new Token(tokenType, finalText, _position, startLine, startColumn));
+            
+            Advance(); // Skip closing backtick
+        }
+        else
+        {
+            throw new Exception($"Unterminated template literal at line {_line}, column {_column}");
+        }
+        
+        return tokens;
+    }
+
     private TokenType GetKeywordTokenType(string identifier)
     {
         return identifier switch
@@ -255,6 +372,10 @@ public class Lexer
                 case '\'':
                     var stringValue = ReadString();
                     tokens.Add(new Token(TokenType.String, stringValue, _position, tokenLine, tokenColumn));
+                    break;
+                case '`':
+                    var templateTokens = ReadTemplateLiteral();
+                    tokens.AddRange(templateTokens);
                     break;
                 case '+':
                     // Check for ++ or +=

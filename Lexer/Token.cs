@@ -78,6 +78,13 @@ public enum TokenType
     Throw,          // throw keyword
     Colon,          // :
     
+    // Template literal tokens
+    TemplateLiteral,    // `simple template`
+    TemplateStart,      // `text${
+    TemplateMiddle,     // }text${  
+    TemplateEnd,        // }text`
+    TemplateExpression, // expression inside ${}
+    
     // Unary operators
     Increment,      // ++
     Decrement,      // --

@@ -395,6 +395,16 @@ public partial class Parser
             return new StringLiteral(value, token);
         }
 
+        if (_currentToken.Type == TokenType.TemplateLiteral)
+        {
+            return ParseTemplateLiteral();
+        }
+
+        if (_currentToken.Type == TokenType.TemplateStart)
+        {
+            return ParseTemplateLiteral();
+        }
+
         if (_currentToken.Type == TokenType.True)
         {
             var token = _currentToken;
@@ -574,5 +584,72 @@ public partial class Parser
         Consume(TokenType.RightBracket, "Expected ']' to close array literal");
         
         return new ArrayLiteral(elements, startToken);
+    }
+    
+    /// <summary>
+    /// Parse template literal expressions `text${expr}text`
+    /// </summary>
+    private Expression ParseTemplateLiteral()
+    {
+        var startToken = _currentToken;
+        var elements = new List<TemplateElement>();
+        
+        // Handle simple template literal without interpolation
+        if (_currentToken.Type == TokenType.TemplateLiteral)
+        {
+            var textValue = _currentToken.Value;
+            elements.Add(new TemplateText(textValue, _currentToken));
+            Advance();
+            return new TemplateLiteral(elements, startToken);
+        }
+        
+        // Handle template literal with interpolation
+        while (_currentToken.Type != TokenType.EOF)
+        {
+            if (_currentToken.Type == TokenType.TemplateStart || _currentToken.Type == TokenType.TemplateMiddle)
+            {
+                // Add text portion
+                var textValue = _currentToken.Value;
+                elements.Add(new TemplateText(textValue, _currentToken));
+                Advance();
+                
+                // Parse expression
+                if (_currentToken.Type == TokenType.TemplateExpression)
+                {
+                    var expressionCode = _currentToken.Value;
+                    
+                    // Create a mini lexer and parser for the expression
+                    var expressionLexer = new Lexer.Lexer(expressionCode);
+                    var expressionTokens = expressionLexer.Tokenize();
+                    var expressionParser = new Parser();
+                    var expression = expressionParser.ParseExpressionFromTokens(expressionTokens, expressionCode);
+                    
+                    elements.Add(new TemplateExpression(expression, _currentToken));
+                    Advance();
+                }
+                else
+                {
+                    throw new ECEngineException("Expected template expression after '${' in template literal",
+                        _currentToken.Line, _currentToken.Column, _sourceCode,
+                        "Template literal interpolation requires an expression");
+                }
+            }
+            else if (_currentToken.Type == TokenType.TemplateEnd)
+            {
+                // Final text portion
+                var textValue = _currentToken.Value;
+                elements.Add(new TemplateText(textValue, _currentToken));
+                Advance();
+                break;
+            }
+            else
+            {
+                throw new ECEngineException("Unexpected token in template literal",
+                    _currentToken.Line, _currentToken.Column, _sourceCode,
+                    "Template literal parsing error");
+            }
+        }
+        
+        return new TemplateLiteral(elements, startToken);
     }
 }

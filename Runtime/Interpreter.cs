@@ -242,6 +242,8 @@ public class Interpreter
             return literal.Value;
         if (node is StringLiteral stringLiteral)
             return stringLiteral.Value;
+        if (node is TemplateLiteral templateLiteral)
+            return EvaluateTemplateLiteral(templateLiteral);
         if (node is BooleanLiteral booleanLiteral)
             return booleanLiteral.Value;
         if (node is NullLiteral nullLiteral)
@@ -305,6 +307,70 @@ public class Interpreter
         }
         
         return result;
+    }
+
+    private object? EvaluateTemplateLiteral(TemplateLiteral templateLiteral)
+    {
+        var resultBuilder = new System.Text.StringBuilder();
+        
+        foreach (var element in templateLiteral.Elements)
+        {
+            if (element is TemplateText textElement)
+            {
+                resultBuilder.Append(textElement.Value);
+            }
+            else if (element is TemplateExpression exprElement)
+            {
+                var expressionValue = Evaluate(exprElement.Expression);
+                var stringValue = ConvertToString(expressionValue);
+                resultBuilder.Append(stringValue);
+            }
+        }
+        
+        return resultBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Convert a value to string representation (for template literal interpolation)
+    /// </summary>
+    private string ConvertToString(object? value)
+    {
+        if (value == null)
+            return "null";
+            
+        if (value is string str)
+            return str;
+            
+        if (value is bool b)
+            return b ? "true" : "false";
+            
+        if (value is double d)
+        {
+            if (double.IsPositiveInfinity(d))
+                return "Infinity";
+            if (double.IsNegativeInfinity(d))
+                return "-Infinity";
+            if (double.IsNaN(d))
+                return "NaN";
+                
+            // Format numbers similar to JavaScript
+            if (d == Math.Floor(d) && d >= -9007199254740991 && d <= 9007199254740991)
+                return ((long)d).ToString();
+            return d.ToString();
+        }
+        
+        if (value is List<object?> list)
+        {
+            var items = list.Select(item => ConvertToString(item));
+            return string.Join(",", items);
+        }
+        
+        if (value is Dictionary<string, object?> dict)
+        {
+            return "[object Object]";
+        }
+        
+        return value.ToString() ?? "";
     }
 
     private object? EvaluateIdentifier(Identifier identifier)

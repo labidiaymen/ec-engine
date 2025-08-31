@@ -71,6 +71,17 @@ public partial class Parser
         return new ProgramNode(statements);
     }
 
+    // Parse an expression from a list of tokens (for template literal interpolation)
+    public Expression ParseExpressionFromTokens(List<Token> tokens, string sourceCode)
+    {
+        _sourceCode = sourceCode;
+        _tokens = tokens;
+        _position = 0;
+        _currentToken = _tokens.Count > 0 ? _tokens[0] : new Token(TokenType.EOF, "", 0);
+        
+        return ParseExpression();
+    }
+
     private Statement ParseStatement()
     {
         // Check for export statements

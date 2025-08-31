@@ -7,18 +7,20 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
 
+# Environment variables used throughout the workflow
+env:
+  DOTNET_VERSION: '9.x'
+  SOLUTION_PATH: 'ECEngine.csproj'
+  CONFIGURATION: 'Release'
+
 permissions:
   contents: read
   actions: read
 
 jobs:
-  test:
-    name: Test
+  build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        dotnet-version: ['9.0.x']
     
     steps:
     - name: Checkout code
@@ -27,16 +29,16 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ matrix.dotnet-version }}
+        dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
       
     - name: Build
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore
       
     - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults
+      run: dotnet test ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-build --no-restore --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults
       
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -46,10 +48,10 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
 
-  build:
+  build-release:
     name: Build Release
     runs-on: ubuntu-latest
-    needs: test
+    needs: build-and-test
     if: github.ref == 'refs/heads/main'
     
     steps:
@@ -59,22 +61,22 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
+        dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
       
     - name: Build Release
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --no-restore
       
     - name: Publish Linux x64
-      run: dotnet publish --configuration Release --runtime linux-x64 --self-contained true --output ./publish/linux-x64
+      run: dotnet publish ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --runtime linux-x64 --self-contained true --output ./publish/linux-x64 --no-restore -p:PublishAot=false
       
     - name: Publish Windows x64
-      run: dotnet publish --configuration Release --runtime win-x64 --self-contained true --output ./publish/win-x64
+      run: dotnet publish ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --runtime win-x64 --self-contained true --output ./publish/win-x64 --no-restore -p:PublishAot=false
       
     - name: Publish macOS x64
-      run: dotnet publish --configuration Release --runtime osx-x64 --self-contained true --output ./publish/osx-x64
+      run: dotnet publish ${{ env.SOLUTION_PATH }} --configuration ${{ env.CONFIGURATION }} --runtime osx-x64 --self-contained true --output ./publish/osx-x64 --no-restore -p:PublishAot=false
       
     - name: Upload Linux artifact
       uses: actions/upload-artifact@v4

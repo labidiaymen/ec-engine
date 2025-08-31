@@ -91,6 +91,46 @@ public class ArrayLiteral : Expression
     }
 }
 
+// Template literal node
+public class TemplateLiteral : Expression
+{
+    public List<TemplateElement> Elements { get; }
+    public TemplateLiteral(List<TemplateElement> elements, Token? token = null)
+    {
+        Elements = elements;
+        Token = token;
+    }
+}
+
+// Template element (either text or expression)
+public abstract class TemplateElement : ASTNode
+{
+    protected TemplateElement(Token? token = null)
+    {
+        Token = token;
+    }
+}
+
+// Template text element  
+public class TemplateText : TemplateElement
+{
+    public string Value { get; }
+    public TemplateText(string value, Token? token = null) : base(token)
+    {
+        Value = value;
+    }
+}
+
+// Template expression element
+public class TemplateExpression : TemplateElement
+{
+    public Expression Expression { get; }
+    public TemplateExpression(Expression expression, Token? token = null) : base(token)
+    {
+        Expression = expression;
+    }
+}
+
 // Identifier node
 public class Identifier : Expression
 {
