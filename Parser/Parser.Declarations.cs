@@ -33,10 +33,18 @@ public partial class Parser
     /// <summary>
     /// Parse a function declaration
     /// </summary>
-    private FunctionDeclaration ParseFunctionDeclaration()
+    private Statement ParseFunctionDeclaration()
     {
         var token = _currentToken;
         Consume(TokenType.Function, "Expected 'function' keyword");
+        
+        // Check if this is a generator function (function*)
+        bool isGenerator = false;
+        if (_currentToken.Type == TokenType.Multiply)
+        {
+            isGenerator = true;
+            Advance(); // consume the *
+        }
         
         var name = Consume(TokenType.Identifier, "Expected function name").Value;
         
@@ -57,6 +65,13 @@ public partial class Parser
         
         var body = ParseBlockStatement();
         
-        return new FunctionDeclaration(name, parameters, body.Body, token);
+        if (isGenerator)
+        {
+            return new GeneratorFunctionDeclaration(name, parameters, body.Body, token);
+        }
+        else
+        {
+            return new FunctionDeclaration(name, parameters, body.Body, token);
+        }
     }
 }

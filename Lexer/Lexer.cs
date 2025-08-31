@@ -335,6 +335,7 @@ public class Lexer
             "in" => TokenType.In,
             "of" => TokenType.Of,
             "as" => TokenType.As,
+            "yield" => TokenType.Yield,
             _ => TokenType.Identifier
         };
     }

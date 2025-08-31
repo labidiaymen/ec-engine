@@ -114,6 +114,12 @@ public partial class Parser
             return ParseReturnStatement();
         }
         
+        // Check for yield statements
+        if (_currentToken.Type == TokenType.Yield)
+        {
+            return ParseYieldStatement();
+        }
+        
         // Check for if statements
         if (_currentToken.Type == TokenType.If)
         {
@@ -220,6 +226,22 @@ public partial class Parser
         Match(TokenType.Semicolon); // Optional semicolon
         
         return new ReturnStatement(argument, token);
+    }
+
+    private YieldStatement ParseYieldStatement()
+    {
+        var token = _currentToken;
+        Consume(TokenType.Yield, "Expected 'yield' keyword");
+        
+        Expression? argument = null;
+        if (_currentToken.Type != TokenType.Semicolon && _currentToken.Type != TokenType.EOF)
+        {
+            argument = ParseExpression();
+        }
+        
+        Match(TokenType.Semicolon); // Optional semicolon
+        
+        return new YieldStatement(argument, token);
     }
 
     private BlockStatement ParseBlockStatement()

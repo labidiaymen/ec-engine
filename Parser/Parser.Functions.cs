@@ -12,10 +12,18 @@ public partial class Parser
     /// <summary>
     /// Parse a function expression with parameters and body
     /// </summary>
-    private FunctionExpression ParseFunctionExpression()
+    private Expression ParseFunctionExpression()
     {
         var token = _currentToken;
         Consume(TokenType.Function, "Expected 'function' keyword");
+        
+        // Check if this is a generator function (function*)
+        bool isGenerator = false;
+        if (_currentToken.Type == TokenType.Multiply)
+        {
+            isGenerator = true;
+            Advance(); // consume the *
+        }
         
         Consume(TokenType.LeftParen, "Expected '(' after 'function'");
         
@@ -34,7 +42,14 @@ public partial class Parser
         
         var body = ParseBlockStatement();
         
-        return new FunctionExpression(parameters, body.Body, token);
+        if (isGenerator)
+        {
+            return new GeneratorFunctionExpression(parameters, body.Body, token);
+        }
+        else
+        {
+            return new FunctionExpression(parameters, body.Body, token);
+        }
     }
 
     /// <summary>

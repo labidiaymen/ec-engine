@@ -97,24 +97,43 @@ public class Interpreter
     }
 
     /// <summary>
-    /// Push a new scope onto the stack
+    /// <summary>
+    /// Push a new scope onto the stack (public for Generator support)
     /// </summary>
-    private void PushScope()
+    public void PushScope()
     {
         _scopes.Push(new Dictionary<string, VariableInfo>());
         SyncVariables();
     }
 
     /// <summary>
-    /// Pop the current scope from the stack
+    /// Pop the current scope from the stack (public for Generator support)
     /// </summary>
-    private void PopScope()
+    public void PopScope()
     {
         if (_scopes.Count > 1) // Always keep at least the global scope
         {
             _scopes.Pop();
             SyncVariables();
         }
+    }
+
+    public void PushThisContext(object? thisContext)
+    {
+        _thisStack.Push(thisContext);
+    }
+
+    public void PopThisContext()
+    {
+        if (_thisStack.Count > 0)
+        {
+            _thisStack.Pop();
+        }
+    }
+
+    public Stack<Dictionary<string, VariableInfo>> GetScopes()
+    {
+        return _scopes;
     }
 
     /// <summary>
@@ -162,9 +181,9 @@ public class Interpreter
     }
 
     /// <summary>
-    /// Set a variable value (for assignments)
+    /// Set a variable value (for assignments, public for Generator support)
     /// </summary>
-    private void SetVariable(string name, object? value)
+    public void SetVariable(string name, object? value)
     {
         // Search from current scope up to global scope
         foreach (var scope in _scopes)
@@ -203,8 +222,14 @@ public class Interpreter
             return EvaluateFunctionExpression(funcExpr);
         if (node is ArrowFunctionExpression arrowFuncExpr)
             return EvaluateArrowFunctionExpression(arrowFuncExpr);
+        if (node is GeneratorFunctionDeclaration genFuncDecl)
+            return EvaluateGeneratorFunctionDeclaration(genFuncDecl);
+        if (node is GeneratorFunctionExpression genFuncExpr)
+            return EvaluateGeneratorFunctionExpression(genFuncExpr);
         if (node is ReturnStatement returnStmt)
             return EvaluateReturnStatement(returnStmt);
+        if (node is YieldStatement yieldStmt)
+            return EvaluateYieldStatement(yieldStmt);
         if (node is BlockStatement blockStmt)
             return EvaluateBlockStatement(blockStmt);
         if (node is ExportStatement exportStmt)
@@ -1087,6 +1112,18 @@ public class Interpreter
             return GetChangeInfoProperty(changeInfo, member.Property);
         }
         
+        // Handle Generator instances
+        if (obj is Generator generator)
+        {
+            return member.Property switch
+            {
+                "next" => new GeneratorMethodFunction(generator, "next"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on Generator",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the generator object")
+            };
+        }
+        
         if (obj is Dictionary<string, object?> dict)
         {
             return dict.ContainsKey(member.Property) ? dict[member.Property] : null;
@@ -1224,6 +1261,16 @@ public class Interpreter
             return delegateFunc(arguments.ToArray());
         }
 
+        if (function is GeneratorMethodFunction generatorMethodFunc)
+        {
+            return generatorMethodFunc.Call(arguments);
+        }
+
+        if (function is GeneratorFunction generatorFunction)
+        {
+            return CallGeneratorFunction(generatorFunction, arguments, thisContext);
+        }
+
         if (function is Function userFunction)
         {
             return CallUserFunction(userFunction, arguments, thisContext);
@@ -1313,6 +1360,58 @@ public class Interpreter
         
         // Arrow function - no name, just return the function object
         return new Function(null, arrowFuncExpr.Parameters, body, closure);
+    }
+
+    private object? EvaluateGeneratorFunctionDeclaration(GeneratorFunctionDeclaration genFuncDecl)
+    {
+        // Create closure with current scope variables (maintain references, not copies)
+        var closure = new Dictionary<string, VariableInfo>();
+        foreach (var scope in _scopes.Reverse())
+        {
+            foreach (var kvp in scope)
+            {
+                if (!closure.ContainsKey(kvp.Key))
+                {
+                    // Store reference to the actual VariableInfo, not a copy
+                    closure[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+        
+        // Create generator function and store it in current scope
+        var generator = new GeneratorFunction(genFuncDecl.Name, genFuncDecl.Parameters, genFuncDecl.Body, closure);
+        if (genFuncDecl.Name != null)
+        {
+            SetVariable(genFuncDecl.Name, generator);
+        }
+        
+        return generator;
+    }
+
+    private object? EvaluateGeneratorFunctionExpression(GeneratorFunctionExpression genFuncExpr)
+    {
+        // Create closure with current scope variables (maintain references, not copies)
+        var closure = new Dictionary<string, VariableInfo>();
+        foreach (var scope in _scopes.Reverse())
+        {
+            foreach (var kvp in scope)
+            {
+                if (!closure.ContainsKey(kvp.Key))
+                {
+                    // Store reference to the actual VariableInfo, not a copy
+                    closure[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+        
+        // Anonymous generator function - no name, just return the generator function object
+        return new GeneratorFunction(null, genFuncExpr.Parameters, genFuncExpr.Body, closure);
+    }
+
+    private object? EvaluateYieldStatement(YieldStatement yieldStmt)
+    {
+        var value = yieldStmt.Argument != null ? Evaluate(yieldStmt.Argument) : null;
+        throw new YieldException(value);
     }
 
     private object? EvaluateReturnStatement(ReturnStatement returnStmt)
@@ -1607,6 +1706,18 @@ public class Interpreter
                 _thisStack.Pop();
             }
         }
+    }
+
+    public object? CallGeneratorFunction(GeneratorFunction generatorFunction, List<object?> arguments, object? thisContext = null)
+    {
+        // Create a new generator instance
+        var generator = generatorFunction.CreateGenerator();
+        
+        // Initialize the generator with the interpreter and arguments
+        generator.Initialize(this, arguments, thisContext);
+        
+        // Return the generator object
+        return generator;
     }
 
     private object? EvaluateMultiObserveStatement(MultiObserveStatement multiObserveStmt)
@@ -2198,6 +2309,49 @@ public class Interpreter
                     {
                         // Continue to next iteration
                         continue;
+                    }
+                }
+            }
+            else if (iterable is Generator generator)
+            {
+                // Iterate over generator values
+                while (true)
+                {
+                    var next = generator.Next();
+                    
+                    // Check if the generator is done
+                    if (next is Dictionary<string, object?> nextResult)
+                    {
+                        if (nextResult.ContainsKey("done") && 
+                            nextResult["done"] is bool isDone && isDone)
+                        {
+                            break; // Generator is exhausted
+                        }
+                        
+                        // Set the loop variable to the yielded value
+                        var value = nextResult.ContainsKey("value") ? nextResult["value"] : null;
+                        var currentScope = _scopes.Peek();
+                        currentScope[forOfStmt.Variable] = new VariableInfo("let", value);
+                        
+                        try
+                        {
+                            // Execute body
+                            result = Evaluate(forOfStmt.Body, _sourceCode);
+                        }
+                        catch (BreakException)
+                        {
+                            break;
+                        }
+                        catch (ContinueException)
+                        {
+                            // Continue to next iteration
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        // Unexpected generator result format
+                        break;
                     }
                 }
             }

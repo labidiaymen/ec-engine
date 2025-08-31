@@ -354,6 +354,48 @@ public class ReturnStatement : Statement
     }
 }
 
+// Yield statement node (e.g., yield x + y;)
+public class YieldStatement : Statement
+{
+    public Expression? Argument { get; }
+    
+    public YieldStatement(Expression? argument = null, Token? token = null)
+    {
+        Argument = argument;
+        Token = token;
+    }
+}
+
+// Generator function declaration node (e.g., function* generate() { yield 1; })
+public class GeneratorFunctionDeclaration : Statement
+{
+    public string? Name { get; }
+    public List<string> Parameters { get; }
+    public List<Statement> Body { get; }
+    
+    public GeneratorFunctionDeclaration(string? name, List<string> parameters, List<Statement> body, Token? token = null)
+    {
+        Name = name;
+        Parameters = parameters;
+        Body = body;
+        Token = token;
+    }
+}
+
+// Generator function expression node (e.g., function*() { yield 1; })
+public class GeneratorFunctionExpression : Expression
+{
+    public List<string> Parameters { get; }
+    public List<Statement> Body { get; }
+    
+    public GeneratorFunctionExpression(List<string> parameters, List<Statement> body, Token? token = null)
+    {
+        Parameters = parameters;
+        Body = body;
+        Token = token;
+    }
+}
+
 // Block statement node (e.g., { statement1; statement2; })
 public class BlockStatement : Statement
 {

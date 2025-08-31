@@ -80,6 +80,7 @@ public enum TokenType
     In,             // in keyword (for...in loops)
     Of,             // of keyword (for...of loops)
     As,             // as keyword (for export renaming)
+    Yield,          // yield keyword (for generator functions)
     Colon,          // :
     
     // Template literal tokens
