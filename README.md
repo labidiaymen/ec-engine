@@ -27,13 +27,35 @@ ECEngine is a JavaScript interpreter that extends ECMAScript with reactive progr
 
 ## Getting Started
 
-### Prerequisites
-- .NET 7.0 or later
+### Installation
+
+**Quick Install (macOS, Linux, WSL):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/labidiaymen/ec-engine/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/labidiaymen/ec-engine/main/install.ps1 | iex
+```
+
+After installation, the binary will be available as `eec`.
+
+### Prerequisites (for building from source)
+- .NET 9.0 or later
 - Visual Studio, VS Code, or any C# compatible IDE
 
 ### Running the Engine
 
-#### File Execution
+#### Using installed binary
+```bash
+eec path/to/script.ec     # Execute a file
+eec -i                    # Interactive mode
+eec --help               # Show help
+eec --version            # Show version
+```
+
+#### Building and running from source
 Execute ECEngine files directly:
 ```bash
 dotnet run path/to/script.ec

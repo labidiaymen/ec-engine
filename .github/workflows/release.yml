@@ -1,0 +1,148 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            os: linux
+            arch: x64
+          - rid: osx-x64
+            os: darwin
+            arch: x64
+          - rid: osx-arm64
+            os: darwin
+            arch: arm64
+          - rid: win-x64
+            os: windows
+            arch: x64
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build and publish
+      run: |
+        dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishAot=true -p:StripSymbols=true -o ./publish/${{ matrix.rid }}
+
+    - name: Create archive
+      run: |
+        cd ./publish/${{ matrix.rid }}
+        if [ "${{ matrix.os }}" = "windows" ]; then
+          zip -r ../../ecengine-${{ matrix.os }}-${{ matrix.arch }}.zip .
+        else
+          tar -czf ../../ecengine-${{ matrix.os }}-${{ matrix.arch }}.tar.gz .
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ecengine-${{ matrix.os }}-${{ matrix.arch }}
+        path: |
+          ecengine-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+          ecengine-${{ matrix.os }}-${{ matrix.arch }}.zip
+
+  create-release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ECEngine ${{ github.ref }}
+        draft: false
+        prerelease: false
+        body: |
+          ## ECEngine Release ${{ github.ref }}
+          
+          ### Installation
+          
+          **Quick Install (macOS, Linux, WSL):**
+          ```bash
+          curl -fsSL https://raw.githubusercontent.com/labidiaymen/ec-engine/main/install.sh | bash
+          ```
+          
+          **Windows (PowerShell):**
+          ```powershell
+          iwr -useb https://raw.githubusercontent.com/labidiaymen/ec-engine/main/install.ps1 | iex
+          ```
+          
+          **Manual Installation:**
+          Download the appropriate binary for your platform below.
+          
+          After installation, the binary will be available as `eec`.
+          
+          ### Changes
+          - See commit history for detailed changes
+          
+          ### Supported Platforms
+          - Linux x64
+          - macOS x64 (Intel)
+          - macOS ARM64 (Apple Silicon)
+          - Windows x64
+
+    - name: Upload Linux Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./ecengine-linux-x64/ecengine-linux-x64.tar.gz
+        asset_name: ecengine-linux-x64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload macOS x64 Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./ecengine-darwin-x64/ecengine-darwin-x64.tar.gz
+        asset_name: ecengine-darwin-x64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload macOS ARM64 Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./ecengine-darwin-arm64/ecengine-darwin-arm64.tar.gz
+        asset_name: ecengine-darwin-arm64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./ecengine-windows-x64/ecengine-windows-x64.zip
+        asset_name: ecengine-windows-x64.zip
+        asset_content_type: application/zip

@@ -64,6 +64,13 @@ class Program
                 return;
             }
 
+            // Check for version
+            if (args.Length == 1 && (args[0] == "-v" || args[0] == "--version"))
+            {
+                ShowVersion();
+                return;
+            }
+
             // Check for file execution
             if (args.Length == 1 && File.Exists(args[0]))
             {
@@ -272,6 +279,7 @@ class Program
         Console.WriteLine("  ECEngine -i, --interactive    Start interactive REPL");
         Console.WriteLine("  ECEngine <file>               Execute a script file");
         Console.WriteLine("  ECEngine -h, --help           Show this help");
+        Console.WriteLine("  ECEngine -v, --version        Show version information");
         Console.WriteLine();
         Console.WriteLine("Package Management:");
         Console.WriteLine("  ECEngine init [--name <name>] [--version <version>]");
@@ -302,6 +310,14 @@ class Program
         Console.WriteLine("  Type JavaScript-like code and press Enter to execute");
         Console.WriteLine("  Use .help for REPL commands");
         Console.WriteLine("  Use .exit to quit");
+    }
+
+    static void ShowVersion()
+    {
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        Console.WriteLine($"ECEngine v{version?.ToString(3) ?? "1.0.0"}");
+        Console.WriteLine("A lightweight ECMAScript (JavaScript) interpreter engine");
+        Console.WriteLine("https://github.com/labidiaymen/ec-engine");
     }
 
     static void ExecuteFile(string filePath)
