@@ -86,7 +86,7 @@ namespace ECEngine.Tests.Runtime
             var exports = interpreter.GetExports();
             Assert.True(exports.ContainsKey("result"));
             // Should find test.ec first (if it exists), then test.js, then test.mjs
-            Assert.Equal("Hello from JavaScript!", exports["result"]);
+            Assert.Equal("Hello from ECEngine!", exports["result"]);
         }
 
         [Fact]

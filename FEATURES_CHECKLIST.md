@@ -392,8 +392,12 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ Automatic extension resolution (tries .ec, .js, .mjs in order)
 - ✅ Module caching (prevents re-execution)
 - ✅ Error handling for missing modules/exports
-- ❌ Node.js-style resolution
-- ❌ Package.json support
+- ✅ Node.js-style resolution
+  - ✅ node_modules directory traversal
+  - ✅ package.json main field support
+  - ✅ index.js fallback resolution
+  - ✅ Directory upward traversal for node_modules lookup
+- ❌ Package.json support (beyond main field)
 - ❌ Module bundling
 
 ---
