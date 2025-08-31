@@ -50,6 +50,22 @@ public class Interpreter
     public IReadOnlyDictionary<string, object?> GetExports() => _exports;
 
     /// <summary>
+    /// Get a variable value by name for testing purposes
+    /// </summary>
+    public object? GetVariable(string name)
+    {
+        // Search through scopes from current to global
+        foreach (var scope in _scopes)
+        {
+            if (scope.TryGetValue(name, out var variableInfo))
+            {
+                return variableInfo.Value;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
     /// Set the module system for this interpreter
     /// </summary>
     public void SetModuleSystem(ModuleSystem moduleSystem)
