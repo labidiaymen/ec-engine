@@ -455,6 +455,7 @@ public class ImportStatement : Statement
 {
     public List<string> ImportedNames { get; }
     public string ModulePath { get; }
+    public string? DefaultImportName { get; set; } // For default imports like: import name from "module"
     
     public ImportStatement(List<string> importedNames, string modulePath, Token? token = null)
     {

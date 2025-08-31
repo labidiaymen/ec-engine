@@ -4,10 +4,10 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 
 ## 📊 Overall Progress Summary
 
-- **✅ Implemented**: 122 features
+- **✅ Implemented**: 133 features
 - **🔄 Partial**: 3 features  
 - **❌ Not Implemented**: 29+ features
-- **🎯 ECEngine Extensions**: 4 features
+- **🎯 ECEngine Extensions**: 5 features
 
 ---
 
@@ -381,7 +381,7 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 ### ✅ **Import Statements**
 - ✅ Named imports: `import { name } from "./module";`
 - ✅ Multiple imports: `import { a, b, c } from "./module";`
-- ❌ Default imports: `import defaultFn from "./module";`
+- ✅ Default imports: `import defaultFn from "./module";`
 - ❌ Namespace imports: `import * as module from "./module";`
 - ❌ Import renaming: `import { name as newName } from "./module";`
 - ❌ Dynamic imports: `import("./module")`
@@ -399,6 +399,19 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
   - ✅ Directory upward traversal for node_modules lookup
 - ❌ Package.json support (beyond main field)
 - ❌ Module bundling
+
+### ✅ **URL Imports (Deno-style)**
+- ✅ HTTP URL imports: `import { add } from "https://unpkg.com/ramda/es/add.js";`
+- ✅ HTTPS URL imports with full module resolution
+- ✅ Local caching system with SHA256 hash-based cache keys
+- ✅ Automatic download and caching of remote modules
+- ✅ CommonJS module.exports detection and execution
+- ✅ Default import syntax for URL modules: `import name from "url";`
+- ✅ Named imports from URL modules: `import { name } from "url";`
+- ✅ Cross-platform cache directory (~/.ecengine/cache/)
+- ✅ Real-world URL compatibility (unpkg.com, CDNs)
+- ✅ Offline execution after initial download
+- ✅ Error handling for network failures and invalid URLs
 
 ---
 

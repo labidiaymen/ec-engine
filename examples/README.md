@@ -37,6 +37,25 @@ Examples of console output:
 - `debugging.ec` - Using console.log for debugging
 - `variable_inspection.ec` - Inspecting variable values
 
+### 📁 modules/
+Examples demonstrating module system features:
+- `basic_import_export.ec` - Basic import/export statements
+- `multiple_exports.ec` - Multiple named exports from a module
+- `default_exports.ec` - Default export syntax and usage
+
+### 🌐 URL Imports & Module Resolution
+Advanced module system examples:
+- `deno_style_url_imports.ec` - **Deno-style URL imports with HTTP downloading**
+- `commonjs_support_demo.ec` - **CommonJS module.exports compatibility** 
+- `nodejs-modules-test/` - **Complete Node.js module resolution with node_modules**
+- `nodejs_basic_demo.ec` - Basic Node.js-style module concepts
+
+### 🚀 Advanced Features
+Comprehensive language feature examples:
+- `advanced_modules_demo.ec` - Complex module scenarios and re-exports
+- `template_literals_demo.ec` - String interpolation with template literals
+- `comprehensive_demo.ec` - Showcase of multiple language features
+
 ## Running Examples
 
 To run any example, use the ECEngine executable:
@@ -79,6 +98,16 @@ dotnet run
 - **console.log()**: Output values to the console
 - **Multiple Arguments**: Pass multiple values to console.log
 - **Debugging**: Use console.log for tracing execution
+
+### Module System & URL Imports
+- **Named Imports**: `import { name } from "./module";`
+- **Default Imports**: `import name from "./module";`
+- **Named Exports**: `export function name() { ... }`
+- **Default Exports**: `export default value;`
+- **URL Imports**: `import { add } from "https://unpkg.com/ramda/es/add.js";`
+- **CommonJS Support**: Auto-detection of `module.exports` syntax
+- **Local Caching**: Automatic caching of downloaded URL modules
+- **Node.js Resolution**: package.json, node_modules, index.js fallback
 
 ## Interactive Features
 

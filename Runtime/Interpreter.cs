@@ -1154,6 +1154,12 @@ public class Interpreter
             return arrayMethodFunc.Call(arguments);
         }
 
+        // Handle C# delegates from CommonJS modules
+        if (function is Func<object[], object> delegateFunc)
+        {
+            return delegateFunc(arguments.ToArray());
+        }
+
         if (function is Function userFunction)
         {
             return CallUserFunction(userFunction, arguments);
@@ -1704,24 +1710,64 @@ public class Interpreter
             // Load the module
             var module = _moduleSystem.LoadModule(importStmt.ModulePath, this);
             
-            // Import the requested names
-            foreach (var name in importStmt.ImportedNames)
+            // Check if module loaded successfully
+            if (module == null)
             {
-                if (module.Exports.ContainsKey(name))
+                var token = importStmt.Token;
+                throw new ECEngineException($"Failed to load module '{importStmt.ModulePath}'",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"Module '{importStmt.ModulePath}' could not be loaded or resolved");
+            }
+            
+            // Handle default import (import name from "module")
+            if (importStmt.DefaultImportName != null)
+            {
+                // For default imports, look for "default" export or use the entire module if CommonJS
+                object? defaultValue = null;
+                
+                if (module.Exports.ContainsKey("default"))
                 {
-                    var value = module.Exports[name];
-                    // Add to current scope instead of _variables
-                    var currentScope = _scopes.Peek();
-                    currentScope[name] = new VariableInfo("const", value);
-                    // Also add to _variables for backwards compatibility
-                    _variables[name] = new VariableInfo("const", value);
+                    defaultValue = module.Exports["default"];
+                }
+                else if (module.Exports.Count == 1)
+                {
+                    // If there's only one export, use it as the default (common in CommonJS)
+                    defaultValue = module.Exports.Values.First();
                 }
                 else
                 {
-                    var token = importStmt.Token;
-                    throw new ECEngineException($"'{name}' is not exported by module '{importStmt.ModulePath}'",
-                        token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
-                        $"Module '{importStmt.ModulePath}' does not export '{name}'");
+                    // If no default and multiple exports, create an object with all exports
+                    defaultValue = module.Exports;
+                }
+                
+                if (defaultValue != null)
+                {
+                    var currentScope = _scopes.Peek();
+                    currentScope[importStmt.DefaultImportName] = new VariableInfo("const", defaultValue);
+                    _variables[importStmt.DefaultImportName] = new VariableInfo("const", defaultValue);
+                }
+            }
+            else
+            {
+                // Handle named imports (import { name1, name2 } from "module")
+                foreach (var name in importStmt.ImportedNames)
+                {
+                    if (module.Exports.ContainsKey(name))
+                    {
+                        var value = module.Exports[name];
+                        // Add to current scope instead of _variables
+                        var currentScope = _scopes.Peek();
+                        currentScope[name] = new VariableInfo("const", value);
+                        // Also add to _variables for backwards compatibility
+                        _variables[name] = new VariableInfo("const", value);
+                    }
+                    else
+                    {
+                        var token = importStmt.Token;
+                        throw new ECEngineException($"'{name}' is not exported by module '{importStmt.ModulePath}'",
+                            token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                            $"Module '{importStmt.ModulePath}' does not export '{name}'");
+                    }
                 }
             }
             

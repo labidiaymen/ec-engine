@@ -131,44 +131,81 @@ public partial class Parser
     }
 
     /// <summary>
-    /// Parse an import statement: import { name1, name2 } from "module";
+    /// Parse an import statement: 
+    /// import { name1, name2 } from "module"; (named imports)
+    /// import name from "module"; (default import)
     /// </summary>
     private ImportStatement ParseImportStatement()
     {
         var token = _currentToken;
         Consume(TokenType.Import, "Expected 'import'");
         
-        // Parse import list: { name1, name2, ... }
         var importedNames = new List<string>();
         
-        Consume(TokenType.LeftBrace, "Expected '{' after 'import'");
-        
-        if (_currentToken.Type != TokenType.RightBrace)
+        // Check if this is a default import (import name from "module")
+        if (_currentToken.Type == TokenType.Identifier)
         {
-            do
+            // Default import: import name from "module"
+            var defaultName = Consume(TokenType.Identifier, "Expected identifier for default import").Value;
+            importedNames.Add("default"); // Store as "default" internally
+            
+            Consume(TokenType.From, "Expected 'from' after default import");
+            var modulePath = Consume(TokenType.String, "Expected string literal for module path").Value;
+            Match(TokenType.Semicolon); // Optional semicolon
+            
+            return new ImportStatement(importedNames, modulePath, token)
             {
-                var name = Consume(TokenType.Identifier, "Expected identifier in import list").Value;
-                importedNames.Add(name);
-                
-                if (_currentToken.Type == TokenType.Comma)
-                {
-                    Advance();
-                }
-                else
-                {
-                    break;
-                }
-            } while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF);
+                DefaultImportName = defaultName // Store the actual variable name
+            };
         }
-        
-        Consume(TokenType.RightBrace, "Expected '}' after import list");
-        Consume(TokenType.From, "Expected 'from' after import list");
-        
-        var modulePath = Consume(TokenType.String, "Expected string literal for module path").Value;
-        
-        Match(TokenType.Semicolon); // Optional semicolon
-        
-        return new ImportStatement(importedNames, modulePath, token);
+        else
+        {
+            // Named imports: import { name1, name2 } from "module"
+            Consume(TokenType.LeftBrace, "Expected '{' after 'import'");
+            
+            if (_currentToken.Type != TokenType.RightBrace)
+            {
+                do
+                {
+                    string name;
+                    if (_currentToken.Type == TokenType.Identifier)
+                    {
+                        name = Consume(TokenType.Identifier, "Expected identifier in import list").Value;
+                    }
+                    else if (_currentToken.Type == TokenType.Default)
+                    {
+                        name = "default";
+                        Advance(); // consume the 'default' token
+                    }
+                    else
+                    {
+                        throw new ECEngineException("Expected identifier or 'default' in import list",
+                            _currentToken.Line, _currentToken.Column, _sourceCode,
+                            "Import lists can only contain identifiers or 'default'");
+                    }
+                    
+                    importedNames.Add(name);
+                    
+                    if (_currentToken.Type == TokenType.Comma)
+                    {
+                        Advance();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                } while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF);
+            }
+            
+            Consume(TokenType.RightBrace, "Expected '}' after import list");
+            Consume(TokenType.From, "Expected 'from' after import list");
+            
+            var modulePath = Consume(TokenType.String, "Expected string literal for module path").Value;
+            
+            Match(TokenType.Semicolon); // Optional semicolon
+            
+            return new ImportStatement(importedNames, modulePath, token);
+        }
     }
 
     /// <summary>
