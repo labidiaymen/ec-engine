@@ -313,6 +313,35 @@ public class FunctionExpression : Expression
     }
 }
 
+// Arrow function expression node (e.g., (a, b) => a + b, x => x * 2)
+public class ArrowFunctionExpression : Expression
+{
+    public List<string> Parameters { get; }
+    public Expression? Body { get; } // For expression body
+    public List<Statement>? BlockBody { get; } // For block body
+    public bool IsExpressionBody { get; }
+    
+    // Constructor for expression body (e.g., x => x * 2)
+    public ArrowFunctionExpression(List<string> parameters, Expression body, Token? token = null)
+    {
+        Parameters = parameters;
+        Body = body;
+        BlockBody = null;
+        IsExpressionBody = true;
+        Token = token;
+    }
+    
+    // Constructor for block body (e.g., x => { return x * 2; })
+    public ArrowFunctionExpression(List<string> parameters, List<Statement> blockBody, Token? token = null)
+    {
+        Parameters = parameters;
+        Body = null;
+        BlockBody = blockBody;
+        IsExpressionBody = false;
+        Token = token;
+    }
+}
+
 // Return statement node (e.g., return x + y;)
 public class ReturnStatement : Statement
 {

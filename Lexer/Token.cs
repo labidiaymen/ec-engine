@@ -96,6 +96,9 @@ public enum TokenType
     UnaryPlus,      // +x (when used as unary)
     UnaryMinus,     // -x (when used as unary)
     
+    // Arrow function operator
+    Arrow,          // =>
+    
     EOF
 }
 

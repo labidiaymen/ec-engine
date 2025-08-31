@@ -44,7 +44,8 @@ public class Function
         Name = name;
         Parameters = parameters;
         Body = body;
-        Closure = new Dictionary<string, VariableInfo>(closure);
+        // Store reference to the closure, not a copy, to maintain variable sharing
+        Closure = closure;
     }
 
     public override string ToString()

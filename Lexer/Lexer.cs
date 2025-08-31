@@ -516,6 +516,12 @@ public class Lexer
                         Advance();
                         Advance();
                     }
+                    else if (_position + 1 < _code.Length && _code[_position + 1] == '>')
+                    {
+                        tokens.Add(new Token(TokenType.Arrow, "=>", _position, tokenLine, tokenColumn));
+                        Advance();
+                        Advance();
+                    }
                     else
                     {
                         tokens.Add(new Token(TokenType.Assign, "=", _position, tokenLine, tokenColumn));

@@ -201,6 +201,8 @@ public class Interpreter
             return EvaluateFunctionDeclaration(funcDecl);
         if (node is FunctionExpression funcExpr)
             return EvaluateFunctionExpression(funcExpr);
+        if (node is ArrowFunctionExpression arrowFuncExpr)
+            return EvaluateArrowFunctionExpression(arrowFuncExpr);
         if (node is ReturnStatement returnStmt)
             return EvaluateReturnStatement(returnStmt);
         if (node is BlockStatement blockStmt)
@@ -1235,7 +1237,7 @@ public class Interpreter
 
     private object? EvaluateFunctionDeclaration(FunctionDeclaration funcDecl)
     {
-        // Create closure with current scope variables (flattened view)
+        // Create closure with current scope variables (maintain references, not copies)
         var closure = new Dictionary<string, VariableInfo>();
         foreach (var scope in _scopes.Reverse())
         {
@@ -1243,6 +1245,7 @@ public class Interpreter
             {
                 if (!closure.ContainsKey(kvp.Key))
                 {
+                    // Store reference to the actual VariableInfo, not a copy
                     closure[kvp.Key] = kvp.Value;
                 }
             }
@@ -1255,7 +1258,7 @@ public class Interpreter
 
     private object? EvaluateFunctionExpression(FunctionExpression funcExpr)
     {
-        // Create closure with current scope variables (flattened view)
+        // Create closure with current scope variables (maintain references, not copies)
         var closure = new Dictionary<string, VariableInfo>();
         foreach (var scope in _scopes.Reverse())
         {
@@ -1263,6 +1266,7 @@ public class Interpreter
             {
                 if (!closure.ContainsKey(kvp.Key))
                 {
+                    // Store reference to the actual VariableInfo, not a copy
                     closure[kvp.Key] = kvp.Value;
                 }
             }
@@ -1270,6 +1274,45 @@ public class Interpreter
         
         // Anonymous function - no name, just return the function object
         return new Function(null, funcExpr.Parameters, funcExpr.Body, closure);
+    }
+
+    private object? EvaluateArrowFunctionExpression(ArrowFunctionExpression arrowFuncExpr)
+    {
+        // Create closure with current scope variables (maintain references, not copies)
+        var closure = new Dictionary<string, VariableInfo>();
+        foreach (var scope in _scopes.Reverse())
+        {
+            foreach (var kvp in scope)
+            {
+                if (!closure.ContainsKey(kvp.Key))
+                {
+                    // Store reference to the actual VariableInfo, not a copy
+                    closure[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+        
+        // For arrow functions with expression body, wrap it in a return statement
+        List<Statement> body;
+        if (arrowFuncExpr.IsExpressionBody && arrowFuncExpr.Body != null)
+        {
+            // Create implicit return statement
+            body = new List<Statement> { new ReturnStatement(arrowFuncExpr.Body) };
+        }
+        else if (arrowFuncExpr.BlockBody != null)
+        {
+            // Use the block body as-is
+            body = arrowFuncExpr.BlockBody;
+        }
+        else
+        {
+            throw new ECEngineException("Arrow function must have either expression or block body", 
+                arrowFuncExpr.Token?.Line ?? 0, arrowFuncExpr.Token?.Column ?? 0, _sourceCode, 
+                "Arrow function body error");
+        }
+        
+        // Arrow function - no name, just return the function object
+        return new Function(null, arrowFuncExpr.Parameters, body, closure);
     }
 
     private object? EvaluateReturnStatement(ReturnStatement returnStmt)
@@ -1527,7 +1570,8 @@ public class Interpreter
             // Add closure variables to current scope first
             foreach (var variable in function.Closure)
             {
-                SetVariable(variable.Key, variable.Value.Value);
+                // Set the actual VariableInfo reference to maintain closure semantics
+                _scopes.Peek()[variable.Key] = variable.Value;
             }
             
             // Bind arguments to parameters (these override closure variables)

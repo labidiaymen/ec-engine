@@ -50,7 +50,7 @@ public partial class Parser
     /// </summary>
     private Expression ParseAssignment()
     {
-        var expression = ParseLogicalOr();
+        var expression = ParseArrowFunction();
         
         if (_currentToken.Type == TokenType.Assign)
         {
@@ -90,6 +90,84 @@ public partial class Parser
         }
         
         return expression;
+    }
+
+    /// <summary>
+    /// Parse arrow function expressions (x => x * 2, (a, b) => a + b)
+    /// </summary>
+    private Expression ParseArrowFunction()
+    {
+        // Try to parse as arrow function
+        var start = _position;
+        var startLine = _currentToken.Line;
+        var startColumn = _currentToken.Column;
+        
+        try
+        {
+            var parameters = new List<string>();
+            
+            // Check for parenthesized parameter list or single parameter
+            if (_currentToken.Type == TokenType.LeftParen)
+            {
+                // Parenthesized parameters: (a, b) => ...
+                Advance(); // consume '('
+                
+                if (_currentToken.Type != TokenType.RightParen)
+                {
+                    parameters.Add(Consume(TokenType.Identifier, "Expected parameter name").Value);
+                    
+                    while (Match(TokenType.Comma))
+                    {
+                        parameters.Add(Consume(TokenType.Identifier, "Expected parameter name after ','").Value);
+                    }
+                }
+                
+                Consume(TokenType.RightParen, "Expected ')' after parameters");
+            }
+            else if (_currentToken.Type == TokenType.Identifier)
+            {
+                // Single parameter without parentheses: x => ...
+                parameters.Add(_currentToken.Value);
+                Advance();
+            }
+            else
+            {
+                // Not an arrow function, backtrack
+                RestorePosition(start, startLine, startColumn);
+                return ParseLogicalOr();
+            }
+            
+            // Must have arrow operator
+            if (_currentToken.Type != TokenType.Arrow)
+            {
+                // Not an arrow function, backtrack
+                RestorePosition(start, startLine, startColumn);
+                return ParseLogicalOr();
+            }
+            
+            var arrowToken = _currentToken;
+            Advance(); // consume '=>'
+            
+            // Parse function body - either expression or block
+            if (_currentToken.Type == TokenType.LeftBrace)
+            {
+                // Block body: x => { return x * 2; }
+                var blockBody = ParseBlockStatement();
+                return new ArrowFunctionExpression(parameters, blockBody.Body, arrowToken);
+            }
+            else
+            {
+                // Expression body: x => x * 2
+                var body = ParseAssignment();
+                return new ArrowFunctionExpression(parameters, body, arrowToken);
+            }
+        }
+        catch
+        {
+            // If parsing fails, backtrack and parse as regular expression
+            RestorePosition(start, startLine, startColumn);
+            return ParseLogicalOr();
+        }
     }
 
     /// <summary>

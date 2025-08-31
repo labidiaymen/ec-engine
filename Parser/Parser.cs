@@ -52,6 +52,12 @@ public partial class Parser
             $"Expected {type} but found {_currentToken.Type}");
     }
 
+    private void RestorePosition(int position, int line, int column)
+    {
+        _position = position;
+        _currentToken = _position < _tokens.Count ? _tokens[_position] : _tokens[^1];
+    }
+
     // Parse code and return AST
     public ASTNode Parse(string code)
     {
