@@ -529,6 +529,7 @@ public class Interpreter
             "nextTick" => _eventLoop != null ? new NextTickFunction(_eventLoop, this) : null,
             "http" => _eventLoop != null ? new HttpModule(_eventLoop, this) : null,
             "createServer" => _eventLoop != null ? new CreateServerFunction(_eventLoop, this) : null,
+            "require" => _moduleSystem != null ? new RequireFunction(_moduleSystem, this) : null,
             "Date" => (object?)new DateModule(),
             "Math" => (object?)new MathModule(),
             "JSON" => (object?)new JsonModule(),
@@ -1111,6 +1112,102 @@ public class Interpreter
             };
         }
         
+        // Handle Filesystem module methods
+        if (obj is FilesystemModule fsModule)
+        {
+            return member.Property switch
+            {
+                "readFile" => fsModule.readFile,
+                "readFileSync" => fsModule.readFileSync,
+                "writeFile" => fsModule.writeFile,
+                "writeFileSync" => fsModule.writeFileSync,
+                "appendFile" => fsModule.appendFile,
+                "appendFileSync" => fsModule.appendFileSync,
+                "exists" => fsModule.exists,
+                "existsSync" => fsModule.existsSync,
+                "stat" => fsModule.stat,
+                "statSync" => fsModule.statSync,
+                "mkdir" => fsModule.mkdir,
+                "mkdirSync" => fsModule.mkdirSync,
+                "rmdir" => fsModule.rmdir,
+                "rmdirSync" => fsModule.rmdirSync,
+                "unlink" => fsModule.unlink,
+                "unlinkSync" => fsModule.unlinkSync,
+                "readdir" => fsModule.readdir,
+                "readdirSync" => fsModule.readdirSync,
+                "rename" => fsModule.rename,
+                "renameSync" => fsModule.renameSync,
+                "copyFile" => fsModule.copyFile,
+                "copyFileSync" => fsModule.copyFileSync,
+                "realpath" => fsModule.realpath,
+                "realpathSync" => fsModule.realpathSync,
+                "constants" => fsModule.constants,
+                _ => throw new ECEngineException($"Property {member.Property} not found on FilesystemModule",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the filesystem module")
+            };
+        }
+        
+        // Handle Path module methods
+        if (obj is PathModule pathModule)
+        {
+            return member.Property switch
+            {
+                "join" => pathModule.join,
+                "resolve" => pathModule.resolve,
+                "dirname" => pathModule.dirname,
+                "basename" => pathModule.basename,
+                "extname" => pathModule.extname,
+                _ => throw new ECEngineException($"Property {member.Property} not found on PathModule",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the path module")
+            };
+        }
+        
+        // Handle OS module properties
+        if (obj is OSModule osModule)
+        {
+            return member.Property switch
+            {
+                "platform" => osModule.platform,
+                "hostname" => osModule.hostname,
+                "tmpdir" => osModule.tmpdir,
+                "homedir" => osModule.homedir,
+                _ => throw new ECEngineException($"Property {member.Property} not found on OSModule",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the os module")
+            };
+        }
+        
+        // Handle Util module methods
+        if (obj is UtilModule utilModule)
+        {
+            return member.Property switch
+            {
+                "inspect" => utilModule.inspect,
+                _ => throw new ECEngineException($"Property {member.Property} not found on UtilModule",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the util module")
+            };
+        }
+        
+        // Handle FileStats object
+        if (obj is FileStats fileStats)
+        {
+            return member.Property switch
+            {
+                "isFile" => fileStats.isFile,
+                "isDirectory" => fileStats.isDirectory,
+                "size" => fileStats.size,
+                "mtime" => fileStats.mtime,
+                "ctime" => fileStats.ctime,
+                "atime" => fileStats.atime,
+                _ => throw new ECEngineException($"Property {member.Property} not found on FileStats",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the file stats object")
+            };
+        }
+        
         if (obj is ServerObject serverObj)
         {
             return member.Property switch
@@ -1204,6 +1301,44 @@ public class Interpreter
                 _ => throw new ECEngineException($"Property {member.Property} not found on Generator",
                     member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
                     $"The property '{member.Property}' does not exist on the generator object")
+            };
+        }
+        
+        if (obj is FilesystemConstants fsConstants)
+        {
+            return member.Property switch
+            {
+                "F_OK" => fsConstants.F_OK,
+                "R_OK" => fsConstants.R_OK,
+                "W_OK" => fsConstants.W_OK,
+                "X_OK" => fsConstants.X_OK,
+                "O_RDONLY" => fsConstants.O_RDONLY,
+                "O_WRONLY" => fsConstants.O_WRONLY,
+                "O_RDWR" => fsConstants.O_RDWR,
+                "O_CREAT" => fsConstants.O_CREAT,
+                "O_EXCL" => fsConstants.O_EXCL,
+                "O_TRUNC" => fsConstants.O_TRUNC,
+                "O_APPEND" => fsConstants.O_APPEND,
+                "S_IFMT" => fsConstants.S_IFMT,
+                "S_IFREG" => fsConstants.S_IFREG,
+                "S_IFDIR" => fsConstants.S_IFDIR,
+                "S_IFCHR" => fsConstants.S_IFCHR,
+                "S_IFBLK" => fsConstants.S_IFBLK,
+                "S_IFIFO" => fsConstants.S_IFIFO,
+                "S_IFLNK" => fsConstants.S_IFLNK,
+                "S_IFSOCK" => fsConstants.S_IFSOCK,
+                "S_IRUSR" => fsConstants.S_IRUSR,
+                "S_IWUSR" => fsConstants.S_IWUSR,
+                "S_IXUSR" => fsConstants.S_IXUSR,
+                "S_IRGRP" => fsConstants.S_IRGRP,
+                "S_IWGRP" => fsConstants.S_IWGRP,
+                "S_IXGRP" => fsConstants.S_IXGRP,
+                "S_IROTH" => fsConstants.S_IROTH,
+                "S_IWOTH" => fsConstants.S_IWOTH,
+                "S_IXOTH" => fsConstants.S_IXOTH,
+                _ => throw new ECEngineException($"Property {member.Property} not found on FilesystemConstants",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the filesystem constants object")
             };
         }
         
@@ -1336,6 +1471,177 @@ public class Interpreter
         if (function is ArrayMethodFunction arrayMethodFunc)
         {
             return arrayMethodFunc.Call(arguments);
+        }
+
+        // Handle require function
+        if (function is RequireFunction requireFunc)
+        {
+            return requireFunc.Call(arguments.ToArray());
+        }
+
+        // Handle filesystem functions
+        if (function is ReadFileFunction readFileFunc)
+        {
+            return readFileFunc.Call(arguments.ToArray());
+        }
+
+        if (function is ReadFileSyncFunction readFileSyncFunc)
+        {
+            return readFileSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is WriteFileFunction writeFileFunc)
+        {
+            return writeFileFunc.Call(arguments.ToArray());
+        }
+
+        if (function is WriteFileSyncFunction writeFileSyncFunc)
+        {
+            return writeFileSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is ExistsFunction existsFunc)
+        {
+            return existsFunc.Call(arguments.ToArray());
+        }
+
+        if (function is StatFunction statFunc)
+        {
+            return statFunc.Call(arguments.ToArray());
+        }
+
+        if (function is StatSyncFunction statSyncFunc)
+        {
+            return statSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is MkdirFunction mkdirFunc)
+        {
+            return mkdirFunc.Call(arguments.ToArray());
+        }
+
+        if (function is MkdirSyncFunction mkdirSyncFunc)
+        {
+            return mkdirSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is RmdirFunction rmdirFunc)
+        {
+            return rmdirFunc.Call(arguments.ToArray());
+        }
+
+        if (function is RmdirSyncFunction rmdirSyncFunc)
+        {
+            return rmdirSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is UnlinkFunction unlinkFunc)
+        {
+            return unlinkFunc.Call(arguments.ToArray());
+        }
+
+        if (function is UnlinkSyncFunction unlinkSyncFunc)
+        {
+            return unlinkSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is ReaddirFunction readdirFunc)
+        {
+            return readdirFunc.Call(arguments.ToArray());
+        }
+
+        if (function is ReaddirSyncFunction readdirSyncFunc)
+        {
+            return readdirSyncFunc.Call(arguments.ToArray());
+        }
+
+        // Handle additional filesystem functions
+        if (function is AppendFileFunction appendFileFunc)
+        {
+            return appendFileFunc.Call(arguments.ToArray());
+        }
+
+        if (function is AppendFileSyncFunction appendFileSyncFunc)
+        {
+            return appendFileSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is ExistsSyncFunction existsSyncFunc)
+        {
+            return existsSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is CopyFileFunction copyFileFunc)
+        {
+            return copyFileFunc.Call(arguments.ToArray());
+        }
+
+        if (function is CopyFileSyncFunction copyFileSyncFunc)
+        {
+            return copyFileSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is RenameFunction renameFunc)
+        {
+            return renameFunc.Call(arguments.ToArray());
+        }
+
+        if (function is RenameSyncFunction renameSyncFunc)
+        {
+            return renameSyncFunc.Call(arguments.ToArray());
+        }
+
+        if (function is RealpathFunction realpathFunc)
+        {
+            return realpathFunc.Call(arguments.ToArray());
+        }
+
+        if (function is RealpathSyncFunction realpathSyncFunc)
+        {
+            return realpathSyncFunc.Call(arguments.ToArray());
+        }
+
+        // Handle path functions
+        if (function is JoinFunction joinFunc)
+        {
+            return joinFunc.Call(arguments.ToArray());
+        }
+
+        if (function is ResolveFunction resolveFunc)
+        {
+            return resolveFunc.Call(arguments.ToArray());
+        }
+
+        if (function is DirnameFunction dirnameFunc)
+        {
+            return dirnameFunc.Call(arguments.ToArray());
+        }
+
+        if (function is BasenameFunction basenameFunc)
+        {
+            return basenameFunc.Call(arguments.ToArray());
+        }
+
+        if (function is ExtnameFunction extnameFunc)
+        {
+            return extnameFunc.Call(arguments.ToArray());
+        }
+
+        // Handle util functions
+        if (function is InspectFunction inspectFunc)
+        {
+            return inspectFunc.Call(arguments.ToArray());
+        }
+        
+        // Handle file stats functions
+        if (function is IsFileFunction isFileFunc)
+        {
+            return isFileFunc.Call(arguments.ToArray());
+        }
+        
+        if (function is IsDirectoryFunction isDirFunc)
+        {
+            return isDirFunc.Call(arguments.ToArray());
         }
 
         // Handle C# delegates from CommonJS modules
