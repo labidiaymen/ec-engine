@@ -447,7 +447,7 @@ public class AdvancedOperatorIntegrationTests
             var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             
             Assert.Contains("Result:", lines[0]);
-            Assert.Contains("∞", lines[1]);
+            Assert.Contains("Infinity", lines[1]);
         }
         finally
         {

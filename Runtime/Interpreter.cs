@@ -1969,6 +1969,17 @@ public class Interpreter
             return dateObj.DateTime.ToString();
         }
         
+        // Handle special numeric values for JavaScript compatibility
+        if (obj is double d)
+        {
+            if (double.IsPositiveInfinity(d))
+                return "Infinity";
+            if (double.IsNegativeInfinity(d))
+                return "-Infinity";
+            if (double.IsNaN(d))
+                return "NaN";
+        }
+        
         return obj.ToString() ?? "";
     }
     
@@ -1996,6 +2007,17 @@ public class Interpreter
         {
             var items = list.Select(FormatValueForConsole);
             return "[ " + string.Join(", ", items) + " ]";
+        }
+        
+        // Handle special numeric values for JavaScript compatibility
+        if (value is double d)
+        {
+            if (double.IsPositiveInfinity(d))
+                return "Infinity";
+            if (double.IsNegativeInfinity(d))
+                return "-Infinity";
+            if (double.IsNaN(d))
+                return "NaN";
         }
         
         return value.ToString() ?? "";
