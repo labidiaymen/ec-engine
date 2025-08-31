@@ -482,6 +482,38 @@ public class ForStatement : Statement
     }
 }
 
+// For...in loop statement node (e.g., for (key in object) { ... })
+public class ForInStatement : Statement
+{
+    public string Variable { get; }      // The iteration variable name
+    public Expression Object { get; }    // The object to iterate over
+    public Statement Body { get; }       // The loop body
+    
+    public ForInStatement(string variable, Expression obj, Statement body, Token? token = null)
+    {
+        Variable = variable;
+        Object = obj;
+        Body = body;
+        Token = token;
+    }
+}
+
+// For...of loop statement node (e.g., for (item of iterable) { ... })
+public class ForOfStatement : Statement
+{
+    public string Variable { get; }      // The iteration variable name
+    public Expression Iterable { get; }  // The iterable to iterate over
+    public Statement Body { get; }       // The loop body
+    
+    public ForOfStatement(string variable, Expression iterable, Statement body, Token? token = null)
+    {
+        Variable = variable;
+        Iterable = iterable;
+        Body = body;
+        Token = token;
+    }
+}
+
 // While loop statement node
 public class WhileStatement : Statement
 {

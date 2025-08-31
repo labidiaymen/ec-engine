@@ -331,6 +331,8 @@ public class Lexer
             "catch" => TokenType.Catch,
             "finally" => TokenType.Finally,
             "throw" => TokenType.Throw,
+            "in" => TokenType.In,
+            "of" => TokenType.Of,
             _ => TokenType.Identifier
         };
     }

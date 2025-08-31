@@ -220,6 +220,10 @@ public class Interpreter
             return EvaluateIfStatement(ifStmt);
         if (node is ForStatement forStmt)
             return EvaluateForStatement(forStmt);
+        if (node is ForInStatement forInStmt)
+            return EvaluateForInStatement(forInStmt);
+        if (node is ForOfStatement forOfStmt)
+            return EvaluateForOfStatement(forOfStmt);
         if (node is WhileStatement whileStmt)
             return EvaluateWhileStatement(whileStmt);
         if (node is DoWhileStatement doWhileStmt)
@@ -1773,6 +1777,205 @@ public class Interpreter
         {
             // Restore original scope
             _variables = originalVariables;
+        }
+    }
+    
+    private object? EvaluateForInStatement(ForInStatement forInStmt)
+    {
+        // Create new scope for the for...in loop
+        PushScope();
+        
+        try
+        {
+            // Evaluate the object to iterate over
+            var obj = Evaluate(forInStmt.Object, _sourceCode);
+            
+            object? result = null;
+            
+            if (obj == null)
+            {
+                // Can't iterate over null - just return
+                return null;
+            }
+            
+            // Handle different object types
+            if (obj is Dictionary<string, object?> dictionary)
+            {
+                // Iterate over object properties
+                foreach (var key in dictionary.Keys)
+                {
+                    // Set the loop variable to the current key in the current scope
+                    var currentScope = _scopes.Peek();
+                    currentScope[forInStmt.Variable] = new VariableInfo("let", key);
+                    
+                    try
+                    {
+                        // Execute body
+                        result = Evaluate(forInStmt.Body, _sourceCode);
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                    catch (ContinueException)
+                    {
+                        // Continue to next iteration
+                        continue;
+                    }
+                }
+            }
+            else if (obj is List<object?> list)
+            {
+                // Iterate over array indices
+                for (int i = 0; i < list.Count; i++)
+                {
+                    // Set the loop variable to the current index in the current scope
+                    var currentScope = _scopes.Peek();
+                    currentScope[forInStmt.Variable] = new VariableInfo("let", i.ToString());
+                    
+                    try
+                    {
+                        // Execute body
+                        result = Evaluate(forInStmt.Body, _sourceCode);
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                    catch (ContinueException)
+                    {
+                        // Continue to next iteration
+                        continue;
+                    }
+                }
+            }
+            else if (obj is string str)
+            {
+                // Iterate over string indices
+                for (int i = 0; i < str.Length; i++)
+                {
+                    // Set the loop variable to the current index in the current scope
+                    var currentScope = _scopes.Peek();
+                    currentScope[forInStmt.Variable] = new VariableInfo("let", i.ToString());
+                    
+                    try
+                    {
+                        // Execute body
+                        result = Evaluate(forInStmt.Body, _sourceCode);
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                    catch (ContinueException)
+                    {
+                        // Continue to next iteration
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                // For other types, try to convert to string and get properties
+                var token = forInStmt.Token;
+                throw new ECEngineException($"Object is not iterable with for...in loop",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"Cannot iterate over object of type {obj.GetType().Name} using for...in");
+            }
+            
+            return result;
+        }
+        finally
+        {
+            // Restore original scope
+            PopScope();
+        }
+    }
+    
+    private object? EvaluateForOfStatement(ForOfStatement forOfStmt)
+    {
+        // Create new scope for the for...of loop
+        PushScope();
+        
+        try
+        {
+            // Evaluate the iterable to iterate over
+            var iterable = Evaluate(forOfStmt.Iterable, _sourceCode);
+            
+            object? result = null;
+            
+            if (iterable == null)
+            {
+                // Can't iterate over null - just return
+                return null;
+            }
+            
+            // Handle different iterable types
+            if (iterable is List<object?> list)
+            {
+                // Iterate over array values
+                foreach (var item in list)
+                {
+                    // Set the loop variable to the current value in the current scope
+                    var currentScope = _scopes.Peek();
+                    currentScope[forOfStmt.Variable] = new VariableInfo("let", item);
+                    
+                    try
+                    {
+                        // Execute body
+                        result = Evaluate(forOfStmt.Body, _sourceCode);
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                    catch (ContinueException)
+                    {
+                        // Continue to next iteration
+                        continue;
+                    }
+                }
+            }
+            else if (iterable is string str)
+            {
+                // Iterate over string characters
+                foreach (char ch in str)
+                {
+                    // Set the loop variable to the current character in the current scope
+                    var currentScope = _scopes.Peek();
+                    currentScope[forOfStmt.Variable] = new VariableInfo("let", ch.ToString());
+                    
+                    try
+                    {
+                        // Execute body
+                        result = Evaluate(forOfStmt.Body, _sourceCode);
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                    catch (ContinueException)
+                    {
+                        // Continue to next iteration
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                // For other types, not iterable with for...of
+                var token = forOfStmt.Token;
+                throw new ECEngineException($"Object is not iterable with for...of loop",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"Cannot iterate over object of type {iterable.GetType().Name} using for...of");
+            }
+            
+            return result;
+        }
+        finally
+        {
+            // Restore original scope
+            PopScope();
         }
     }
     

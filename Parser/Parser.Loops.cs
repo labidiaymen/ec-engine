@@ -10,15 +10,82 @@ namespace ECEngine.Parser;
 public partial class Parser
 {
     /// <summary>
-    /// Parse a for statement: for (init; condition; update) body
+    /// Parse a for statement: for (init; condition; update) body | for (var in obj) body | for (var of iterable) body
     /// </summary>
-    private ForStatement ParseForStatement()
+    private Statement ParseForStatement()
     {
         var token = _currentToken;
         Consume(TokenType.For, "Expected 'for' keyword");
         Consume(TokenType.LeftParen, "Expected '(' after 'for'");
         
-        // Parse initialization (can be variable declaration or expression)
+        // Look ahead to determine the type of for loop
+        // Save current position to backtrack if needed
+        var savedPosition = _position;
+        var savedToken = _currentToken;
+        
+        // Try to parse as for...in or for...of
+        if (_currentToken.Type == TokenType.Var || _currentToken.Type == TokenType.Let || _currentToken.Type == TokenType.Const)
+        {
+            var varType = _currentToken.Type;
+            Advance(); // consume var/let/const
+            
+            if (_currentToken.Type == TokenType.Identifier)
+            {
+                var variableName = _currentToken.Value;
+                Advance(); // consume identifier
+                
+                // Check for 'in' or 'of'
+                if (_currentToken.Type == TokenType.In)
+                {
+                    // for...in loop
+                    Advance(); // consume 'in'
+                    var obj = ParseExpression();
+                    Consume(TokenType.RightParen, "Expected ')' after for...in");
+                    var forInBody = ParseStatement();
+                    return new ForInStatement(variableName, obj, forInBody, token);
+                }
+                else if (_currentToken.Type == TokenType.Of)
+                {
+                    // for...of loop
+                    Advance(); // consume 'of'
+                    var iterable = ParseExpression();
+                    Consume(TokenType.RightParen, "Expected ')' after for...of");
+                    var forOfBody = ParseStatement();
+                    return new ForOfStatement(variableName, iterable, forOfBody, token);
+                }
+            }
+        }
+        else if (_currentToken.Type == TokenType.Identifier)
+        {
+            var variableName = _currentToken.Value;
+            Advance(); // consume identifier
+            
+            // Check for 'in' or 'of'
+            if (_currentToken.Type == TokenType.In)
+            {
+                // for...in loop without declaration
+                Advance(); // consume 'in'
+                var obj = ParseExpression();
+                Consume(TokenType.RightParen, "Expected ')' after for...in");
+                var forInBodyNoDecl = ParseStatement();
+                return new ForInStatement(variableName, obj, forInBodyNoDecl, token);
+            }
+            else if (_currentToken.Type == TokenType.Of)
+            {
+                // for...of loop without declaration
+                Advance(); // consume 'of'
+                var iterable = ParseExpression();
+                Consume(TokenType.RightParen, "Expected ')' after for...of");
+                var forOfBodyNoDecl = ParseStatement();
+                return new ForOfStatement(variableName, iterable, forOfBodyNoDecl, token);
+            }
+        }
+        
+        // If we get here, it's a traditional for loop - restore position and parse normally
+        _position = savedPosition;
+        _currentToken = savedToken;
+        
+        // Parse traditional for loop: for (init; condition; update) body
         Statement? init = null;
         if (_currentToken.Type != TokenType.Semicolon)
         {

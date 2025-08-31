@@ -49,7 +49,7 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ Null literal: `null`
 - ✅ Modules: `import`, `export`, `from`
 - ✅ ECEngine extensions: `observe`, `when`
-- ✅ Loop control: `for`, `while`, `do`, `break`, `continue`
+- ✅ Loop control: `for`, `while`, `do`, `break`, `continue`, `in`, `of`
 - ✅ Switch statements: `switch`, `case`, `default`
 - ✅ Exception handling: `try`, `catch`, `finally`, `throw`
 - ❌ Classes: `class`, `extends`, `super`, `static`
@@ -97,6 +97,8 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 - ✅ `ImportStatement` - Module imports
 - ✅ `WhileStatement` - While loops
 - ✅ `ForStatement` - For loops
+- ✅ `ForInStatement` - For...in loops
+- ✅ `ForOfStatement` - For...of loops
 - ✅ `DoWhileStatement` - Do-while loops
 - ✅ `SwitchStatement` - Switch statements
 - ✅ `CaseStatement` - Switch case clauses
@@ -286,8 +288,8 @@ This document provides a comprehensive checklist of ECMAScript (JavaScript) feat
 
 ### ✅ **Loops**
 - ✅ `for` loops
-- ❌ `for...in` loops
-- ❌ `for...of` loops  
+- ✅ `for...in` loops
+- ✅ `for...of` loops  
 - ✅ `while` loops
 - ✅ `do...while` loops
 - ✅ `break` statements
@@ -640,7 +642,7 @@ ECEngine currently implements a solid foundation of ECMAScript features with abo
 
 - ✅ **Core language mechanics**: Variables, functions, expressions, conditionals
 - ✅ **Advanced scoping**: Complete block scoping for let/const with proper scope chains
-- ✅ **Control flow**: Complete loop support (for, while, do-while) with break/continue
+- ✅ **Control flow**: Complete loop support (for, while, do-while, for...in, for...of) with break/continue
 - ✅ **Switch statements**: Full switch-case-default support with fall-through behavior
 - ✅ **Exception handling**: Complete try-catch-finally-throw support
 - ✅ **Comparison and logic**: Full comparison operators and boolean operations

@@ -76,6 +76,8 @@ public enum TokenType
     Catch,          // catch keyword
     Finally,        // finally keyword
     Throw,          // throw keyword
+    In,             // in keyword (for...in loops)
+    Of,             // of keyword (for...of loops)
     Colon,          // :
     
     // Template literal tokens
