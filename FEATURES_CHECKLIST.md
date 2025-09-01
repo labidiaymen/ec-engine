@@ -4,9 +4,9 @@
 
 | Category | Implemented | Partial | Missing | Progress |
 |----------|------------|---------|---------|----------|
-| **Lexical Analysis** | 39 | 2 | 3 | **93%** |
+| **Lexical Analysis** | 41 | 2 | 1 | **93%** |
 | **Parser & AST** | 56 | 2 | 12 | **83%** |
-| **Runtime & Interpreter** | 39 | 1 | 18 | **68%** |
+| **Runtime & Interpreter** | 41 | 1 | 17 | **69%** |
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
@@ -15,7 +15,7 @@
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
 | **ECEngine Extensions** | 5 | 0 | 1 | **83%** |
-| **TOTAL** | **201** | **6** | **107** | **64%** |
+| **TOTAL** | **203** | **6** | **105** | **65%** |
 
 ## 🔤 Lexical Analysis (93% Complete)
 
@@ -23,12 +23,12 @@
 - **Basic Tokens**: Numbers (`42`, `3.14`), strings (`"hello"`, `'world'`), template literals (`` `hello ${world}` ``), identifiers, comments (`//`, `/* */`)
 - **Operators**: Arithmetic (`+`, `-`, `*`, `/`), assignment (`=`), logical (`&&`, `||`), comparison (`==`, `!=`, `<`, `>`, `<=`, `>=`, `===`, `!==`), unary (`!`, `++`, `--`, `+x`, `-x`), compound (`+=`, `-=`, `*=`, `/=`), bitwise (`&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`), ternary (`? :`), arrow (`=>`)
 - **Punctuation**: `()`, `{}`, `;`, `,`, `.`, `[]`, `:`, `?`
-- **Keywords**: Variables (`var`, `let`, `const`), functions (`function`, `return`, `yield`), control flow (`if`, `else`, `for`, `while`, `do`, `break`, `continue`, `in`, `of`, `switch`, `case`, `default`, `try`, `catch`, `finally`, `throw`), booleans (`true`, `false`), null (`null`), context (`this`), modules (`import`, `export`, `from`), ECEngine extensions (`observe`, `when`)
+- **Keywords**: Variables (`var`, `let`, `const`), functions (`function`, `return`, `yield`), control flow (`if`, `else`, `for`, `while`, `do`, `break`, `continue`, `in`, `of`, `switch`, `case`, `default`, `try`, `catch`, `finally`, `throw`), booleans (`true`, `false`), null (`null`), context (`this`), modules (`import`, `export`, `from`), operators (`new`, `typeof`), ECEngine extensions (`observe`, `when`)
 
 ### ❌ Missing  
 - Classes: `class`, `extends`, `super`, `static`
 - Async: `async`, `await`
-- Other: `new`, `typeof`, `instanceof`, `delete`
+- Other: `instanceof`, `delete`
 
 ---
 
@@ -76,10 +76,12 @@
     - HTML wrapper methods (legacy): `bold()`, `italics()`, `fontcolor()`, etc.
   - Array methods: `push`, `pop`, `slice`, `join`, `indexOf`, native array support (`.length`, indexing)
 - **ECEngine Extensions**: Variable observation system, observer callbacks with old/new values, multi-variable observation, change tracking metadata, conditional `when` statements
+- **Type System**: Complete `typeof` operator implementation with proper JavaScript semantics (returns correct types: "number", "string", "boolean", "object", "function"), comprehensive test coverage with 15+ test cases for all data types and expressions
+- **Object Construction**: Full `new` operator implementation with built-in constructor support (`new Object()`, `new Array()`, `new String()`, `new Number()`, `new Boolean()`, `new Date()`), custom constructor functions, proper error handling, comprehensive test coverage with 12+ test cases
 
 ### ❌ Missing
 - Hoisting behavior, temporal dead zone, `this` binding, `arguments` object, async functions
-- Type conversion: implicit coercion, `typeof`, `instanceof` operators
+- Type conversion: implicit coercion, `instanceof` operators
 - Number methods, advanced object features (prototypes, property descriptors)
 
 ---
