@@ -10,22 +10,27 @@ permissions:
 
 jobs:
   build-and-release:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - rid: linux-x64
             os: linux
             arch: x64
+            runner: ubuntu-latest
           - rid: osx-x64
             os: darwin
             arch: x64
+            runner: macos-13
           - rid: osx-arm64
             os: darwin
             arch: arm64
+            runner: macos-latest
           - rid: win-x64
             os: windows
             arch: x64
+            runner: windows-latest
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
     - uses: actions/checkout@v4
@@ -42,14 +47,19 @@ jobs:
       run: |
         dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishAot=true -p:StripSymbols=true -o ./publish/${{ matrix.rid }}
 
-    - name: Create archive
+    - name: Create archive (Windows)
+      if: matrix.os == 'windows'
       run: |
         cd ./publish/${{ matrix.rid }}
-        if [ "${{ matrix.os }}" = "windows" ]; then
-          zip -r ../../ecengine-${{ matrix.os }}-${{ matrix.arch }}.zip .
-        else
-          tar -czf ../../ecengine-${{ matrix.os }}-${{ matrix.arch }}.tar.gz .
-        fi
+        Compress-Archive -Path * -DestinationPath ../../ecengine-${{ matrix.os }}-${{ matrix.arch }}.zip
+      shell: powershell
+
+    - name: Create archive (Unix)
+      if: matrix.os != 'windows'
+      run: |
+        cd ./publish/${{ matrix.rid }}
+        tar -czf ../../ecengine-${{ matrix.os }}-${{ matrix.arch }}.tar.gz *
+      shell: bash
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
