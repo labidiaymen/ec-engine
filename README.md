@@ -21,6 +21,7 @@ ECEngine is a JavaScript interpreter that extends ECMAScript with reactive progr
 
 - **ECMAScript Compatibility** - Full JavaScript syntax support including variables, functions, arrays, and modules
 - **Complete String API** - All 70+ JavaScript string methods with Unicode support and full MDN compatibility
+- **Method Chaining** - Support for chaining method calls like `text.trim().toUpperCase().replace("old", "new")`
 - **Reactive Programming** - Built-in `observe` pattern for automatic variable change detection  
 - **Module System** - Complete `import`/`export` support with automatic resolution
 - **Interactive REPL** - Advanced console with cursor navigation and command history

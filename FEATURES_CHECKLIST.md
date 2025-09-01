@@ -47,10 +47,11 @@
 
 ---
 
-## ⚙️ Runtime & Interpreter (78% Complete)
+## ⚙️ Runtime & Interpreter (82% Complete)
 
 ### ✅ Implemented  
 - **Basic Evaluation**: Number/string/boolean/null literals, template literals with interpolation, identifier resolution, binary expressions (arithmetic, comparison, logical, strict comparison, bitwise), member expressions, function calls, object/array literals, compound assignments, conditional expressions, string concatenation with type conversion, escape sequences
+- **Method Chaining**: Full support for chaining method calls (e.g., `str.trim().toUpperCase()`, `arr.slice(0, 2).join("-")`)
 - **Variable Management**: `var`/`let`/`const` declarations, assignments, property assignments (`obj.prop = value`), advanced scope management, const immutability, block scoping for `let`/`const`
 - **Functions**: Declarations, expressions, calls with parameters, return statements, basic closures, arrow functions, generator functions with `yield`, `next()` method, state preservation
 - **Built-in Objects**: 

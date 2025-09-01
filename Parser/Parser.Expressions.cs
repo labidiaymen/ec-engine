@@ -406,22 +406,40 @@ public partial class Parser
     {
         var expression = ParseMember();
 
-        while (_currentToken.Type == TokenType.LeftParen)
+        while (_currentToken.Type == TokenType.LeftParen || _currentToken.Type == TokenType.Dot || _currentToken.Type == TokenType.LeftBracket)
         {
-            Advance(); // consume '('
-            var arguments = new List<Expression>();
-
-            if (_currentToken.Type != TokenType.RightParen)
+            if (_currentToken.Type == TokenType.LeftParen)
             {
-                arguments.Add(ParseExpression());
-                while (Match(TokenType.Comma))
+                Advance(); // consume '('
+                var arguments = new List<Expression>();
+
+                if (_currentToken.Type != TokenType.RightParen)
                 {
                     arguments.Add(ParseExpression());
+                    while (Match(TokenType.Comma))
+                    {
+                        arguments.Add(ParseExpression());
+                    }
                 }
-            }
 
-            Consume(TokenType.RightParen, "Expected ')' after arguments");
-            expression = new CallExpression(expression, arguments);
+                Consume(TokenType.RightParen, "Expected ')' after arguments");
+                expression = new CallExpression(expression, arguments);
+            }
+            else if (_currentToken.Type == TokenType.Dot)
+            {
+                var token = _currentToken;
+                Advance(); // consume '.'
+                var property = Consume(TokenType.Identifier, "Expected property name after '.'");
+                expression = new MemberExpression(expression, property.Value, token);
+            }
+            else if (_currentToken.Type == TokenType.LeftBracket)
+            {
+                var token = _currentToken;
+                Advance(); // consume '['
+                var propertyExpr = ParseExpression();
+                Consume(TokenType.RightBracket, "Expected ']' after computed property");
+                expression = new MemberExpression(expression, propertyExpr, token);
+            }
         }
 
         return expression;

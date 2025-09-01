@@ -55,8 +55,7 @@ console.log();
 // Splitting & Arrays
 console.log("📊 Splitting:");
 console.log("split(' '):", text.split(' '));
-var chars = text.split('');
-console.log("split('') first 5:", chars.slice(0, 5));
+console.log("split('').slice(0, 5):", text.split('').slice(0, 5)); // Method chaining!
 console.log();
 
 // Unicode & Advanced Features
@@ -100,3 +99,11 @@ console.log();
 
 console.log("✅ String Methods Showcase Complete!");
 console.log("ECEngine supports 70+ JavaScript string methods");
+
+// Method Chaining Demo
+console.log();
+console.log("🔗 Method Chaining:");
+var chainExample = "  hello WORLD  ";
+console.log("Original:", JSON.stringify(chainExample));
+console.log("Chained methods:", chainExample.trim().replace("WORLD", "ECEngine").toUpperCase());
+console.log("Complex chain:", "JavaScript".toLowerCase().replace("java", "EC").concat(" Engine"));
