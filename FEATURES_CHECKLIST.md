@@ -10,12 +10,12 @@
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
-| **Node.js API Compatibility** | 5 | 0 | 22 | **19%** |
+| **Node.js API Compatibility** | 6 | 0 | 21 | **22%** |
 | **Modern JavaScript** | 2 | 0 | 18 | **10%** |
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
 | **ECEngine Extensions** | 5 | 0 | 1 | **83%** |
-| **TOTAL** | **198** | **6** | **110** | **67%** |
+| **TOTAL** | **199** | **6** | **109** | **68%** |
 
 ## 🔤 Lexical Analysis (93% Complete)
 
@@ -133,13 +133,14 @@
 - **Console**: `console.log()` with object formatting and multiple arguments
 - **HTTP**: Basic HTTP server creation with `createServer()`, observable server pattern, request handling
 - **Filesystem (fs)**: Complete Node.js-compatible filesystem API with 16+ functions including `readFile`, `writeFile`, `appendFile`, `stat`, `mkdir`, `rmdir`, `readdir`, `unlink`, `rename`, `copyFile`, `realpath`, `exists` (both sync and async variants), full `fs.constants` support with 30+ constants, proper error handling, and cross-platform path normalization
+- **Events**: `EventEmitter` implementation using object factory pattern with full API: `.on()`, `.emit()`, `.off()`, `.removeAllListeners()`, `.listenerCount()`, `.listeners()`, `.eventNames()`, multiple listeners per event, event argument passing
 
 ### ❌ Missing
 - **Global Objects**: `process` object (`process.env`, `process.argv`, `process.cwd()`, `process.exit()`), `global` object, `Buffer` class
 - **Built-in Modules**: `path` (path utilities), `os` (operating system), `crypto` (cryptographic functions), `url` (URL parsing), `querystring` (query string utilities)
 - **Module Helpers**: `require()` function, `__dirname`, `__filename` variables, `module` object with metadata
 - **Streams**: Readable/Writable/Transform streams, `stream` module
-- **Events**: `EventEmitter` class, event-driven architecture
+- **Events**: ✅ **EventEmitter implementation** (object factory pattern with `.on()`, `.emit()`, `.off()`, `.removeAllListeners()`, `.listenerCount()`, `.listeners()`, `.eventNames()`)
 - **Utilities**: `util` module (`util.inspect()`, `util.promisify()`), `assert` module
 - **Async**: Native Promise support, `async`/`await` syntax, callback conventions
 - **Error Handling**: Error objects with stack traces, domain-specific error types

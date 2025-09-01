@@ -553,6 +553,7 @@ public class Interpreter
             "JSON" => (object?)new JsonModule(),
             "String" => (object?)new StringModule(),
             "Object" => (object?)new ObjectModule(),
+            "EventEmitter" => (object?)new EventEmitterModule(),
             _ => null
         };
 
@@ -1273,6 +1274,18 @@ public class Interpreter
             };
         }
         
+        // Handle EventEmitter module methods
+        if (obj is EventEmitterModule eventEmitterModule)
+        {
+            return member.Property switch
+            {
+                "createEventEmitter" => new EventEmitterCreateFunction(eventEmitterModule),
+                _ => throw new ECEngineException($"Property {member.Property} not found on EventEmitter",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the EventEmitter module")
+            };
+        }
+        
         // Handle FileStats object
         if (obj is FileStats fileStats)
         {
@@ -1639,6 +1652,74 @@ public class Interpreter
         if (function is ObjectMethodFunction objectMethodFunc)
         {
             return objectMethodFunc.Call(arguments);
+        }
+
+        // Handle EventEmitter functions
+        if (function is EventEmitterCreateFunction eventEmitterCreateFunc)
+        {
+            return eventEmitterCreateFunc.Call(arguments);
+        }
+
+        if (function is EventEmitterOnFunction eventEmitterOnFunc)
+        {
+            return eventEmitterOnFunc.Call(arguments);
+        }
+
+        if (function is EventEmitterEmitFunction eventEmitterEmitFunc)
+        {
+            // Special handling for emit to call user functions
+            if (arguments.Count < 1)
+            {
+                return eventEmitterEmitFunc.Call(arguments);
+            }
+
+            var (eventName, eventArgs, listeners) = eventEmitterEmitFunc.GetEventData(arguments);
+            
+            if (listeners.Count == 0)
+            {
+                return false;
+            }
+
+            // Call all listeners with the provided arguments
+            foreach (var listener in listeners.ToList())
+            {
+                try
+                {
+                    CallUserFunction(listener, eventArgs);
+                }
+                catch (Exception ex)
+                {
+                    // In Node.js, EventEmitter errors are handled specially
+                    Console.WriteLine($"Warning: EventEmitter listener error: {ex.Message}");
+                }
+            }
+
+            return true;
+        }
+
+        if (function is EventEmitterOffFunction eventEmitterOffFunc)
+        {
+            return eventEmitterOffFunc.Call(arguments);
+        }
+
+        if (function is EventEmitterRemoveAllFunction eventEmitterRemoveAllFunc)
+        {
+            return eventEmitterRemoveAllFunc.Call(arguments);
+        }
+
+        if (function is EventEmitterListenerCountFunction eventEmitterListenerCountFunc)
+        {
+            return eventEmitterListenerCountFunc.Call(arguments);
+        }
+
+        if (function is EventEmitterListenersFunction eventEmitterListenersFunc)
+        {
+            return eventEmitterListenersFunc.Call(arguments);
+        }
+
+        if (function is EventEmitterEventNamesFunction eventEmitterEventNamesFunc)
+        {
+            return eventEmitterEventNamesFunc.Call(arguments);
         }
 
         // Handle String constructor and static methods
