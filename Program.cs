@@ -325,8 +325,6 @@ class Program
         try
         {
             var code = File.ReadAllText(filePath);
-            Console.WriteLine($"Executing file: {filePath}");
-            Console.WriteLine();
             
             var interpreter = new Interpreter();
             var eventLoop = new EventLoop();
@@ -340,11 +338,6 @@ class Program
             
             // Run the event loop to handle async operations
             eventLoop.Run();
-            
-            if (result != null)
-            {
-                Console.WriteLine($"Result: {result}");
-            }
         }
         catch (Exception ex)
         {
@@ -381,15 +374,15 @@ class Program
 
     static void ExecuteCode(string code)
     {
-        ExecuteCode(code, new Interpreter());
+        Console.WriteLine($"Executing: {code}");
+        var result = ExecuteCode(code, new Interpreter());
+        Console.WriteLine($"Result: {result ?? "undefined"}");
     }
 
     static object? ExecuteCode(string code, Interpreter interpreter)
     {
         try
         {
-            Console.WriteLine($"Executing: {code}");
-
             // Tokenize
             var lexer = new Lexer.Lexer(code);
             var tokens = lexer.Tokenize();
@@ -401,7 +394,6 @@ class Program
             // Interpret
             var result = interpreter.Evaluate(ast, code);
 
-            Console.WriteLine($"Result: {result ?? "undefined"}");
             return result;
         }
         catch (ECEngineException ex)
