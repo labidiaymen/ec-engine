@@ -6,6 +6,13 @@ namespace ECEngine.AST;
 public abstract class ASTNode
 {
     public Token? Token { get; set; }
+    
+    // Virtual dispatch method for performance optimization
+    // Default implementation falls back to the legacy evaluation system
+    public virtual object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return interpreter.EvaluateLegacy(this);
+    }
 }
 
 // Statement node
@@ -14,7 +21,7 @@ public abstract class Statement : ASTNode { }
 // Expression node
 public abstract class Expression : ASTNode { }
 
-// Number literal node
+// Number literal node - Optimized for direct value return
 public class NumberLiteral : Expression
 {
     public double Value { get; }
@@ -23,9 +30,15 @@ public class NumberLiteral : Expression
         Value = value;
         Token = token;
     }
+    
+    // Fast path optimization - direct value return
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return Value;
+    }
 }
 
-// String literal node
+// String literal node - Optimized for direct value return
 public class StringLiteral : Expression
 {
     public string Value { get; }
@@ -34,9 +47,15 @@ public class StringLiteral : Expression
         Value = value;
         Token = token;
     }
+    
+    // Fast path optimization - direct value return
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return Value;
+    }
 }
 
-// Boolean literal node
+// Boolean literal node - Optimized for direct value return
 public class BooleanLiteral : Expression
 {
     public bool Value { get; }
@@ -44,6 +63,12 @@ public class BooleanLiteral : Expression
     {
         Value = value;
         Token = token;
+    }
+    
+    // Fast path optimization - direct value return
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return Value;
     }
 }
 
@@ -53,6 +78,12 @@ public class NullLiteral : Expression
     public NullLiteral(Token? token = null)
     {
         Token = token;
+    }
+    
+    // Fast path optimization - direct null return
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return null;
     }
 }
 
@@ -149,6 +180,12 @@ public class Identifier : Expression
         Name = name;
         Token = token;
     }
+    
+    // Delegate to interpreter's optimized identifier evaluation
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return interpreter.EvaluateIdentifierOptimized(this);
+    }
 }
 
 // Binary expression node
@@ -162,6 +199,12 @@ public class BinaryExpression : Expression
         Left = left;
         Operator = op;
         Right = right;
+    }
+    
+    // Delegate to interpreter's optimized binary expression evaluation
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return interpreter.EvaluateBinaryExpressionOptimized(this);
     }
 }
 
@@ -206,6 +249,12 @@ public class CallExpression : Expression
     {
         Callee = callee;
         Arguments = arguments;
+    }
+    
+    // Delegate to interpreter's optimized call expression evaluation
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return interpreter.EvaluateCallExpressionOptimized(this);
     }
 }
 

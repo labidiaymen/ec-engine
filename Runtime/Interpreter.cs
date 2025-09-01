@@ -210,10 +210,19 @@ public class Interpreter
     {
         _sourceCode = sourceCode;
 
+        // NEW: Use virtual dispatch for performance optimization
+        return node.Accept(this);
+    }
+
+    /// <summary>
+    /// Legacy evaluation method for backwards compatibility and fallback
+    /// </summary>
+    public object? EvaluateLegacy(ASTNode node)
+    {
         if (node is ProgramNode program)
             return EvaluateProgram(program);
         if (node is ExpressionStatement stmt)
-            return Evaluate(stmt.Expression, sourceCode);
+            return Evaluate(stmt.Expression, _sourceCode);
         if (node is VariableDeclaration varDecl)
             return EvaluateVariableDeclaration(varDecl);
         if (node is FunctionDeclaration funcDecl)
@@ -314,6 +323,80 @@ public class Interpreter
         throw new ECEngineException($"Unknown node type: {node.GetType().Name}",
             1, 1, _sourceCode, "Unsupported AST node encountered during evaluation");
     }
+
+    #region Optimized Evaluation Methods
+
+    /// <summary>
+    /// Optimized identifier evaluation with variable caching
+    /// </summary>
+    public object? EvaluateIdentifierOptimized(Identifier identifier)
+    {
+        // TODO: Add variable cache optimization here
+        // For now, delegate to existing implementation
+        return EvaluateIdentifier(identifier);
+    }
+
+    /// <summary>
+    /// Optimized binary expression evaluation with fast paths for numbers
+    /// </summary>
+    public object? EvaluateBinaryExpressionOptimized(BinaryExpression binary)
+    {
+        // Fast path for number literals
+        if (binary.Left is NumberLiteral leftNum && binary.Right is NumberLiteral rightNum)
+        {
+            var fastResult = EvaluateNumberBinaryOperation(leftNum.Value, binary.Operator, rightNum.Value);
+            if (fastResult != null)
+            {
+                return fastResult;
+            }
+        }
+
+        // Fall back to general case
+        return EvaluateBinaryExpression(binary);
+    }
+
+    /// <summary>
+    /// Fast path for number-only binary operations
+    /// </summary>
+    private object? EvaluateNumberBinaryOperation(double left, string op, double right)
+    {
+        return op switch
+        {
+            "+" => left + right,
+            "-" => left - right,
+            "*" => left * right,
+            "/" => left / right,
+            "%" => left % right,
+            "<" => left < right,
+            "<=" => left <= right,
+            ">" => left > right,
+            ">=" => left >= right,
+            "==" => Math.Abs(left - right) < double.Epsilon,
+            "!=" => Math.Abs(left - right) >= double.Epsilon,
+            "===" => Math.Abs(left - right) < double.Epsilon,
+            "!==" => Math.Abs(left - right) >= double.Epsilon,
+            // Bitwise operators (convert to integers for bitwise operations)
+            "&" => (double)((int)left & (int)right),
+            "|" => (double)((int)left | (int)right),
+            "^" => (double)((int)left ^ (int)right),
+            "<<" => (double)((int)left << (int)right),
+            ">>" => (double)((int)left >> (int)right),
+            ">>>" => (double)((uint)(int)left >> (int)right),
+            _ => null // Fall back to general evaluation
+        };
+    }
+
+    /// <summary>
+    /// Optimized call expression evaluation
+    /// </summary>
+    public object? EvaluateCallExpressionOptimized(CallExpression call)
+    {
+        // TODO: Add function call caching and optimization here
+        // For now, delegate to existing implementation
+        return EvaluateCallExpression(call);
+    }
+
+    #endregion
 
     private object? EvaluateProgram(ProgramNode program)
     {
