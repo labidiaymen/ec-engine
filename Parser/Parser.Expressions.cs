@@ -400,7 +400,8 @@ public partial class Parser
             _currentToken.Type == TokenType.Decrement ||
             _currentToken.Type == TokenType.Plus ||
             _currentToken.Type == TokenType.Minus ||
-            _currentToken.Type == TokenType.BitwiseNot)
+            _currentToken.Type == TokenType.BitwiseNot ||
+            _currentToken.Type == TokenType.Typeof)
         {
             var op = _currentToken.Value;
             var token = _currentToken;

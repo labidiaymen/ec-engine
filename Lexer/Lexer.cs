@@ -337,6 +337,7 @@ public class Lexer
             "as" => TokenType.As,
             "yield" => TokenType.Yield,
             "new" => TokenType.New,
+            "typeof" => TokenType.Typeof,
             _ => TokenType.Identifier
         };
     }

@@ -869,6 +869,9 @@ public class Interpreter
                 var intValue = ConvertToInt(operand);
                 return (double)(~intValue);
                 
+            case "typeof":
+                return GetTypeOfValue(operand);
+                
             default:
                 throw new ECEngineException($"Unknown unary operator: {unary.Operator}",
                     token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
@@ -2081,6 +2084,22 @@ public class Interpreter
         throw new ECEngineException($"'{constructor?.GetType().Name}' is not a constructor",
             newExpr.Token?.Line ?? 1, newExpr.Token?.Column ?? 1, _sourceCode,
             "Cannot use 'new' with non-constructor value");
+    }
+
+    /// <summary>
+    /// Returns the JavaScript typeof value for an object
+    /// </summary>
+    private string GetTypeOfValue(object? value)
+    {
+        return value switch
+        {
+            null => "object", // JavaScript quirk: typeof null === "object"
+            bool => "boolean",
+            double => "number",
+            string => "string", 
+            Function => "function",
+            _ => "object"
+        };
     }
 
     private object? EvaluateFunctionDeclaration(FunctionDeclaration funcDecl)
