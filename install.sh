@@ -85,7 +85,9 @@ get_latest_version() {
     version=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep -o '"tag_name": "[^"]*' | grep -o '[^"]*$')
     
     if [ -z "$version" ]; then
-        print_error "Failed to get latest version"
+        print_error "No releases found for $REPO"
+        print_error "Please check if there are any published releases at:"
+        print_error "https://github.com/$REPO/releases"
         exit 1
     fi
     
