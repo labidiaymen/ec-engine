@@ -2,6 +2,11 @@
 
 This directory contains comprehensive examples demonstrating the various features of the ECEngine scripting language.
 
+## 🌟 Featured Examples
+
+### `string_methods_showcase.ec` 
+**Complete JavaScript String API Demo** - Demonstrates all 70+ string methods including Unicode support, pattern matching, and HTML wrapper methods. Perfect introduction to ECEngine's string capabilities.
+
 ## Directory Structure
 
 ### 📁 variables/

@@ -549,6 +549,7 @@ public class Interpreter
             "Date" => (object?)new DateModule(),
             "Math" => (object?)new MathModule(),
             "JSON" => (object?)new JsonModule(),
+            "String" => (object?)new StringModule(),
             _ => null
         };
 
@@ -1128,6 +1129,20 @@ public class Interpreter
             };
         }
         
+        // Handle String static methods
+        if (obj is StringModule stringModule)
+        {
+            return member.Property switch
+            {
+                "fromCharCode" => stringModule.fromCharCode,
+                "fromCodePoint" => stringModule.fromCodePoint,
+                "raw" => stringModule.raw,
+                _ => throw new ECEngineException($"Property {member.Property} not found on String",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the String object")
+            };
+        }
+        
         // Handle Filesystem module methods
         if (obj is FilesystemModule fsModule)
         {
@@ -1358,6 +1373,92 @@ public class Interpreter
             };
         }
         
+        // Handle string methods and properties
+        if (obj is string stringValue)
+        {
+            return member.Property switch
+            {
+                // Properties
+                "length" => (double)stringValue.Length,
+                
+                // Instance methods - Character access
+                "charAt" => new StringMethodFunction(stringValue, "charAt"),
+                "charCodeAt" => new StringMethodFunction(stringValue, "charCodeAt"),
+                "codePointAt" => new StringMethodFunction(stringValue, "codePointAt"),
+                "at" => new StringMethodFunction(stringValue, "at"),
+                
+                // Search methods
+                "indexOf" => new StringMethodFunction(stringValue, "indexOf"),
+                "lastIndexOf" => new StringMethodFunction(stringValue, "lastIndexOf"),
+                "search" => new StringMethodFunction(stringValue, "search"),
+                "includes" => new StringMethodFunction(stringValue, "includes"),
+                "startsWith" => new StringMethodFunction(stringValue, "startsWith"),
+                "endsWith" => new StringMethodFunction(stringValue, "endsWith"),
+                
+                // Extraction methods
+                "slice" => new StringMethodFunction(stringValue, "slice"),
+                "substring" => new StringMethodFunction(stringValue, "substring"),
+                "substr" => new StringMethodFunction(stringValue, "substr"),
+                
+                // Case methods
+                "toLowerCase" => new StringMethodFunction(stringValue, "toLowerCase"),
+                "toUpperCase" => new StringMethodFunction(stringValue, "toUpperCase"),
+                "toLocaleLowerCase" => new StringMethodFunction(stringValue, "toLocaleLowerCase"),
+                "toLocaleUpperCase" => new StringMethodFunction(stringValue, "toLocaleUpperCase"),
+                
+                // String building methods
+                "concat" => new StringMethodFunction(stringValue, "concat"),
+                "repeat" => new StringMethodFunction(stringValue, "repeat"),
+                "padStart" => new StringMethodFunction(stringValue, "padStart"),
+                "padEnd" => new StringMethodFunction(stringValue, "padEnd"),
+                
+                // Modification methods
+                "trim" => new StringMethodFunction(stringValue, "trim"),
+                "trimStart" => new StringMethodFunction(stringValue, "trimStart"),
+                "trimEnd" => new StringMethodFunction(stringValue, "trimEnd"),
+                "replace" => new StringMethodFunction(stringValue, "replace"),
+                "replaceAll" => new StringMethodFunction(stringValue, "replaceAll"),
+                
+                // Splitting
+                "split" => new StringMethodFunction(stringValue, "split"),
+                
+                // Pattern matching
+                "match" => new StringMethodFunction(stringValue, "match"),
+                "matchAll" => new StringMethodFunction(stringValue, "matchAll"),
+                
+                // Unicode methods
+                "normalize" => new StringMethodFunction(stringValue, "normalize"),
+                "isWellFormed" => new StringMethodFunction(stringValue, "isWellFormed"),
+                "toWellFormed" => new StringMethodFunction(stringValue, "toWellFormed"),
+                
+                // Comparison
+                "localeCompare" => new StringMethodFunction(stringValue, "localeCompare"),
+                
+                // Object methods
+                "toString" => new StringMethodFunction(stringValue, "toString"),
+                "valueOf" => new StringMethodFunction(stringValue, "valueOf"),
+                
+                // HTML wrapper methods (deprecated but included for compatibility)
+                "anchor" => new StringMethodFunction(stringValue, "anchor"),
+                "big" => new StringMethodFunction(stringValue, "big"),
+                "blink" => new StringMethodFunction(stringValue, "blink"),
+                "bold" => new StringMethodFunction(stringValue, "bold"),
+                "fixed" => new StringMethodFunction(stringValue, "fixed"),
+                "fontcolor" => new StringMethodFunction(stringValue, "fontcolor"),
+                "fontsize" => new StringMethodFunction(stringValue, "fontsize"),
+                "italics" => new StringMethodFunction(stringValue, "italics"),
+                "link" => new StringMethodFunction(stringValue, "link"),
+                "small" => new StringMethodFunction(stringValue, "small"),
+                "strike" => new StringMethodFunction(stringValue, "strike"),
+                "sub" => new StringMethodFunction(stringValue, "sub"),
+                "sup" => new StringMethodFunction(stringValue, "sup"),
+                
+                _ => throw new ECEngineException($"Property {member.Property} not found on String",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on strings")
+            };
+        }
+        
         if (obj is Dictionary<string, object?> dict)
         {
             return dict.ContainsKey(member.Property) ? dict[member.Property] : null;
@@ -1482,6 +1583,22 @@ public class Interpreter
         if (function is JsonMethodFunction jsonMethodFunc)
         {
             return jsonMethodFunc.Call(arguments);
+        }
+
+        // Handle String constructor and static methods
+        if (function is StringModule stringModule)
+        {
+            return stringModule.Call(arguments);
+        }
+
+        if (function is StringStaticMethodFunction stringStaticFunc)
+        {
+            return stringStaticFunc.Call(arguments);
+        }
+
+        if (function is StringMethodFunction stringMethodFunc)
+        {
+            return stringMethodFunc.Call(arguments);
         }
 
         if (function is ArrayMethodFunction arrayMethodFunc)
