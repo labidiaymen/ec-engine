@@ -238,7 +238,7 @@ function func{iteration}_{i}(x, y) {{
         
         // Assert
         var memoryIncrease = finalMemory - initialMemory;
-        Assert.True(memoryIncrease < 3 * 1024 * 1024, // Less than 3MB increase
+        Assert.True(memoryIncrease < 4 * 1024 * 1024, // Less than 4MB increase (increased to account for package management)
             $"Memory increased by {memoryIncrease / 1024.0:F2}KB after defining many functions");
     }
 
