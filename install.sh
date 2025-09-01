@@ -82,7 +82,13 @@ detect_platform() {
 # Function to get the latest release version
 get_latest_version() {
     local version
+    # Try latest stable release first
     version=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep -o '"tag_name": "[^"]*' | grep -o '[^"]*$')
+    
+    # If no stable release, get the most recent release (including prereleases)
+    if [ -z "$version" ]; then
+        version=$(curl -s "https://api.github.com/repos/$REPO/releases?per_page=1" | grep -o '"tag_name": "[^"]*' | head -1 | grep -o '[^"]*$')
+    fi
     
     if [ -z "$version" ]; then
         print_error "No releases found for $REPO"
