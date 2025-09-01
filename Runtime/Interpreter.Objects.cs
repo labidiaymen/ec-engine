@@ -89,6 +89,12 @@ public partial class Interpreter
             case HttpRequestObject requestObj:
                 return GetHttpRequestProperty(requestObj, propertyName);
                 
+            case BufferObject bufferObj:
+                return GetBufferProperty(bufferObj, propertyName);
+                
+            case BufferConstructor bufferConstructor:
+                return GetBufferConstructorProperty(bufferConstructor, propertyName);
+                
             case Generator generator:
                 return GetGeneratorProperty(generator, propertyName);
                 
@@ -797,6 +803,53 @@ public partial class Interpreter
             "Url" => requestObj.Url,
             "Path" => requestObj.Path,
             "Headers" => requestObj.Headers,
+            _ => null
+        };
+    }
+    
+    /// <summary>
+    /// Get Buffer object properties and methods
+    /// </summary>
+    private object? GetBufferProperty(BufferObject bufferObj, string propertyName)
+    {
+        return propertyName switch
+        {
+            "length" => (double)bufferObj.length,
+            "toString" => new BufferMethodFunction(bufferObj, "toString"),
+            "toJSON" => new BufferMethodFunction(bufferObj, "toJSON"),
+            "compare" => new BufferMethodFunction(bufferObj, "compare"),
+            "copy" => new BufferMethodFunction(bufferObj, "copy"),
+            "equals" => new BufferMethodFunction(bufferObj, "equals"),
+            "fill" => new BufferMethodFunction(bufferObj, "fill"),
+            "includes" => new BufferMethodFunction(bufferObj, "includes"),
+            "indexOf" => new BufferMethodFunction(bufferObj, "indexOf"),
+            "lastIndexOf" => new BufferMethodFunction(bufferObj, "lastIndexOf"),
+            "slice" => new BufferMethodFunction(bufferObj, "slice"),
+            "subarray" => new BufferMethodFunction(bufferObj, "subarray"),
+            "swap16" => new BufferMethodFunction(bufferObj, "swap16"),
+            "swap32" => new BufferMethodFunction(bufferObj, "swap32"),
+            "swap64" => new BufferMethodFunction(bufferObj, "swap64"),
+            "write" => new BufferMethodFunction(bufferObj, "write"),
+            _ => propertyName.All(char.IsDigit) ? bufferObj.Get(int.Parse(propertyName)) : null
+        };
+    }
+    
+    /// <summary>
+    /// Get property from BufferConstructor (for static methods like Buffer.alloc, Buffer.from, etc.)
+    /// </summary>
+    private object? GetBufferConstructorProperty(BufferConstructor bufferConstructor, string propertyName)
+    {
+        return propertyName switch
+        {
+            "alloc" => new BufferAllocFunction(),
+            "allocUnsafe" => new BufferAllocUnsafeFunction(),
+            "allocUnsafeSlow" => new BufferAllocUnsafeSlowFunction(),
+            "byteLength" => new BufferByteLengthFunction(),
+            "compare" => new BufferCompareFunction(),
+            "concat" => new BufferConcatFunction(),
+            "from" => new BufferFromFunction(),
+            "isBuffer" => new BufferIsBufferFunction(),
+            "isEncoding" => new BufferIsEncodingFunction(),
             _ => null
         };
     }

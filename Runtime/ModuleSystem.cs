@@ -104,7 +104,7 @@ public class ModuleSystem
     {
         // Remove node: prefix if present
         var normalizedPath = modulePath.StartsWith("node:") ? modulePath.Substring(5) : modulePath;
-        return normalizedPath == "querystring" || normalizedPath == "path" || normalizedPath == "http";
+        return normalizedPath == "querystring" || normalizedPath == "path" || normalizedPath == "http" || normalizedPath == "buffer";
     }
     
     /// <summary>
@@ -159,6 +159,17 @@ public class ModuleSystem
                         module.Exports[kvp.Key] = kvp.Value;
                     }
                     module.Exports["default"] = httpDict;
+                }
+                break;
+            case "buffer":
+                var bufferModule = BufferGlobals.GetBufferModule();
+                if (bufferModule is Dictionary<string, object?> bufferDict)
+                {
+                    foreach (var kvp in bufferDict)
+                    {
+                        module.Exports[kvp.Key] = kvp.Value;
+                    }
+                    module.Exports["default"] = bufferDict;
                 }
                 break;
         }

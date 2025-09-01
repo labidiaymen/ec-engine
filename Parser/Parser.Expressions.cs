@@ -489,7 +489,7 @@ public partial class Parser
                 var token = _currentToken;
                 Advance(); // consume '.'
                 
-                // Allow 'default' as a property name
+                // Allow 'default', 'from', and other keywords as property names
                 string propertyName;
                 if (_currentToken.Type == TokenType.Identifier)
                 {
@@ -499,6 +499,11 @@ public partial class Parser
                 {
                     propertyName = "default";
                     Advance(); // consume 'default'
+                }
+                else if (_currentToken.Type == TokenType.From)
+                {
+                    propertyName = "from";
+                    Advance(); // consume 'from'
                 }
                 else
                 {

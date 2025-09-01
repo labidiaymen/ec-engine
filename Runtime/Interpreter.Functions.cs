@@ -197,6 +197,19 @@ public partial class Interpreter
             // HTTP functions (new Node.js-compatible)
             HttpResponseMethodFunction httpResponseMethodFunc => httpResponseMethodFunc.Call(arguments),
             
+            // Buffer functions
+            BufferConstructor bufferConstructor => bufferConstructor.Call(arguments),
+            BufferAllocFunction bufferAllocFunc => bufferAllocFunc.Call(arguments),
+            BufferAllocUnsafeFunction bufferAllocUnsafeFunc => bufferAllocUnsafeFunc.Call(arguments),
+            BufferAllocUnsafeSlowFunction bufferAllocUnsafeSlowFunc => bufferAllocUnsafeSlowFunc.Call(arguments),
+            BufferByteLengthFunction bufferByteLengthFunc => bufferByteLengthFunc.Call(arguments),
+            BufferCompareFunction bufferCompareFunc => bufferCompareFunc.Call(arguments),
+            BufferConcatFunction bufferConcatFunc => bufferConcatFunc.Call(arguments),
+            BufferFromFunction bufferFromFunc => bufferFromFunc.Call(arguments),
+            BufferIsBufferFunction bufferIsBufferFunc => bufferIsBufferFunc.Call(arguments),
+            BufferIsEncodingFunction bufferIsEncodingFunc => bufferIsEncodingFunc.Call(arguments),
+            BufferMethodFunction bufferMethodFunc => bufferMethodFunc.Call(arguments),
+            
             // Date functions
             DateModule dateModuleAsFunc => dateModuleAsFunc.Constructor.Call(arguments),
             DateConstructorFunction dateConstructorFunc => dateConstructorFunc.Call(arguments),

@@ -10,7 +10,7 @@
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
-| **Node.js API Compatibility** | 13 | 0 | 14 | **48%** |
+| **Node.js API Compatibility** | 14 | 0 | 13 | **52%** |
 | **Modern JavaScript** | 2 | 0 | 18 | **10%** |
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
@@ -127,7 +127,7 @@
 
 ---
 
-## 🌐 Node.js API Compatibility (47% Complete)
+## 🌐 Node.js API Compatibility (60% Complete)
 
 ### ✅ Implemented
 - **Module System**: Node.js-style module resolution with `node_modules` traversal, `package.json` main field support, `index.js` fallback, directory upward traversal, multi-extension support (`.ec`, `.js`, `.mjs`), `node:` prefix support for core modules (e.g., `require('node:http')`)
@@ -142,9 +142,10 @@
 - **Path Module**: Complete Node.js-compatible path API implementation with full `require('path')` support including all standard methods (`basename()`, `dirname()`, `extname()`, `format()`, `isAbsolute()`, `join()`, `normalize()`, `parse()`, `relative()`, `resolve()`, `toNamespacedPath()`, `matchesGlob()`), platform-specific variants (`path.posix`, `path.win32`), path properties (`path.sep`, `path.delimiter`), cross-platform behavior with automatic Windows/POSIX detection, proper path normalization with ".." segment handling, comprehensive test coverage with 24 test cases
 - **Process Global (COMPLETE)**: Full Node.js-compatible `process` global object implementation with all core properties (`process.pid`, `process.platform`, `process.arch`, `process.version`, `process.versions`, `process.argv`, `process.env`, `process.execPath`, `process.exitCode`), all core methods (`process.cwd()`, `process.chdir()`, `process.exit()`, `process.memoryUsage()`, `process.uptime()`, `process.hrtime()`, `process.nextTick()`), complete EventEmitter functionality (`process.on()`, `process.off()`, `process.emit()`, `process.eventNames()`, `process.listenerCount()`), proper process lifecycle events (`beforeExit`, `exit` with correct Node.js timing semantics), property setting support (`process.exitCode = value`), singleton pattern for state persistence, cross-platform compatibility (macOS, Linux, Windows), and comprehensive test coverage with 4 demo files
 - **Streams (COMPLETE)**: Full Node.js-compatible `stream` module implementation with all core stream types (ReadableStream, WritableStream, DuplexStream, TransformStream, PassThroughStream), complete API compatibility (`push()`, `read()`, `write()`, `end()`, `pipe()`, `on()`, `emit()`), proper event handling (`data`, `end`, `error`, `readable`, `drain`, `finish`), stream utilities (`stream.isReadable()`, `stream.isWritable()`, `stream.pipeline()`, `stream.finished()`, `stream.compose()`), constructor options support (highWaterMark, encoding, objectMode), flowing and non-flowing modes, backpressure handling, comprehensive test coverage with 25+ unit tests, and full module system integration via `require('stream')`
+- **Buffer (COMPLETE)**: Full Node.js-compatible Buffer API implementation following official specification with complete `require('buffer')` and `require('node:buffer')` support, all static factory methods (`Buffer.alloc()`, `Buffer.allocUnsafe()`, `Buffer.from()`, `Buffer.concat()`), utility methods (`Buffer.isBuffer()`, `Buffer.isEncoding()`, `Buffer.byteLength()`, `Buffer.compare()`), full instance method API (30+ methods including `toString()`, `slice()`, `write()`, `fill()`, `copy()`, `equals()`, `indexOf()`, `includes()`, `subarray()`, etc.), complete encoding support (utf8, ascii, base64, hex), binary data manipulation, string conversion, buffer comparison and concatenation, proper property access for both dot notation (`Buffer.from`) and bracket notation (`Buffer['from']`), comprehensive test coverage with 23 unit tests, and example demonstration file
 
 ### ❌ Missing
-- **Global Objects**: `global` object, `Buffer` class
+- **Global Objects**: `global` object
 - **Built-in Modules**: `os` (operating system), `crypto` (cryptographic functions)
 - **Module Helpers**: `require()` function, `__dirname`, `__filename` variables, `module` object with metadata
 - **Async**: Native Promise support, `async`/`await` syntax, callback conventions
