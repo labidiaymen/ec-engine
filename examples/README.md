@@ -55,7 +55,11 @@ Advanced module system examples:
 - `nodejs-modules-test/` - **Complete Node.js module resolution with node_modules**
 - `nodejs_basic_demo.ec` - Basic Node.js-style module concepts
 
-### 🚀 Advanced Features
+### � Node.js Built-in Modules
+Examples of Node.js-compatible built-in modules:
+- `path_module_demo.ec` - **Complete Node.js Path API** - All path manipulation methods including `join()`, `resolve()`, `normalize()`, `basename()`, `dirname()`, platform-specific variants, and cross-platform compatibility
+
+### �🚀 Advanced Features
 Comprehensive language feature examples:
 - `advanced_modules_demo.ec` - Complex module scenarios and re-exports
 - `template_literals_demo.ec` - String interpolation with template literals

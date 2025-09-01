@@ -102,7 +102,7 @@ public class ModuleSystem
     /// </summary>
     private bool IsBuiltinModule(string modulePath)
     {
-        return modulePath == "querystring";
+        return modulePath == "querystring" || modulePath == "path";
     }
     
     /// <summary>
@@ -134,6 +134,14 @@ public class ModuleSystem
                     ["escape"] = module.Exports["escape"],
                     ["unescape"] = module.Exports["unescape"]
                 };
+                break;
+            case "path":
+                var pathExports = PathGlobals.GetPathModule();
+                foreach (var kvp in pathExports)
+                {
+                    module.Exports[kvp.Key] = kvp.Value;
+                }
+                module.Exports["default"] = pathExports;
                 break;
         }
         

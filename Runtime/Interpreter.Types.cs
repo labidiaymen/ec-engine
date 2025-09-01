@@ -45,6 +45,7 @@ public partial class Interpreter
             SetTimeoutFunction or SetIntervalFunction or ClearTimeoutFunction or ClearIntervalFunction => "function",
             RequireFunction or UrlConstructorFunction or URLSearchParamsConstructorFunction => "function",
             QuerystringMethodFunction => "function",
+            PathMethodFunction => "function",
             StringModule => "function", // String constructor is a function
             FunctionDeclaration => "function",
             ArrowFunction => "function",

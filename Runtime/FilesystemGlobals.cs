@@ -1128,7 +1128,7 @@ public class RequireFunction
         return moduleName switch
         {
             "fs" => true,
-            "path" => true,
+            // "path" => true,  // Removed: Now handled by ModuleSystem for Node.js compatibility
             "os" => true,
             "util" => true,
             "url" => true,
@@ -1141,7 +1141,7 @@ public class RequireFunction
         return moduleName switch
         {
             "fs" => new FilesystemModule(),
-            "path" => new PathModule(),
+            // "path" => new PathModule(),  // Removed: Now handled by ModuleSystem for Node.js compatibility
             "os" => new OSModule(),
             "util" => new Runtime.UtilModule(),
             "url" => new Runtime.UrlModule(),

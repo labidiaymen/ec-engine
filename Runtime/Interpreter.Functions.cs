@@ -229,6 +229,7 @@ public partial class Interpreter
             
             JsonMethodFunction jsonMethodFunc => jsonMethodFunc.Call(arguments),
             QuerystringMethodFunction querystringMethodFunc => querystringMethodFunc.Call(arguments),
+            PathMethodFunction pathMethodFunc => pathMethodFunc.Call(arguments),
             ObjectMethodFunction objectMethodFunc => objectMethodFunc.Call(arguments),
             
             // EventEmitter functions
