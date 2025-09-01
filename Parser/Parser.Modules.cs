@@ -141,26 +141,95 @@ public partial class Parser
         Consume(TokenType.Import, "Expected 'import'");
         
         var importedNames = new List<string>();
+        var importAliases = new Dictionary<string, string>();
         
-        // Check if this is a default import (import name from "module")
-        if (_currentToken.Type == TokenType.Identifier)
+        // Check for namespace import: import * as name from "module"
+        if (_currentToken.Type == TokenType.Multiply)
         {
-            // Default import: import name from "module"
-            var defaultName = Consume(TokenType.Identifier, "Expected identifier for default import").Value;
-            importedNames.Add("default"); // Store as "default" internally
+            Advance(); // consume '*'
+            Consume(TokenType.As, "Expected 'as' after '*' in namespace import");
+            var namespaceName = Consume(TokenType.Identifier, "Expected identifier after 'as'").Value;
             
-            Consume(TokenType.From, "Expected 'from' after default import");
+            Consume(TokenType.From, "Expected 'from' after namespace import");
             var modulePath = Consume(TokenType.String, "Expected string literal for module path").Value;
             Match(TokenType.Semicolon); // Optional semicolon
             
-            return new ImportStatement(importedNames, modulePath, token)
+            return new ImportStatement(new List<string>(), modulePath, token)
             {
-                DefaultImportName = defaultName // Store the actual variable name
+                IsNamespaceImport = true,
+                NamespaceImportName = namespaceName
             };
+        }
+        // Check if this is a default import (import name from "module")
+        else if (_currentToken.Type == TokenType.Identifier)
+        {
+            // Could be default import or mixed import
+            var defaultName = Consume(TokenType.Identifier, "Expected identifier for default import").Value;
+            
+            // Check if there's a comma for mixed import: import defaultName, { named } from "module"
+            if (_currentToken.Type == TokenType.Comma)
+            {
+                Advance(); // consume comma
+                
+                // Now parse named imports
+                Consume(TokenType.LeftBrace, "Expected '{' after comma in mixed import");
+                
+                if (_currentToken.Type != TokenType.RightBrace)
+                {
+                    do
+                    {
+                        var importName = Consume(TokenType.Identifier, "Expected identifier in import list").Value;
+                        
+                        // Check for alias: name as alias
+                        if (_currentToken.Type == TokenType.As)
+                        {
+                            Advance(); // consume 'as'
+                            var alias = Consume(TokenType.Identifier, "Expected identifier after 'as'").Value;
+                            importAliases[importName] = alias;
+                        }
+                        
+                        importedNames.Add(importName);
+                        
+                        if (_currentToken.Type == TokenType.Comma)
+                        {
+                            Advance();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    } while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF);
+                }
+                
+                Consume(TokenType.RightBrace, "Expected '}' after import list");
+                Consume(TokenType.From, "Expected 'from' after import list");
+                var modulePath = Consume(TokenType.String, "Expected string literal for module path").Value;
+                Match(TokenType.Semicolon); // Optional semicolon
+                
+                importedNames.Insert(0, "default"); // Add default to the list
+                
+                return new ImportStatement(importedNames, modulePath, token)
+                {
+                    DefaultImportName = defaultName,
+                    ImportAliases = importAliases
+                };
+            }
+            else
+            {
+                // Pure default import: import name from "module"
+                Consume(TokenType.From, "Expected 'from' after default import");
+                var modulePath = Consume(TokenType.String, "Expected string literal for module path").Value;
+                Match(TokenType.Semicolon); // Optional semicolon
+                
+                return new ImportStatement(new List<string> { "default" }, modulePath, token)
+                {
+                    DefaultImportName = defaultName
+                };
+            }
         }
         else
         {
-            // Named imports: import { name1, name2 } from "module"
+            // Named imports: import { name1, name2 as alias2 } from "module"
             Consume(TokenType.LeftBrace, "Expected '{' after 'import'");
             
             if (_currentToken.Type != TokenType.RightBrace)
@@ -184,6 +253,14 @@ public partial class Parser
                             "Import lists can only contain identifiers or 'default'");
                     }
                     
+                    // Check for alias: name as alias
+                    if (_currentToken.Type == TokenType.As)
+                    {
+                        Advance(); // consume 'as'
+                        var alias = Consume(TokenType.Identifier, "Expected identifier after 'as'").Value;
+                        importAliases[name] = alias;
+                    }
+                    
                     importedNames.Add(name);
                     
                     if (_currentToken.Type == TokenType.Comma)
@@ -204,7 +281,10 @@ public partial class Parser
             
             Match(TokenType.Semicolon); // Optional semicolon
             
-            return new ImportStatement(importedNames, modulePath, token);
+            return new ImportStatement(importedNames, modulePath, token)
+            {
+                ImportAliases = importAliases
+            };
         }
     }
 

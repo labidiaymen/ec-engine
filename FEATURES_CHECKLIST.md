@@ -6,16 +6,16 @@
 |----------|------------|---------|---------|----------|
 | **Lexical Analysis** | 39 | 2 | 3 | **93%** |
 | **Parser & AST** | 56 | 2 | 12 | **83%** |
-| **Runtime & Interpreter** | 36 | 1 | 21 | **64%** |
+| **Runtime & Interpreter** | 39 | 1 | 18 | **68%** |
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
-| **Module System** | 11 | 0 | 3 | **79%** |
+| **Module System** | 14 | 0 | 0 | **100%** |
 | **Node.js API Compatibility** | 5 | 0 | 22 | **19%** |
 | **Modern JavaScript** | 2 | 0 | 18 | **10%** |
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
 | **ECEngine Extensions** | 5 | 0 | 1 | **83%** |
-| **TOTAL** | **195** | **6** | **113** | **65%** |
+| **TOTAL** | **198** | **6** | **110** | **67%** |
 
 ## 🔤 Lexical Analysis (93% Complete)
 
@@ -47,7 +47,7 @@
 
 ---
 
-## ⚙️ Runtime & Interpreter (82% Complete)
+## ⚙️ Runtime & Interpreter (68% Complete)
 
 ### ✅ Implemented  
 - **Basic Evaluation**: Number/string/boolean/null literals, template literals with interpolation, identifier resolution, binary expressions (arithmetic, comparison, logical, strict comparison, bitwise), member expressions, function calls, object/array literals, compound assignments, conditional expressions, string concatenation with type conversion, escape sequences
@@ -60,6 +60,7 @@
   - `Date` object: constructors, static methods (`now()`, `parse()`, `UTC()`), instance methods (`getTime()`, `getFullYear()`, etc.), UTC methods, string methods (`toString()`, `toISOString()`, etc.)
   - `Math` object: constants (`PI`, `E`, etc.), basic functions (`abs()`, `floor()`, `ceil()`, `round()`, `max()`, `min()`), power functions (`pow()`, `sqrt()`, `exp()`, `log()`), trigonometric functions, `random()`
   - `JSON` object: `parse()`, `stringify()` with proper escaping
+  - **`Object` object**: Static methods including `keys()`, `values()`, `entries()`, `assign()`, `create()`, `hasOwnProperty()`, `freeze()`, `seal()`
   - **`String` object (COMPLETE)**: All 70+ JavaScript string methods including:
     - Character access: `charAt()`, `charCodeAt()`, `codePointAt()`, `at()`
     - Search: `indexOf()`, `lastIndexOf()`, `search()`, `includes()`, `startsWith()`, `endsWith()`
@@ -73,7 +74,7 @@
     - Comparison: `localeCompare()`
     - Static methods: `fromCharCode()`, `fromCodePoint()`, `raw()`
     - HTML wrapper methods (legacy): `bold()`, `italics()`, `fontcolor()`, etc.
-  - Array methods: `push`, `pop`, `slice`, `join`, `indexOf`
+  - Array methods: `push`, `pop`, `slice`, `join`, `indexOf`, native array support (`.length`, indexing)
 - **ECEngine Extensions**: Variable observation system, observer callbacks with old/new values, multi-variable observation, change tracking metadata, conditional `when` statements
 
 ### ❌ Missing
@@ -110,17 +111,17 @@
 
 ---
 
-## 📦 Module System (79% Complete)
+## 📦 Module System (100% Complete)
 
 ### ✅ Implemented
 - **Exports**: Variables (`export var PI = 3.14`), constants (`export const MAX = 100`), functions (`export function add() {}`), default exports (`export default function() {}`), re-exports (`export { name } from "./module"`), export renaming (`export { name as newName }`)
-- **Imports**: Named imports (`import { name } from "./module"`), multiple imports (`import { a, b, c }`), default imports (`import defaultFn from "./module"`)
+- **Imports**: Named imports (`import { name } from "./module"`), multiple imports (`import { a, b, c }`), default imports (`import defaultFn from "./module"`), **namespace imports** (`import * as module from "./file"`), **import renaming** (`import { name as newName } from "./file"`), **mixed imports** (`import defaultFn, { named as alias } from "./file"`)
+- **Dynamic Imports**: Full support for `import("./module")` with promise-based loading, runtime module resolution, and error handling
 - **Resolution**: Relative paths (`"./module.ec"`), multiple extensions (`.ec`, `.js`, `.mjs`), automatic extension resolution, module caching, error handling for missing modules/exports
 - **Node.js-style**: `node_modules` traversal, `package.json` main field support, `index.js` fallback, directory upward traversal
 - **URL Imports (Deno-style)**: HTTP/HTTPS imports, local caching with SHA256 hashes, automatic download, CommonJS detection, cross-platform cache directory, offline execution, network error handling
 
-### ❌ Missing
-- Namespace imports (`import * as module`), import renaming (`import { name as newName }`), dynamic imports (`import("./module")`)
+### ✅ Complete - All ES6+ Module Features Implemented!
 
 ---
 

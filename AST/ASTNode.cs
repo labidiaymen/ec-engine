@@ -599,10 +599,25 @@ public class ImportStatement : Statement
     public List<string> ImportedNames { get; }
     public string ModulePath { get; }
     public string? DefaultImportName { get; set; } // For default imports like: import name from "module"
+    public string? NamespaceImportName { get; set; } // For namespace imports like: import * as name from "module"
+    public Dictionary<string, string> ImportAliases { get; set; } = new(); // For renamed imports like: import { foo as bar } from "module"
+    public bool IsNamespaceImport { get; set; } = false; // True for import * as name
     
     public ImportStatement(List<string> importedNames, string modulePath, Token? token = null)
     {
         ImportedNames = importedNames;
+        ModulePath = modulePath;
+        Token = token;
+    }
+}
+
+// Dynamic import expression node
+public class DynamicImportExpression : Expression
+{
+    public Expression ModulePath { get; }
+    
+    public DynamicImportExpression(Expression modulePath, Token? token = null)
+    {
         ModulePath = modulePath;
         Token = token;
     }

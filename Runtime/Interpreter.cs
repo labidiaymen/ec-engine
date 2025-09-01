@@ -333,6 +333,8 @@ public class Interpreter
             return EvaluateUnaryExpression(unary);
         if (node is MemberExpression member)
             return EvaluateMemberExpression(member);
+        if (node is DynamicImportExpression dynamicImport)
+            return EvaluateDynamicImportExpression(dynamicImport);
         if (node is CallExpression call)
             return EvaluateCallExpression(call);
 
@@ -550,6 +552,7 @@ public class Interpreter
             "Math" => (object?)new MathModule(),
             "JSON" => (object?)new JsonModule(),
             "String" => (object?)new StringModule(),
+            "Object" => (object?)new ObjectModule(),
             _ => null
         };
 
@@ -978,6 +981,23 @@ public class Interpreter
                     "Only numeric indices are allowed for array access");
             }
             
+            // Handle native array indexing
+            if (obj is Array arr)
+            {
+                if (key is double index)
+                {
+                    var intIndex = (int)index;
+                    if (intIndex >= 0 && intIndex < arr.Length)
+                    {
+                        return arr.GetValue(intIndex);
+                    }
+                    return null; // Out of bounds returns undefined in JavaScript
+                }
+                throw new ECEngineException("Array index must be a number",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    "Only numeric indices are allowed for array access");
+            }
+            
             // Handle dictionary/object property access with computed key
             if (obj is Dictionary<string, object?> objDict)
             {
@@ -1008,6 +1028,18 @@ public class Interpreter
                 "lastIndexOf" => new ArrayMethodFunction(array, "lastIndexOf"),
                 "reverse" => new ArrayMethodFunction(array, "reverse"),
                 "sort" => new ArrayMethodFunction(array, "sort"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on Array",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on arrays")
+            };
+        }
+
+        // Handle native arrays (like string[], object[], etc.)
+        if (obj is Array arr2 && !member.Computed)
+        {
+            return member.Property switch
+            {
+                "length" => (double)arr2.Length,
                 _ => throw new ECEngineException($"Property {member.Property} not found on Array",
                     member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
                     $"The property '{member.Property}' does not exist on arrays")
@@ -1140,6 +1172,25 @@ public class Interpreter
                 _ => throw new ECEngineException($"Property {member.Property} not found on String",
                     member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
                     $"The property '{member.Property}' does not exist on the String object")
+            };
+        }
+        
+        // Handle Object static methods
+        if (obj is ObjectModule objectModule)
+        {
+            return member.Property switch
+            {
+                "keys" => new ObjectMethodFunction(objectModule, "keys"),
+                "values" => new ObjectMethodFunction(objectModule, "values"),
+                "entries" => new ObjectMethodFunction(objectModule, "entries"),
+                "hasOwnProperty" => new ObjectMethodFunction(objectModule, "hasOwnProperty"),
+                "assign" => new ObjectMethodFunction(objectModule, "assign"),
+                "create" => new ObjectMethodFunction(objectModule, "create"),
+                "freeze" => new ObjectMethodFunction(objectModule, "freeze"),
+                "seal" => new ObjectMethodFunction(objectModule, "seal"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on Object",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the Object object")
             };
         }
         
@@ -1583,6 +1634,11 @@ public class Interpreter
         if (function is JsonMethodFunction jsonMethodFunc)
         {
             return jsonMethodFunc.Call(arguments);
+        }
+
+        if (function is ObjectMethodFunction objectMethodFunc)
+        {
+            return objectMethodFunc.Call(arguments);
         }
 
         // Handle String constructor and static methods
@@ -2467,6 +2523,19 @@ public class Interpreter
                     $"Module '{importStmt.ModulePath}' could not be loaded or resolved");
             }
             
+            // Handle namespace import (import * as name from "module")
+            if (importStmt.IsNamespaceImport && importStmt.NamespaceImportName != null)
+            {
+                // Create a namespace object containing all exports
+                var namespaceObject = new Dictionary<string, object?>(module.Exports);
+                
+                var currentScope = _scopes.Peek();
+                currentScope[importStmt.NamespaceImportName] = new VariableInfo("const", namespaceObject);
+                _variables[importStmt.NamespaceImportName] = new VariableInfo("const", namespaceObject);
+                
+                return null;
+            }
+            
             // Handle default import (import name from "module")
             if (importStmt.DefaultImportName != null)
             {
@@ -2495,19 +2564,30 @@ public class Interpreter
                     _variables[importStmt.DefaultImportName] = new VariableInfo("const", defaultValue);
                 }
             }
-            else
+            
+            // Handle named imports (import { name1, name2 as alias } from "module")
+            if (importStmt.ImportedNames.Count > 0)
             {
-                // Handle named imports (import { name1, name2 } from "module")
                 foreach (var name in importStmt.ImportedNames)
                 {
+                    // Skip default if already handled above
+                    if (name == "default" && importStmt.DefaultImportName != null)
+                        continue;
+                        
                     if (module.Exports.ContainsKey(name))
                     {
                         var value = module.Exports[name];
-                        // Add to current scope instead of _variables
+                        
+                        // Check if this import has an alias
+                        var importName = importStmt.ImportAliases.ContainsKey(name) 
+                            ? importStmt.ImportAliases[name] 
+                            : name;
+                        
+                        // Add to current scope
                         var currentScope = _scopes.Peek();
-                        currentScope[name] = new VariableInfo("const", value);
+                        currentScope[importName] = new VariableInfo("const", value);
                         // Also add to _variables for backwards compatibility
-                        _variables[name] = new VariableInfo("const", value);
+                        _variables[importName] = new VariableInfo("const", value);
                     }
                     else
                     {
@@ -2529,6 +2609,58 @@ public class Interpreter
         {
             var token = importStmt.Token;
             throw new ECEngineException($"Failed to import module '{importStmt.ModulePath}': {ex.Message}",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                ex.Message);
+        }
+    }
+
+    private object? EvaluateDynamicImportExpression(DynamicImportExpression dynamicImport)
+    {
+        if (_moduleSystem == null)
+        {
+            var token = dynamicImport.Token;
+            throw new ECEngineException("Module system not available",
+                token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                "Dynamic import requires a module system to be configured");
+        }
+
+        try
+        {
+            // Evaluate the module path expression
+            var modulePathValue = Evaluate(dynamicImport.ModulePath, _sourceCode);
+            var modulePath = modulePathValue?.ToString() ?? "";
+
+            if (string.IsNullOrEmpty(modulePath))
+            {
+                var token = dynamicImport.Token;
+                throw new ECEngineException("Dynamic import path cannot be empty",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    "Dynamic import requires a valid module path string");
+            }
+
+            // Load the module
+            var module = _moduleSystem.LoadModule(modulePath, this);
+
+            if (module == null)
+            {
+                var token = dynamicImport.Token;
+                throw new ECEngineException($"Failed to load module '{modulePath}'",
+                    token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
+                    $"Module '{modulePath}' could not be loaded or resolved");
+            }
+
+            // For dynamic imports, always return a Promise-like object with the module namespace
+            // Since ECEngine doesn't have Promises yet, we'll return the module exports directly
+            return new Dictionary<string, object?>(module.Exports);
+        }
+        catch (ECEngineException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            var token = dynamicImport.Token;
+            throw new ECEngineException($"Failed to dynamically import module: {ex.Message}",
                 token?.Line ?? 1, token?.Column ?? 1, _sourceCode,
                 ex.Message);
         }

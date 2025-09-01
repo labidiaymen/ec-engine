@@ -458,8 +458,26 @@ public partial class Parser
             {
                 var token = _currentToken;
                 Advance(); // consume '.'
-                var property = Consume(TokenType.Identifier, "Expected property name after '.'");
-                expression = new MemberExpression(expression, property.Value, token);
+                
+                // Allow 'default' as a property name
+                string propertyName;
+                if (_currentToken.Type == TokenType.Identifier)
+                {
+                    propertyName = Consume(TokenType.Identifier, "Expected property name after '.'").Value;
+                }
+                else if (_currentToken.Type == TokenType.Default)
+                {
+                    propertyName = "default";
+                    Advance(); // consume 'default'
+                }
+                else
+                {
+                    throw new ECEngineException("Expected property name after '.'",
+                        _currentToken.Line, _currentToken.Column, _sourceCode,
+                        "Property access requires an identifier or 'default'");
+                }
+                
+                expression = new MemberExpression(expression, propertyName, token);
             }
             else if (_currentToken.Type == TokenType.LeftBracket)
             {
@@ -537,8 +555,39 @@ public partial class Parser
         {
             var name = _currentToken.Value;
             var token = _currentToken;
+            
+            // Check for dynamic import: import(modulePath)
+            if (name == "import" && Peek().Type == TokenType.LeftParen)
+            {
+                Advance(); // consume 'import'
+                Advance(); // consume '('
+                var modulePath = ParseExpression();
+                Consume(TokenType.RightParen, "Expected ')' after import expression");
+                return new DynamicImportExpression(modulePath, token);
+            }
+            
             Advance();
             return new Identifier(name, token);
+        }
+
+        if (_currentToken.Type == TokenType.Import)
+        {
+            var token = _currentToken;
+            
+            // Check for dynamic import: import(modulePath)
+            if (Peek().Type == TokenType.LeftParen)
+            {
+                Advance(); // consume 'import'
+                Advance(); // consume '('
+                var modulePath = ParseExpression();
+                Consume(TokenType.RightParen, "Expected ')' after import expression");
+                return new DynamicImportExpression(modulePath, token);
+            }
+            
+            // If not followed by '(', treat as unexpected in expression context
+            throw new ECEngineException("Unexpected 'import' in expression context",
+                _currentToken.Line, _currentToken.Column, _sourceCode,
+                "Use 'import()' for dynamic imports or 'import ... from ...' for static imports");
         }
 
         if (_currentToken.Type == TokenType.Function)
