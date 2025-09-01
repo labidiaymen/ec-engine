@@ -145,7 +145,7 @@ public class ModuleSystem
     }
     
     /// <summary>
-    /// Implements Node.js-style module resolution
+    /// Implements Node.js-style module resolution with ECEngine package support
     /// </summary>
     private string? ResolveNodeStyleModule(string moduleName, string startDir)
     {
@@ -154,7 +154,19 @@ public class ModuleSystem
         
         while (currentDir != null)
         {
-            // Try to resolve in node_modules of current directory
+            // First try to resolve in ec_packages (ECEngine packages from URLs)
+            var ecPackagesDir = Path.Combine(currentDir, "ec_packages");
+            if (Directory.Exists(ecPackagesDir))
+            {
+                var ecModuleDir = Path.Combine(ecPackagesDir, moduleName);
+                var resolved = ResolveECPackageModule(ecModuleDir);
+                if (resolved != null)
+                {
+                    return resolved;
+                }
+            }
+            
+            // Then try to resolve in node_modules of current directory
             var nodeModulesDir = Path.Combine(currentDir, "node_modules");
             if (Directory.Exists(nodeModulesDir))
             {
@@ -187,6 +199,44 @@ public class ModuleSystem
         return null;
     }
     
+    /// <summary>
+    /// Resolves a module in the ECEngine packages directory
+    /// </summary>
+    private string? ResolveECPackageModule(string modulePath)
+    {
+        // Check if it's a directory with package.json
+        if (Directory.Exists(modulePath))
+        {
+            var packageJsonPath = Path.Combine(modulePath, "package.json");
+            if (File.Exists(packageJsonPath))
+            {
+                var mainFile = GetMainFromPackageJson(packageJsonPath);
+                if (mainFile != null)
+                {
+                    var mainPath = Path.Combine(modulePath, mainFile);
+                    var resolvedMain = ResolveWithExtensions(mainPath);
+                    if (File.Exists(resolvedMain))
+                    {
+                        return resolvedMain;
+                    }
+                }
+            }
+            
+            // Try common entry points for EC packages
+            var entryPoints = new[] { "index.ec", "index.js", "index.mjs", "main.ec", "main.js" };
+            foreach (var entry in entryPoints)
+            {
+                var entryPath = Path.Combine(modulePath, entry);
+                if (File.Exists(entryPath))
+                {
+                    return entryPath;
+                }
+            }
+        }
+        
+        return null;
+    }
+
     /// <summary>
     /// Resolves a module in a specific node_modules directory
     /// </summary>
