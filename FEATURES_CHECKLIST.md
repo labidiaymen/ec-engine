@@ -10,12 +10,12 @@
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
-| **Node.js API Compatibility** | 7 | 0 | 20 | **26%** |
+| **Node.js API Compatibility** | 8 | 0 | 19 | **30%** |
 | **Modern JavaScript** | 2 | 0 | 18 | **10%** |
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
 | **ECEngine Extensions** | 5 | 0 | 1 | **83%** |
-| **TOTAL** | **200** | **6** | **108** | **68%** |
+| **TOTAL** | **201** | **6** | **107** | **64%** |
 
 ## 🔤 Lexical Analysis (93% Complete)
 
@@ -135,10 +135,11 @@
 - **Filesystem (fs)**: Complete Node.js-compatible filesystem API with 16+ functions including `readFile`, `writeFile`, `appendFile`, `stat`, `mkdir`, `rmdir`, `readdir`, `unlink`, `rename`, `copyFile`, `realpath`, `exists` (both sync and async variants), full `fs.constants` support with 30+ constants, proper error handling, and cross-platform path normalization
 - **Events**: `EventEmitter` implementation using object factory pattern with full API: `.on()`, `.emit()`, `.off()`, `.removeAllListeners()`, `.listenerCount()`, `.listeners()`, `.eventNames()`, multiple listeners per event, event argument passing
 - **Utilities (util)**: Comprehensive Node.js util module implementation with `util.inspect()` (object inspection with proper formatting), `util.format()` (printf-style string formatting with %s, %d, %j placeholders), type checking functions (`isArray`, `isFunction`, `isNumber`, `isObject`, `isPrimitive`, `isString`, `isUndefined`, `isNullOrUndefined`), `util.isDeepStrictEqual()` (deep object comparison), `util.debuglog()` (debug logging with sections), `util.types` module (advanced type checking), and `util.promisify/callbackify()` placeholders
+- **URL Module**: Complete Node.js-compatible URL API implementation with WHATWG URL standard support including `URL` constructor (`new URL(input, base)`), `URLSearchParams` class with full API (`get()`, `set()`, `append()`, `delete()`, `has()`, `getAll()`, `toString()`), legacy Node.js URL functions (`url.parse()`, `url.format()`, `url.resolve()`), domain conversion functions (`url.domainToASCII()`, `url.domainToUnicode()`), property access/modification (protocol, hostname, port, pathname, search, hash, username, password), integrated with `require('url')` and global constructors, comprehensive test coverage with 25+ test cases
 
 ### ❌ Missing
 - **Global Objects**: `process` object (`process.env`, `process.argv`, `process.cwd()`, `process.exit()`), `global` object, `Buffer` class
-- **Built-in Modules**: `path` (path utilities), `os` (operating system), `crypto` (cryptographic functions), `url` (URL parsing), `querystring` (query string utilities)
+- **Built-in Modules**: `path` (path utilities), `os` (operating system), `crypto` (cryptographic functions), `querystring` (query string utilities)
 - **Module Helpers**: `require()` function, `__dirname`, `__filename` variables, `module` object with metadata
 - **Streams**: Readable/Writable/Transform streams, `stream` module
 - **Utilities**: `assert` module (✅ **util module implemented** with `util.inspect()`, `util.format()`, type checking, deep equality, debug logging)

@@ -1,5 +1,6 @@
 using ECEngine.AST;
 using ECEngine.Lexer;
+using System.Reflection;
 
 namespace ECEngine.Runtime;
 
@@ -560,6 +561,9 @@ public class Interpreter
             "Boolean" => (object?)"Boolean", // Constructor name for new operator
             "EventEmitter" => (object?)new EventEmitterModule(),
             "util" => (object?)new Runtime.UtilModule(),
+            "url" => (object?)new UrlModule(),
+            "URL" => (object?)new UrlConstructorFunction(),
+            "URLSearchParams" => (object?)new URLSearchParamsConstructorFunction(),
             _ => null
         };
 
@@ -693,6 +697,50 @@ public class Interpreter
             
             obj[propertyName] = value;
             return value;
+        }
+        
+        // Handle property assignment on custom objects (like UrlClass)
+        if (target != null)
+        {
+            // Get property name based on member expression type
+            string propertyName;
+            if (assignment.Left.Computed)
+            {
+                // Bracket notation: obj[key]
+                var propValue = Evaluate(assignment.Left.ComputedProperty!, _sourceCode);
+                propertyName = propValue?.ToString() ?? "";
+            }
+            else
+            {
+                // Dot notation: obj.prop
+                propertyName = assignment.Left.Property;
+            }
+            
+            // Try to set property using reflection
+            var targetType = target.GetType();
+            var property = targetType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            
+            if (property != null && property.CanWrite)
+            {
+                try
+                {
+                    // Convert value to appropriate type if needed
+                    object? convertedValue = value;
+                    if (value != null && property.PropertyType != typeof(object))
+                    {
+                        convertedValue = Convert.ChangeType(value, property.PropertyType);
+                    }
+                    property.SetValue(target, convertedValue);
+                    return value;
+                }
+                catch (Exception ex)
+                {
+                    var assignmentToken = assignment.Token;
+                    throw new ECEngineException($"Cannot set property '{propertyName}': {ex.Message}",
+                        assignmentToken?.Line ?? 1, assignmentToken?.Column ?? 1, _sourceCode,
+                        $"Property assignment failed");
+                }
+            }
         }
         
         var assignmentToken2 = assignment.Token;
@@ -1318,6 +1366,76 @@ public class Interpreter
             };
         }
         
+        // Handle URL module methods
+        if (obj is UrlModule urlModule)
+        {
+            return member.Property switch
+            {
+                "URL" => new UrlConstructorFunction(),
+                "URLSearchParams" => new URLSearchParamsConstructorFunction(),
+                "format" => urlModule.Format,
+                "domainToASCII" => urlModule.DomainToASCII,
+                "domainToUnicode" => urlModule.DomainToUnicode,
+                "fileURLToPath" => urlModule.FileURLToPath,
+                "pathToFileURL" => urlModule.PathToFileURL,
+                "urlToHttpOptions" => urlModule.UrlToHttpOptions,
+                "parse" => urlModule.Parse,
+                "resolve" => urlModule.Resolve,
+                _ => throw new ECEngineException($"Property {member.Property} not found on URL module",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the url module")
+            };
+        }
+        
+        // Handle URL instance properties
+        if (obj is UrlClass url)
+        {
+            return member.Property switch
+            {
+                "protocol" => url.Protocol,
+                "username" => url.Username,
+                "password" => url.Password,
+                "hostname" => url.Hostname,
+                "port" => url.Port,
+                "host" => url.Host,
+                "pathname" => url.Pathname,
+                "search" => url.Search,
+                "searchParams" => url.SearchParams,
+                "hash" => url.Hash,
+                "origin" => url.Origin,
+                "href" => url.Href,
+                "toString" => new UrlMethodFunction(url, "toString"),
+                "toJSON" => new UrlMethodFunction(url, "toJSON"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on URL instance",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on URL instances")
+            };
+        }
+        
+        // Handle URLSearchParams instance methods
+        if (obj is URLSearchParams urlParams)
+        {
+            return member.Property switch
+            {
+                "append" => new URLSearchParamsMethodFunction(urlParams, "append"),
+                "delete" => new URLSearchParamsMethodFunction(urlParams, "delete"),
+                "get" => new URLSearchParamsMethodFunction(urlParams, "get"),
+                "getAll" => new URLSearchParamsMethodFunction(urlParams, "getAll"),
+                "has" => new URLSearchParamsMethodFunction(urlParams, "has"),
+                "keys" => new URLSearchParamsMethodFunction(urlParams, "keys"),
+                "values" => new URLSearchParamsMethodFunction(urlParams, "values"),
+                "entries" => new URLSearchParamsMethodFunction(urlParams, "entries"),
+                "set" => new URLSearchParamsMethodFunction(urlParams, "set"),
+                "sort" => new URLSearchParamsMethodFunction(urlParams, "sort"),
+                "toString" => new URLSearchParamsMethodFunction(urlParams, "toString"),
+                "forEach" => new URLSearchParamsMethodFunction(urlParams, "forEach"),
+                "size" => urlParams.Size,
+                _ => throw new ECEngineException($"Property {member.Property} not found on URLSearchParams instance",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on URLSearchParams instances")
+            };
+        }
+        
         // Handle EventEmitter module methods
         if (obj is EventEmitterModule eventEmitterModule)
         {
@@ -1793,6 +1911,71 @@ public class Interpreter
             return utilMethodFunc.Call(arguments);
         }
 
+        // Handle URL module functions
+        if (function is UrlMethodFunction urlMethodFunc)
+        {
+            return urlMethodFunc.Call(arguments);
+        }
+
+        // Handle URL parsing functions
+        if (function is UrlParseFunction urlParseFunc)
+        {
+            return urlParseFunc.Call(arguments);
+        }
+
+        if (function is UrlFormatFunction urlFormatFunc)
+        {
+            return urlFormatFunc.Call(arguments);
+        }
+
+        if (function is UrlResolveFunction urlResolveFunc)
+        {
+            return urlResolveFunc.Call(arguments);
+        }
+
+        if (function is DomainToASCIIFunction domainToASCIIFunc)
+        {
+            return domainToASCIIFunc.Call(arguments);
+        }
+
+        if (function is DomainToUnicodeFunction domainToUnicodeFunc)
+        {
+            return domainToUnicodeFunc.Call(arguments);
+        }
+
+        if (function is FileURLToPathFunction fileURLToPathFunc)
+        {
+            return fileURLToPathFunc.Call(arguments);
+        }
+
+        if (function is PathToFileURLFunction pathToFileURLFunc)
+        {
+            return pathToFileURLFunc.Call(arguments);
+        }
+
+        if (function is UrlToHttpOptionsFunction urlToHttpOptionsFunc)
+        {
+            return urlToHttpOptionsFunc.Call(arguments);
+        }
+
+        // Handle URL constructor
+        if (function is UrlConstructorFunction urlConstructorFunc)
+        {
+            return urlConstructorFunc.Call(arguments);
+        }
+
+        // Handle URLSearchParams constructor
+        if (function is URLSearchParamsConstructorFunction urlSearchParamsConstructorFunc)
+        {
+            return urlSearchParamsConstructorFunc.Call(arguments);
+        }
+
+        // Handle URLSearchParams method functions
+        if (function is URLSearchParamsMethodFunction urlSearchParamsMethodFunc)
+        {
+            return urlSearchParamsMethodFunc.Call(arguments);
+        }
+
         // Handle require function
         if (function is RequireFunction requireFunc)
         {
@@ -2062,6 +2245,33 @@ public class Interpreter
                     if (arguments.Count == 0)
                         return false;
                     return IsTruthy(arguments[0]);
+                    
+                case "URL":
+                    if (constructor is UrlConstructorFunction urlConstructor)
+                    {
+                        return urlConstructor.Call(arguments);
+                    }
+                    // Fallback: create URL directly
+                    if (arguments.Count == 0)
+                        throw new ECEngineException("URL constructor requires at least one argument",
+                            newExpr.Token?.Line ?? 1, newExpr.Token?.Column ?? 1, _sourceCode,
+                            "URL constructor missing required argument");
+                    return new UrlClass(arguments[0]?.ToString() ?? "", arguments.Count > 1 ? arguments[1]?.ToString() : null);
+                    
+                case "URLSearchParams":
+                    if (constructor is URLSearchParamsConstructorFunction urlSearchParamsConstructor)
+                    {
+                        return urlSearchParamsConstructor.Call(arguments);
+                    }
+                    // Fallback: create URLSearchParams directly
+                    if (arguments.Count == 0)
+                        return new URLSearchParams();
+                    var arg = arguments[0];
+                    if (arg is string str)
+                        return new URLSearchParams(str);
+                    if (arg is Dictionary<string, object> dict)
+                        return new URLSearchParams(dict);
+                    return new URLSearchParams(); // Default to empty if unknown type
                     
                 default:
                     // For unknown constructor names, check if it's a user-defined function

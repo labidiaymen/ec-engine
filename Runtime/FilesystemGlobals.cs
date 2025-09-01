@@ -1131,6 +1131,7 @@ public class RequireFunction
             "path" => true,
             "os" => true,
             "util" => true,
+            "url" => true,
             _ => false
         };
     }
@@ -1143,6 +1144,7 @@ public class RequireFunction
             "path" => new PathModule(),
             "os" => new OSModule(),
             "util" => new Runtime.UtilModule(),
+            "url" => new Runtime.UrlModule(),
             _ => throw new ECEngineException($"Built-in module '{moduleName}' is not implemented", 1, 1, "", "Module not implemented")
         };
     }
