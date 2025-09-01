@@ -1142,7 +1142,7 @@ public class RequireFunction
             "fs" => new FilesystemModule(),
             "path" => new PathModule(),
             "os" => new OSModule(),
-            "util" => new UtilModule(),
+            "util" => new Runtime.UtilModule(),
             _ => throw new ECEngineException($"Built-in module '{moduleName}' is not implemented", 1, 1, "", "Module not implemented")
         };
     }
@@ -1274,47 +1274,6 @@ public class OSModule
         if (OperatingSystem.IsMacOS()) return "darwin";
         if (OperatingSystem.IsLinux()) return "linux";
         return "unknown";
-    }
-}
-
-/// <summary>
-/// Node.js util module equivalent
-/// </summary>
-public class UtilModule
-{
-    public InspectFunction inspect { get; }
-
-    public UtilModule()
-    {
-        inspect = new InspectFunction();
-    }
-}
-
-public class InspectFunction
-{
-    public object? Call(object?[] args)
-    {
-        if (args.Length == 0)
-            return "undefined";
-
-        var obj = args[0];
-        return FormatObject(obj);
-    }
-
-    private string FormatObject(object? obj)
-    {
-        if (obj == null) return "null";
-        if (obj is string str) return $"'{str}'";
-        if (obj is bool b) return b.ToString().ToLower();
-        if (obj is double || obj is int || obj is float) return obj.ToString()!;
-        
-        // For complex objects, return a simple representation
-        if (obj.GetType().IsClass && obj.GetType() != typeof(string))
-        {
-            return $"[object {obj.GetType().Name}]";
-        }
-
-        return obj.ToString() ?? "undefined";
     }
 }
 

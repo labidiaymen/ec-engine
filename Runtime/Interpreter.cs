@@ -554,6 +554,7 @@ public class Interpreter
             "String" => (object?)new StringModule(),
             "Object" => (object?)new ObjectModule(),
             "EventEmitter" => (object?)new EventEmitterModule(),
+            "util" => (object?)new Runtime.UtilModule(),
             _ => null
         };
 
@@ -1263,14 +1264,49 @@ public class Interpreter
         }
         
         // Handle Util module methods
-        if (obj is UtilModule utilModule)
+        if (obj is Runtime.UtilModule utilModule)
         {
             return member.Property switch
             {
-                "inspect" => utilModule.inspect,
+                "inspect" => new UtilMethodFunction(utilModule.inspect, "inspect"),
+                "format" => new UtilMethodFunction(utilModule.format, "format"),
+                "isArray" => new UtilMethodFunction(utilModule.isArray, "isArray"),
+                "isDate" => new UtilMethodFunction(utilModule.isDate, "isDate"),
+                "isError" => new UtilMethodFunction(utilModule.isError, "isError"),
+                "isFunction" => new UtilMethodFunction(utilModule.isFunction, "isFunction"),
+                "isNullOrUndefined" => new UtilMethodFunction(utilModule.isNullOrUndefined, "isNullOrUndefined"),
+                "isNumber" => new UtilMethodFunction(utilModule.isNumber, "isNumber"),
+                "isObject" => new UtilMethodFunction(utilModule.isObject, "isObject"),
+                "isPrimitive" => new UtilMethodFunction(utilModule.isPrimitive, "isPrimitive"),
+                "isString" => new UtilMethodFunction(utilModule.isString, "isString"),
+                "isSymbol" => new UtilMethodFunction(utilModule.isSymbol, "isSymbol"),
+                "isUndefined" => new UtilMethodFunction(utilModule.isUndefined, "isUndefined"),
+                "isRegExp" => new UtilMethodFunction(utilModule.isRegExp, "isRegExp"),
+                "isDeepStrictEqual" => new UtilMethodFunction(utilModule.isDeepStrictEqual, "isDeepStrictEqual"),
+                "debuglog" => new UtilMethodFunction(utilModule.debuglog, "debuglog"),
+                "inherits" => new UtilMethodFunction(utilModule.inherits, "inherits"),
+                "promisify" => new UtilMethodFunction(utilModule.promisify, "promisify"),
+                "callbackify" => new UtilMethodFunction(utilModule.callbackify, "callbackify"),
+                "types" => utilModule.types,
                 _ => throw new ECEngineException($"Property {member.Property} not found on UtilModule",
                     member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
                     $"The property '{member.Property}' does not exist on the util module")
+            };
+        }
+        
+        // Handle util.types module methods
+        if (obj is TypesModule typesModule)
+        {
+            return member.Property switch
+            {
+                "isArrayBuffer" => new UtilMethodFunction(typesModule.isArrayBuffer, "isArrayBuffer"),
+                "isDate" => new UtilMethodFunction(typesModule.isDate, "isDate"),
+                "isMap" => new UtilMethodFunction(typesModule.isMap, "isMap"),
+                "isSet" => new UtilMethodFunction(typesModule.isSet, "isSet"),
+                "isRegExp" => new UtilMethodFunction(typesModule.isRegExp, "isRegExp"),
+                _ => throw new ECEngineException($"Property {member.Property} not found on util.types",
+                    member.Token?.Line ?? 1, member.Token?.Column ?? 1, _sourceCode,
+                    $"The property '{member.Property}' does not exist on the util.types module")
             };
         }
         
@@ -1743,6 +1779,12 @@ public class Interpreter
             return arrayMethodFunc.Call(arguments);
         }
 
+        // Handle Util module functions
+        if (function is UtilMethodFunction utilMethodFunc)
+        {
+            return utilMethodFunc.Call(arguments);
+        }
+
         // Handle require function
         if (function is RequireFunction requireFunc)
         {
@@ -1900,7 +1942,7 @@ public class Interpreter
         // Handle util functions
         if (function is InspectFunction inspectFunc)
         {
-            return inspectFunc.Call(arguments.ToArray());
+            return inspectFunc.Call(arguments);
         }
         
         // Handle file stats functions

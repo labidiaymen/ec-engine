@@ -10,12 +10,12 @@
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
-| **Node.js API Compatibility** | 6 | 0 | 21 | **22%** |
+| **Node.js API Compatibility** | 7 | 0 | 20 | **26%** |
 | **Modern JavaScript** | 2 | 0 | 18 | **10%** |
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
 | **ECEngine Extensions** | 5 | 0 | 1 | **83%** |
-| **TOTAL** | **199** | **6** | **109** | **68%** |
+| **TOTAL** | **200** | **6** | **108** | **68%** |
 
 ## 🔤 Lexical Analysis (93% Complete)
 
@@ -125,7 +125,7 @@
 
 ---
 
-## � Node.js API Compatibility (19% Complete)
+## � Node.js API Compatibility (26% Complete)
 
 ### ✅ Implemented
 - **Module System**: Node.js-style module resolution with `node_modules` traversal, `package.json` main field support, `index.js` fallback, directory upward traversal, multi-extension support (`.ec`, `.js`, `.mjs`)
@@ -134,14 +134,14 @@
 - **HTTP**: Basic HTTP server creation with `createServer()`, observable server pattern, request handling
 - **Filesystem (fs)**: Complete Node.js-compatible filesystem API with 16+ functions including `readFile`, `writeFile`, `appendFile`, `stat`, `mkdir`, `rmdir`, `readdir`, `unlink`, `rename`, `copyFile`, `realpath`, `exists` (both sync and async variants), full `fs.constants` support with 30+ constants, proper error handling, and cross-platform path normalization
 - **Events**: `EventEmitter` implementation using object factory pattern with full API: `.on()`, `.emit()`, `.off()`, `.removeAllListeners()`, `.listenerCount()`, `.listeners()`, `.eventNames()`, multiple listeners per event, event argument passing
+- **Utilities (util)**: Comprehensive Node.js util module implementation with `util.inspect()` (object inspection with proper formatting), `util.format()` (printf-style string formatting with %s, %d, %j placeholders), type checking functions (`isArray`, `isFunction`, `isNumber`, `isObject`, `isPrimitive`, `isString`, `isUndefined`, `isNullOrUndefined`), `util.isDeepStrictEqual()` (deep object comparison), `util.debuglog()` (debug logging with sections), `util.types` module (advanced type checking), and `util.promisify/callbackify()` placeholders
 
 ### ❌ Missing
 - **Global Objects**: `process` object (`process.env`, `process.argv`, `process.cwd()`, `process.exit()`), `global` object, `Buffer` class
 - **Built-in Modules**: `path` (path utilities), `os` (operating system), `crypto` (cryptographic functions), `url` (URL parsing), `querystring` (query string utilities)
 - **Module Helpers**: `require()` function, `__dirname`, `__filename` variables, `module` object with metadata
 - **Streams**: Readable/Writable/Transform streams, `stream` module
-- **Events**: ✅ **EventEmitter implementation** (object factory pattern with `.on()`, `.emit()`, `.off()`, `.removeAllListeners()`, `.listenerCount()`, `.listeners()`, `.eventNames()`)
-- **Utilities**: `util` module (`util.inspect()`, `util.promisify()`), `assert` module
+- **Utilities**: `assert` module (✅ **util module implemented** with `util.inspect()`, `util.format()`, type checking, deep equality, debug logging)
 - **Async**: Native Promise support, `async`/`await` syntax, callback conventions
 - **Error Handling**: Error objects with stack traces, domain-specific error types
 - **Timers**: Full Node.js timer API compatibility beyond basic setTimeout/setInterval
