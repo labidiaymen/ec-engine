@@ -15,95 +15,15 @@ For a comprehensive overview of implemented and planned features, see the **[�
 
 ## Overview
 
-ECEngine is a modern JavaScript interpreter that implements core ECMAScript features while introducing innovative design patterns for reactive programming. The engine supports:
-
-- **Standard ECMAScript** - Full JavaScript syntax compatibility (variables, functions, expressions, etc.)
-- **Module System** - Complete `import`/`export` support for code organization
-- **Reactive Programming** - Built-in `observe` pattern for variable change detection
-- **Interactive REPL** - Advanced console with cursor navigation and command history
-- **Modern Architecture** - Clean separation of lexing, parsing, and interpretation phases
-
-Key capabilities include:
-- **Lexical Analysis** - Complete tokenization of JavaScript source code
-- **Parsing** - Robust Abstract Syntax Tree (AST) generation
-- **Interpretation** - Full evaluation and execution of JavaScript expressions
-- **Runtime** - Comprehensive runtime environment with console support
-- **Observe Pattern** - Reactive programming with automatic change detection
-
-## Project Structure
-
-```
-ECEngine/
-├── AST/                 # Abstract Syntax Tree definitions
-│   └── ASTNode.cs      # Complete AST classes including ObserveStatement
-├── Lexer/              # Tokenization components
-│   ├── Lexer.cs        # Full lexer implementation with all JS tokens
-│   └── Token.cs        # Comprehensive token type definitions
-├── Parser/             # Parsing components
-│   └── Parser.cs       # Complete parser for JavaScript + observe syntax
-├── Runtime/            # Runtime environment
-│   ├── Interpreter.cs  # Full AST evaluation engine with observe support
-│   ├── InteractiveRuntime.cs # REPL with cursor navigation
-│   ├── ConsoleInputHandler.cs # Advanced input handling
-│   └── ConsoleRuntime.cs # Console.log implementation
-├── Tests/              # Comprehensive unit tests
-├── examples/           # Example ECEngine programs
-│   ├── variables/      # Variable declaration examples
-│   ├── functions/      # Function examples
-│   ├── expressions/    # Expression examples
-│   └── console/        # Console usage examples
-├── vscode-extension/   # VS Code syntax highlighting
-└── Program.cs          # Main entry point
-```
+ECEngine is a JavaScript interpreter that extends ECMAScript with reactive programming capabilities. Built in C#, it provides a complete JavaScript runtime environment with an innovative `observe` pattern for automatic change detection and reactive programming.
 
 ## Features
 
-### ✅ Implemented Features
-- **Complete ECMAScript Support**
-  - Variable declarations (`var`, `let`, `const`)
-  - All data types (numbers, strings, booleans, undefined)
-  - Array literals and methods (`push`, `pop`, `slice`, `join`, `indexOf`)
-  - Array indexing and nested arrays
-  - Arithmetic and assignment expressions
-  - Function declarations and calls
-  - Anonymous and higher-order functions
-  - Comprehensive operator support
-  - Comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`)
-  - Conditional statements (`if`, `else`, `else if`)
-  - Boolean literals (`true`, `false`)
-  - String concatenation with automatic type conversion
-
-- **Module System**
-  - **Export statements**: Export variables, constants, and functions
-  - **Import statements**: Import specific exports with destructuring syntax
-  - **Module resolution**: Automatic `.ec` extension and relative path support
-  - **Error handling**: Comprehensive error messages for missing modules/exports
-  - **Module caching**: Prevents re-execution of already loaded modules
-
-- **Advanced Design Patterns**
-  - **Observe Pattern**: `observe variable function() { ... }` for reactive programming
-  - Automatic change detection and callback execution
-  - Multiple observers per variable support
-
-- **Interactive Development**
-  - Full-featured REPL with cursor navigation (←→↑↓)
-  - Command history with navigation
-  - Line editing (Home, End, Backspace, Delete)
-  - Variable inspection (`.vars` command)
-  - Interactive debugging support
-
-- **Developer Experience**
-  - VS Code extension with syntax highlighting
-  - Comprehensive example library
-  - Built-in help system
-  - Error reporting with location information
-
-### 🔄 Planned Enhancements
-- Control flow statements (loops, switch)
-- ✅ Object and array literal support
-- Advanced error handling (try/catch)
-- Default exports and imports
-- More reactive programming patterns
+- **ECMAScript Compatibility** - Full JavaScript syntax support including variables, functions, arrays, and modules
+- **Reactive Programming** - Built-in `observe` pattern for automatic variable change detection  
+- **Module System** - Complete `import`/`export` support with automatic resolution
+- **Interactive REPL** - Advanced console with cursor navigation and command history
+- **Developer Tools** - VS Code extension with syntax highlighting and comprehensive examples
 
 ## Getting Started
 
@@ -120,17 +40,10 @@ dotnet run path/to/script.ec
 ```
 
 #### Interactive Mode (REPL)
-Start the interactive shell with full cursor support:
+Start the interactive shell:
 ```bash
 dotnet run -i
 ```
-
-Features in interactive mode:
-- ←/→ arrows for cursor movement
-- ↑/↓ arrows for command history
-- Home/End for line navigation
-- Tab completion (planned)
-- Multi-line input support
 
 #### Example Programs
 Try the included examples:
@@ -159,7 +72,27 @@ dotnet test
 
 ## Sample Usage
 
-### Basic ECMAScript Features
+### Reactive Programming with Observe Pattern
+ECEngine extends JavaScript with reactive programming capabilities:
+
+```javascript
+// Standard JavaScript approach
+var temperature = 20;
+
+// ECEngine - Reactive with observe pattern
+observe temperature function() {
+    console.log("Temperature changed to: " + temperature);
+    if (temperature > 30) {
+        console.log("It's getting hot!");
+    }
+}
+
+// Automatic change detection
+temperature = 35;  // Output: "Temperature changed to: 35" + "It's getting hot!"
+temperature = 25;  // Output: "Temperature changed to: 25"
+```
+
+### Standard JavaScript Features
 ```javascript
 // Variable declarations
 var x = 42;
@@ -171,68 +104,15 @@ function greet(name) {
     return "Hello, " + name + "!";
 }
 
+// Arrays with methods
+var numbers = [1, 2, 3, 4, 5];
+numbers.push(6);             // Returns new length: 6
+var subset = numbers.slice(1, 3); // [2, 3]
+var joined = numbers.join(", ");   // "1, 2, 3, 4, 5"
+
 // Expressions
 var result = x * 2 + 10;
 console.log(greet("ECEngine"));
-```
-
-### Array Support
-```javascript
-// Array literals and basic operations
-var numbers = [1, 2, 3, 4, 5];
-var mixed = [42, "hello", true, null];
-
-// Array indexing
-console.log(numbers[0]);     // 1
-console.log(numbers.length); // 5
-
-// Array methods
-numbers.push(6);             // Returns new length: 6
-var last = numbers.pop();    // Returns removed element: 6
-var subset = numbers.slice(1, 3); // [2, 3]
-var joined = numbers.join(", ");   // "1, 2, 3, 4, 5"
-var index = numbers.indexOf(3);    // 2
-
-// Nested arrays
-var matrix = [[1, 2], [3, 4]];
-console.log(matrix[1][0]);   // 3
-```
-
-### Observe Pattern (Reactive Programming)
-```javascript
-// Declare a variable
-var temperature = 20;
-
-// Set up an observer
-observe temperature function() {
-    console.log("Temperature changed to: " + temperature);
-    if (temperature > 30) {
-        console.log("It's getting hot!");
-    }
-}
-
-// Trigger the observer
-temperature = 35;  // Output: "Temperature changed to: 35" + "It's getting hot!"
-temperature = 25;  // Output: "Temperature changed to: 25"
-```
-
-### Interactive Session Example
-```bash
-$ dotnet run -i
-ECEngine Interactive Shell
-Type .help for available commands or .exit to quit
-
-ec> var x = 10
-10
-ec> observe x function() { console.log("x is now: " + x); }
-ec> x = 20
-x is now: 20
-20
-ec> .vars
-Current variables:
-  var x = 20
-ec> .exit
-Goodbye!
 ```
 
 ### Programmatic Usage
@@ -269,126 +149,32 @@ ECEngine implements a modern interpreter architecture with reactive programming 
 3. **Interpreter**: Walks the AST and evaluates expressions with reactive observer management
 4. **Runtime**: Provides built-in functions, variable management, and console environment
 
-### Reactive Programming Architecture
-- **Observer Registry**: Tracks variable observers and their associated callback functions
-- **Change Detection**: Automatically triggers observers when variable values change
-- **Memory Management**: Efficient cleanup of observers and variables
-- **Event Propagation**: Handles multiple observers per variable with proper execution order
+### Reactive Programming
+The observe pattern enables automatic change detection without manual event binding:
 
-### Design Patterns
-- **Observer Pattern**: Core reactive programming implementation
-- **Visitor Pattern**: AST traversal and evaluation
-- **Strategy Pattern**: Different evaluation strategies for various node types
-- **Factory Pattern**: Token and AST node creation
-
-## ECMAScript Compatibility
-
-ECEngine implements a subset of ECMAScript (JavaScript) with full syntax compatibility for supported features:
-
-### Supported ECMAScript Features
-- ✅ **Variables**: `var`, `let`, `const` declarations
-- ✅ **Data Types**: Numbers, strings, booleans, undefined
-- ✅ **Operators**: Arithmetic (`+`, `-`, `*`, `/`), assignment (`=`)
-- ✅ **Functions**: Function declarations, calls, anonymous functions
-- ✅ **Expressions**: Binary expressions, parentheses, operator precedence
-- ✅ **Console**: `console.log()` for output
-
-### ECEngine Extensions
-ECEngine extends standard JavaScript with additional design patterns:
-
-#### Observe Pattern
 ```javascript
-// Standard JavaScript - NOT reactive
+// Multiple observers per variable
 var counter = 0;
-function onCounterChange() {
-    console.log("Counter: " + counter);
-}
-// Manual calls required: onCounterChange();
 
-// ECEngine - Reactive with observe
-var counter = 0;
 observe counter function() {
-    console.log("Counter: " + counter);  // Automatically called when counter changes
+    console.log("Observer 1: " + counter);
 }
-counter = 5;  // Automatically triggers the observer
+
+observe counter function() {
+    console.log("Observer 2: " + counter * 2);
+}
+
+counter = 5;  // Both observers triggered automatically
 ```
 
-This pattern enables:
-- **Automatic Change Detection**: No manual event binding
-- **Declarative Reactive Programming**: Clean, readable code
-- **Multiple Observers**: Multiple functions can observe the same variable
-- **Zero Configuration**: Works out of the box without setup
-
-## 🔄 CI/CD & Automation
-
-ECEngine uses GitHub Actions for continuous integration and deployment:
-
-### Workflows
-- **CI/CD Pipeline** (`ci.yml`): Runs tests on every push/PR across multiple .NET versions
-- **Code Quality** (`quality.yml`): Performs static analysis, formatting checks, and coverage reporting  
-- **Release** (`release.yml`): Automated releases with cross-platform binaries when tags are pushed
-
-### Features
-- ✅ **Multi-platform Testing**: Tests run on Ubuntu with .NET 7.0 and 8.0
-- ✅ **Security Scanning**: CodeQL analysis and dependency vulnerability checks
-- ✅ **Code Coverage**: Automated coverage reporting with Codecov integration
-- ✅ **Automated Releases**: Cross-platform binaries (Linux, Windows, macOS) on version tags
-- ✅ **Dependency Management**: Dependabot automatically updates dependencies weekly
-
-### Release Process
-To create a new release:
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-This triggers automatic building and publishing of release artifacts.
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Quick Start
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes and add tests
-4. Ensure all tests pass (`dotnet test`)
-5. Submit a pull request
-
-### Development Workflow
-- **All PRs** trigger automated testing and quality checks
-- **Code formatting** is enforced with `dotnet format`
-- **Test coverage** is tracked and reported
-- **Security scanning** runs on all commits
-
-### Areas for Contribution
-- 🚀 **ECMAScript Features**: Control flow, objects, arrays, modules
-- 🔮 **Reactive Patterns**: Additional design patterns beyond observe
-- 🐛 **Bug Fixes**: Parser edge cases, runtime improvements  
-- 📚 **Documentation**: Component guides, usage examples, tutorials
-- 🧪 **Testing**: Additional test cases, performance tests
-- 🎨 **VS Code Extension**: Enhanced syntax highlighting, IntelliSense
-
-## 🔒 Security
+## Security
 
 ECEngine is designed with security in mind:
-- **No File System Access**: Cannot read/write files
-- **No Network Access**: Cannot make external requests
-- **Memory Safe**: Uses .NET's memory management
+- **Sandboxed Environment**: No file system or network access
+- **Memory Safe**: Uses .NET's managed memory
 - **Input Validation**: Handles malicious input gracefully
 
-For security concerns, please see our [Security Policy](SECURITY.md).
-
-## 🎓 Educational Focus
-
-ECEngine is specifically designed as an educational tool for:
-- **Learning Language Implementation**: Understanding how interpreters, lexers, and parsers work
-- **Exploring Language Design**: Experimenting with new language features like the observe pattern
-- **Teaching Reactive Programming**: Demonstrating reactive programming concepts in a simple environment
-- **Academic Research**: Studying language design and implementation techniques
-
-While functional and feature-rich, ECEngine prioritizes educational value and clear code structure over production performance.
-
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details.
 
