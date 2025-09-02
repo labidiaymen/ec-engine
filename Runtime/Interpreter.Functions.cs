@@ -296,13 +296,6 @@ public partial class Interpreter
             RealpathFunction realpathFunc => realpathFunc.Call(arguments.ToArray()),
             RealpathSyncFunction realpathSyncFunc => realpathSyncFunc.Call(arguments.ToArray()),
             
-            // Path functions
-            JoinFunction joinFunc => joinFunc.Call(arguments.ToArray()),
-            ResolveFunction resolveFunc => resolveFunc.Call(arguments.ToArray()),
-            DirnameFunction dirnameFunc => dirnameFunc.Call(arguments.ToArray()),
-            BasenameFunction basenameFunc => basenameFunc.Call(arguments.ToArray()),
-            ExtnameFunction extnameFunc => extnameFunc.Call(arguments.ToArray()),
-            
             // File stats functions
             IsFileFunction isFileFunc => isFileFunc.Call(arguments.ToArray()),
             IsDirectoryFunction isDirFunc => isDirFunc.Call(arguments.ToArray()),

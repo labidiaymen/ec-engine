@@ -1131,7 +1131,6 @@ public class RequireFunction
         return baseModuleName switch
         {
             "fs" => true,
-            "path" => true,
             "os" => true,
             "util" => true,
             "url" => true,
@@ -1153,7 +1152,6 @@ public class RequireFunction
         return baseModuleName switch
         {
             "fs" => new FilesystemModule(),
-            "path" => GetPathModule(),
             "os" => new OSModule(),
             "util" => new Runtime.UtilModule(),
             "url" => new Runtime.UrlModule(),
@@ -1205,122 +1203,6 @@ public class RequireFunction
         {
             { "createServer", new CreateServerFunction(null, null) }
         };
-    }
-
-    private object? GetPathModule()
-    {
-        // Return path module
-        return new Runtime.PathModule();
-    }
-}
-
-/// <summary>
-/// Node.js path module equivalent
-/// </summary>
-public class PathModule
-{
-    public JoinFunction join { get; }
-    public ResolveFunction resolve { get; }
-    public DirnameFunction dirname { get; }
-    public BasenameFunction basename { get; }
-    public ExtnameFunction extname { get; }
-
-    public PathModule()
-    {
-        join = new JoinFunction();
-        resolve = new ResolveFunction();
-        dirname = new DirnameFunction();
-        basename = new BasenameFunction();
-        extname = new ExtnameFunction();
-    }
-}
-
-public class JoinFunction
-{
-    public object? Call(object?[] args)
-    {
-        if (args.Length == 0)
-            return ".";
-
-        var paths = args.Where(arg => !string.IsNullOrEmpty(arg?.ToString()))
-                        .Select(arg => arg!.ToString()!)
-                        .ToArray();
-
-        if (paths.Length == 0)
-            return ".";
-
-        return Path.Combine(paths);
-    }
-}
-
-public class ResolveFunction
-{
-    public object? Call(object?[] args)
-    {
-        if (args.Length == 0)
-            return Directory.GetCurrentDirectory();
-
-        var paths = args.Select(arg => arg?.ToString() ?? "").ToArray();
-        var basePath = Directory.GetCurrentDirectory();
-
-        foreach (var path in paths)
-        {
-            if (Path.IsPathRooted(path))
-            {
-                basePath = path;
-            }
-            else
-            {
-                basePath = Path.Combine(basePath, path);
-            }
-        }
-
-        return Path.GetFullPath(basePath);
-    }
-}
-
-public class DirnameFunction
-{
-    public object? Call(object?[] args)
-    {
-        if (args.Length < 1 || string.IsNullOrEmpty(args[0]?.ToString()))
-            throw new ECEngineException("path.dirname requires a path argument", 1, 1, "", "Missing path argument");
-
-        var path = args[0]!.ToString()!;
-        var directory = Path.GetDirectoryName(path);
-        return string.IsNullOrEmpty(directory) ? "." : directory;
-    }
-}
-
-public class BasenameFunction
-{
-    public object? Call(object?[] args)
-    {
-        if (args.Length < 1 || string.IsNullOrEmpty(args[0]?.ToString()))
-            throw new ECEngineException("path.basename requires a path argument", 1, 1, "", "Missing path argument");
-
-        var path = args[0]!.ToString()!;
-        var ext = args.Length > 1 ? args[1]?.ToString() : null;
-        var basename = Path.GetFileName(path);
-
-        if (!string.IsNullOrEmpty(ext) && basename.EndsWith(ext))
-        {
-            basename = basename.Substring(0, basename.Length - ext.Length);
-        }
-
-        return basename;
-    }
-}
-
-public class ExtnameFunction
-{
-    public object? Call(object?[] args)
-    {
-        if (args.Length < 1 || string.IsNullOrEmpty(args[0]?.ToString()))
-            throw new ECEngineException("path.extname requires a path argument", 1, 1, "", "Missing path argument");
-
-        var path = args[0]!.ToString()!;
-        return Path.GetExtension(path);
     }
 }
 
