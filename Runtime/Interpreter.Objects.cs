@@ -79,6 +79,9 @@ public partial class Interpreter
             case ConsoleObject when propertyName == "log":
                 return new ConsoleLogFunction();
                 
+            case ProcessObject processObj:
+                return GetProcessProperty(processObj, propertyName);
+                
             case Generator generator:
                 return GetGeneratorProperty(generator, propertyName);
                 
@@ -125,6 +128,10 @@ public partial class Interpreter
                 
             case List<object?> list:
                 SetArrayProperty(list, propertyName, value);
+                break;
+                
+            case ProcessObject processObj:
+                SetProcessProperty(processObj, propertyName, value);
                 break;
                 
             default:
@@ -544,6 +551,59 @@ public partial class Interpreter
             "stringify" => new JsonMethodFunction(jsonModule.Stringify, "stringify"),
             _ => null
         };
+    }
+    
+    /// <summary>
+    /// Get process object properties and methods
+    /// </summary>
+    private object? GetProcessProperty(ProcessObject processObj, string propertyName)
+    {
+        return propertyName switch
+        {
+            "env" => processObj.Env,
+            "argv" => processObj.Argv,
+            "execPath" => processObj.ExecPath,
+            "platform" => processObj.Platform,
+            "arch" => processObj.Arch,
+            "version" => processObj.Version,
+            "versions" => processObj.Versions,
+            "pid" => processObj.Pid,
+            "ppid" => processObj.Ppid,
+            "cwd" => new ProcessMethodFunction(processObj, "cwd"),
+            "chdir" => new ProcessMethodFunction(processObj, "chdir"),
+            "exit" => new ProcessMethodFunction(processObj, "exit"),
+            "memoryUsage" => new ProcessMethodFunction(processObj, "memoryUsage"),
+            "uptime" => new ProcessMethodFunction(processObj, "uptime"),
+            "hrtime" => new ProcessMethodFunction(processObj, "hrtime"),
+            "nextTick" => new ProcessMethodFunction(processObj, "nextTick"),
+            "on" => new ProcessMethodFunction(processObj, "on"),
+            "off" => new ProcessMethodFunction(processObj, "off"),
+            "removeListener" => new ProcessMethodFunction(processObj, "removeListener"),
+            "emit" => new ProcessMethodFunction(processObj, "emit"),
+            "eventNames" => new ProcessMethodFunction(processObj, "eventNames"),
+            "listenerCount" => new ProcessMethodFunction(processObj, "listenerCount"),
+            "exitCode" => processObj.ExitCode,
+            _ => null
+        };
+    }
+    
+    /// <summary>
+    /// Set process object properties
+    /// </summary>
+    private void SetProcessProperty(ProcessObject processObj, string propertyName, object? value)
+    {
+        switch (propertyName)
+        {
+            case "exitCode":
+                if (value != null)
+                {
+                    processObj.ExitCode = Convert.ToInt32(value);
+                }
+                break;
+                
+            default:
+                throw new ECEngineException($"Cannot set read-only property '{propertyName}' on process object", 1, 1, _sourceCode, "Property is read-only");
+        }
     }
     
     /// <summary>

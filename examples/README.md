@@ -48,6 +48,14 @@ Examples demonstrating module system features:
 - `multiple_exports.ec` - Multiple named exports from a module
 - `default_exports.ec` - Default export syntax and usage
 
+### 📁 process/
+Examples demonstrating Node.js-compatible process global object:
+- `process_events_demo.ec` - **Complete process event system demo** with lifecycle events
+- `process_demo.ec` - Core process properties and methods
+- `process_simple_test.ec` - Basic process functionality testing
+- `process_exit_test.ec` - Process exit behavior
+- `process_exit_scenarios.ec` - Advanced exit scenarios with different behaviors
+
 ### 🌐 URL Imports & Module Resolution
 Advanced module system examples:
 - `deno_style_url_imports.ec` - **Deno-style URL imports with HTTP downloading**
@@ -117,6 +125,15 @@ dotnet run
 - **CommonJS Support**: Auto-detection of `module.exports` syntax
 - **Local Caching**: Automatic caching of downloaded URL modules
 - **Node.js Resolution**: package.json, node_modules, index.js fallback
+
+### Process Global Object
+- **Process Information**: `process.pid`, `process.platform`, `process.arch`
+- **Environment**: `process.env`, `process.argv`, `process.cwd()`
+- **Event System**: `process.on()`, `process.emit()`, `process.off()`
+- **Lifecycle Events**: `beforeExit`, `exit` with proper Node.js semantics
+- **Exit Control**: `process.exit()`, `process.exitCode` property
+- **Timing**: `process.uptime()`, `process.hrtime()`, `process.nextTick()`
+- **Memory**: `process.memoryUsage()` with detailed memory statistics
 
 ## Interactive Features
 

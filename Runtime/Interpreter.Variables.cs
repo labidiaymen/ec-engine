@@ -214,6 +214,8 @@ public partial class Interpreter
         {
             case "console":
                 return new ConsoleObject();
+            case "process":
+                return ProcessGlobals.CreateProcessObject(this);
             case "setTimeout":
                 return new SetTimeoutFunction(_eventLoop, this);
             case "setInterval":
