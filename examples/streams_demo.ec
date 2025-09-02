@@ -1,6 +1,6 @@
 // Node.js Streams API Demo - Testing ECEngine Stream Implementation
 
-const stream = require('stream');
+const stream = require('node:stream');
 
 console.log("=== ECEngine Streams Demo ===");
 

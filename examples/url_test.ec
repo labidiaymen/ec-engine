@@ -37,7 +37,7 @@ params.delete("baz");
 console.log("After delete:", params.toString());
 
 // Test URL module functions
-const url = require("url");
+const url = require("node:url");
 
 console.log("URL module loaded successfully");
 

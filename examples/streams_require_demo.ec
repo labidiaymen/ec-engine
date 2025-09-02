@@ -1,7 +1,7 @@
 // Test file: streams_require_demo.ec
 // This demonstrates using Node.js-style streams with require()
 
-const stream = require('stream');
+const stream = require('node:stream');
 
 console.log('Stream module loaded:', typeof stream);
 console.log('Readable constructor:', typeof stream.Readable);

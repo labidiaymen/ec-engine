@@ -2,8 +2,8 @@
 // This example shows common filesystem operations
 
 // Import the filesystem module like Node.js
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 console.log("Basic Filesystem Operations Demo");
 

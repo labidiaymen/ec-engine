@@ -1126,30 +1126,91 @@ public class RequireFunction
 
     private bool IsBuiltInModule(string moduleName)
     {
-        return moduleName switch
+        var baseModuleName = moduleName.StartsWith("node:") ? moduleName.Substring(5) : moduleName;
+        
+        return baseModuleName switch
         {
             "fs" => true,
-            // "path" => true,  // Removed: Now handled by ModuleSystem for Node.js compatibility
+            "path" => true,
             "os" => true,
             "util" => true,
             "url" => true,
             "stream" => true,
+            "console" => true,
+            "events" => true,
+            "process" => true,
+            "querystring" => true,
+            "http" => true,
             _ => false
         };
     }
 
     private object? GetBuiltInModule(string moduleName)
     {
-        return moduleName switch
+        // Strip node: prefix if present for Node.js compatibility
+        var baseModuleName = moduleName.StartsWith("node:") ? moduleName.Substring(5) : moduleName;
+        
+        return baseModuleName switch
         {
             "fs" => new FilesystemModule(),
-            // "path" => new PathModule(),  // Removed: Now handled by ModuleSystem for Node.js compatibility
+            "path" => GetPathModule(),
             "os" => new OSModule(),
             "util" => new Runtime.UtilModule(),
             "url" => new Runtime.UrlModule(),
             "stream" => new StreamModule(),
+            "console" => GetConsoleModule(),
+            "events" => GetEventsModule(),
+            "process" => GetProcessModule(),
+            "querystring" => GetQuerystringModule(),
+            "http" => GetHttpModule(),
             _ => throw new ECEngineException($"Built-in module '{moduleName}' is not implemented", 1, 1, "", "Module not implemented")
         };
+    }
+
+    private object? GetConsoleModule()
+    {
+        // Return an object with console methods
+        var console = new Dictionary<string, object?>
+        {
+            { "log", new ConsoleLogFunction() }
+        };
+        return console;
+    }
+
+    private object? GetEventsModule()
+    {
+        // Return EventEmitter constructor
+        return new Dictionary<string, object?>
+        {
+            { "EventEmitter", new EventEmitterCreateFunction(new EventEmitterModule()) }
+        };
+    }
+
+    private object? GetProcessModule()
+    {
+        // Return the global process object
+        return ProcessGlobals.CreateProcessObject(null);
+    }
+
+    private object? GetQuerystringModule()
+    {
+        // Return querystring module
+        return new Runtime.QuerystringModule();
+    }
+
+    private object? GetHttpModule()
+    {
+        // Return HTTP module
+        return new Dictionary<string, object?>
+        {
+            { "createServer", new CreateServerFunction(null, null) }
+        };
+    }
+
+    private object? GetPathModule()
+    {
+        // Return path module
+        return new Runtime.PathModule();
     }
 }
 

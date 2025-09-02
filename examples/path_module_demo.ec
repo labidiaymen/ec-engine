@@ -1,5 +1,5 @@
-// Node.js Path Module Demo - Complete API showcase
-const path = require('path');
+// Path module functionality demonstration
+const path = require('node:path');
 
 console.log('=== Path Module Demo ===');
 console.log('Node.js-compatible path operations');
