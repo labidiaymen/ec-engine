@@ -67,7 +67,7 @@ detect_platform() {
             if [ "$os" = "darwin" ]; then
                 arch="arm64"
             else
-                arch="x64"  # Fallback to x64 for Linux ARM
+                arch="x64"  # Fallback to x64 for Linux ARM until arm64 builds are available
             fi
             ;;
         *)
@@ -104,14 +104,14 @@ get_latest_version() {
 install_ecengine() {
     local platform="$1"
     local version="$2"
-    local filename="ecengine-${platform}.tar.gz"
+    local filename="ecengine-${version}-${platform}.tar.gz"
     local url="https://github.com/$REPO/releases/download/$version/$filename"
     
     print_status "Installing eec $version for $platform..."
     
-    # Create install directory
-    rm -rf "$INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"
+    # Create temporary extraction directory
+    local temp_dir="/tmp/eec-install-$$"
+    mkdir -p "$temp_dir"
     
     # Download the release
     print_status "Downloading from $url..."
@@ -123,19 +123,20 @@ install_ecengine() {
     
     # Extract the archive
     print_status "Extracting eec..."
-    if ! tar -xzf "/tmp/$filename" -C "$INSTALL_DIR"; then
+    if ! tar -xzf "/tmp/$filename" -C "$temp_dir"; then
         print_error "Failed to extract eec"
         exit 1
     fi
     
-    # Make executable
-    chmod +x "$INSTALL_DIR/eec"
-    
-    # Create symlink in bin directory
-    ln -sf "$INSTALL_DIR/eec" "$BIN_DIR/eec"
+    # Install the self-contained executable directly to bin directory
+    # No .NET runtime installation required - this is a self-contained build
+    print_status "Installing self-contained executable (no .NET runtime required)..."
+    cp "$temp_dir/eec" "$BIN_DIR/eec"
+    chmod +x "$BIN_DIR/eec"
     
     # Clean up
     rm -f "/tmp/$filename"
+    rm -rf "$temp_dir"
 }
 
 # Function to update PATH if needed
