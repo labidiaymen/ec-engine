@@ -190,6 +190,7 @@ public partial class Interpreter
             BooleanLiteral boolLiteral => boolLiteral.Value,
             NullLiteral => null,
             TemplateLiteral templateLiteral => EvaluateTemplateLiteral(templateLiteral),
+            RegexLiteral regexLiteral => EvaluateRegexLiteral(regexLiteral),
             
             // Variables and Identifiers
             Identifier identifier => EvaluateIdentifier(identifier),
@@ -307,6 +308,27 @@ public partial class Interpreter
         }
         
         return result.ToString();
+    }
+    
+    /// <summary>
+    /// Evaluate regex literals
+    /// </summary>
+    public object? EvaluateRegexLiteral(RegexLiteral regexLiteral)
+    {
+        // Create a JavaScript-like regex object
+        var regexObject = new Dictionary<string, object?>
+        {
+            ["source"] = regexLiteral.Pattern,
+            ["flags"] = regexLiteral.Flags,
+            ["global"] = regexLiteral.Flags.Contains('g'),
+            ["ignoreCase"] = regexLiteral.Flags.Contains('i'),
+            ["multiline"] = regexLiteral.Flags.Contains('m'),
+            ["test"] = new RegexTestFunction(regexLiteral.Pattern, regexLiteral.Flags),
+            ["exec"] = new RegexExecFunction(regexLiteral.Pattern, regexLiteral.Flags),
+            ["toString"] = new RegexToStringFunction(regexLiteral.Pattern, regexLiteral.Flags)
+        };
+        
+        return regexObject;
     }
     
     /// <summary>

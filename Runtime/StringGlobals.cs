@@ -468,11 +468,29 @@ namespace ECEngine.Runtime
         {
             if (arguments.Count == 0) return null;
             
-            var pattern = arguments[0]?.ToString() ?? "";
+            string pattern;
+            RegexOptions options = RegexOptions.None;
+            
+            // Handle regex object or string pattern
+            var arg = arguments[0];
+            if (arg is Dictionary<string, object?> regexObj && regexObj.ContainsKey("source"))
+            {
+                // It's a regex object
+                pattern = regexObj["source"]?.ToString() ?? "";
+                var flags = regexObj["flags"]?.ToString() ?? "";
+                
+                if (flags.Contains('i')) options |= RegexOptions.IgnoreCase;
+                if (flags.Contains('m')) options |= RegexOptions.Multiline;
+            }
+            else
+            {
+                // It's a string pattern
+                pattern = arg?.ToString() ?? "";
+            }
             
             try
             {
-                var match = Regex.Match(_stringValue, pattern);
+                var match = Regex.Match(_stringValue, pattern, options);
                 if (!match.Success) return null;
                 
                 var result = new List<object?> { match.Value };

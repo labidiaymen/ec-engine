@@ -102,6 +102,9 @@ public enum TokenType
     // Arrow function operator
     Arrow,          // =>
     
+    // Regular expression literal
+    Regex,          // /pattern/flags
+    
     EOF
 }
 

@@ -548,6 +548,20 @@ public partial class Parser
             return new StringLiteral(value, token);
         }
 
+        if (_currentToken.Type == TokenType.Regex)
+        {
+            var value = _currentToken.Value;
+            var token = _currentToken;
+            Advance();
+            
+            // Split pattern and flags (separated by $ in our lexer)
+            var parts = value.Split('$');
+            var pattern = parts[0];
+            var flags = parts.Length > 1 ? parts[1] : "";
+            
+            return new RegexLiteral(pattern, flags, token);
+        }
+
         if (_currentToken.Type == TokenType.TemplateLiteral)
         {
             return ParseTemplateLiteral();

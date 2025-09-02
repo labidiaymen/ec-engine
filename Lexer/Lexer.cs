@@ -182,6 +182,90 @@ public class Lexer
         return result.ToString();
     }
 
+    private string ReadRegex()
+    {
+        Advance(); // Skip opening /
+        var result = new System.Text.StringBuilder();
+        
+        while (_currentChar != '\0' && _currentChar != '/')
+        {
+            if (_currentChar == '\\')
+            {
+                // Handle escaped characters in regex
+                result.Append(_currentChar);
+                Advance();
+                if (_currentChar != '\0')
+                {
+                    result.Append(_currentChar);
+                    Advance();
+                }
+            }
+            else
+            {
+                result.Append(_currentChar);
+                Advance();
+            }
+        }
+        
+        if (_currentChar == '/')
+        {
+            Advance(); // Skip closing /
+        }
+        else
+        {
+            throw new Exception($"Unterminated regex literal at line {_line}, column {_column}");
+        }
+        
+        // Read flags (g, i, m, etc.)
+        var flags = new System.Text.StringBuilder();
+        while (_currentChar != '\0' && char.IsLetter(_currentChar))
+        {
+            flags.Append(_currentChar);
+            Advance();
+        }
+        
+        // Return pattern + flags (e.g., "Error$/g")
+        return result.ToString() + "$" + flags.ToString();
+    }
+
+    private bool LooksLikeRegex()
+    {
+        // Lookahead to see if this looks like a regex literal
+        // A regex should have content and a closing /
+        int pos = _position + 1; // Skip the opening /
+        
+        if (pos >= _code.Length) return false; // Just a single /, not a regex
+        
+        // Look for content followed by closing /
+        while (pos < _code.Length)
+        {
+            char c = _code[pos];
+            
+            if (c == '/')
+            {
+                // Found closing /, this looks like a regex
+                return true;
+            }
+            else if (c == '\n' || c == '\r')
+            {
+                // Newline before closing /, probably not a regex
+                return false;
+            }
+            else if (c == '\\' && pos + 1 < _code.Length)
+            {
+                // Skip escaped character
+                pos += 2;
+            }
+            else
+            {
+                pos++;
+            }
+        }
+        
+        // Reached end without finding closing /, not a regex
+        return false;
+    }
+
     private List<Token> ReadTemplateLiteral()
     {
         var tokens = new List<Token>();
@@ -465,9 +549,59 @@ public class Lexer
                         }
                     }
                     
-                    // Regular division operator
-                    tokens.Add(new Token(TokenType.Divide, "/", _position, tokenLine, tokenColumn));
-                    Advance();
+                    // Determine if this is a regex literal or division operator
+                    // based on the previous token and lookahead
+                    bool isRegex = false;
+                    if (tokens.Count == 0)
+                    {
+                        // Start of input - check if it looks like a regex
+                        isRegex = LooksLikeRegex();
+                    }
+                    else
+                    {
+                        var lastToken = tokens[tokens.Count - 1];
+                        // These tokens can be followed by regex literals
+                        switch (lastToken.Type)
+                        {
+                            case TokenType.LeftParen:
+                            case TokenType.LeftBrace:
+                            case TokenType.LeftBracket:
+                            case TokenType.Comma:
+                            case TokenType.Semicolon:
+                            case TokenType.Colon:
+                            case TokenType.Equal:
+                            case TokenType.StrictEqual:
+                            case TokenType.NotEqual:
+                            case TokenType.StrictNotEqual:
+                            case TokenType.LessThan:
+                            case TokenType.GreaterThan:
+                            case TokenType.LessThanOrEqual:
+                            case TokenType.GreaterThanOrEqual:
+                            case TokenType.LogicalAnd:
+                            case TokenType.LogicalOr:
+                            case TokenType.Question:
+                            case TokenType.Return:
+                            case TokenType.Assign:
+                            case TokenType.Plus:
+                            case TokenType.Minus:
+                            case TokenType.LogicalNot:
+                                isRegex = LooksLikeRegex();
+                                break;
+                        }
+                    }
+                    
+                    if (isRegex)
+                    {
+                        // Read as regex literal
+                        var regexValue = ReadRegex();
+                        tokens.Add(new Token(TokenType.Regex, regexValue, _position, tokenLine, tokenColumn));
+                    }
+                    else
+                    {
+                        // Regular division operator
+                        tokens.Add(new Token(TokenType.Divide, "/", _position, tokenLine, tokenColumn));
+                        Advance();
+                    }
                     break;
                 case '(':
                     tokens.Add(new Token(TokenType.LeftParen, "(", _position, tokenLine, tokenColumn));

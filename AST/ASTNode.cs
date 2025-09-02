@@ -55,6 +55,25 @@ public class StringLiteral : Expression
     }
 }
 
+// Regex literal node 
+public class RegexLiteral : Expression
+{
+    public string Pattern { get; }
+    public string Flags { get; }
+    
+    public RegexLiteral(string pattern, string flags = "", Token? token = null)
+    {
+        Pattern = pattern;
+        Flags = flags;
+        Token = token;
+    }
+    
+    public override object? Accept(ECEngine.Runtime.Interpreter interpreter)
+    {
+        return interpreter.EvaluateRegexLiteral(this);
+    }
+}
+
 // Boolean literal node - Optimized for direct value return
 public class BooleanLiteral : Expression
 {
