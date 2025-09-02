@@ -10,12 +10,12 @@
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
-| **Node.js API Compatibility** | 14 | 0 | 13 | **52%** |
+| **Node.js API Compatibility** | 15 | 0 | 12 | **56%** |
 | **Modern JavaScript** | 2 | 0 | 18 | **10%** |
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
 | **ECEngine Extensions** | 5 | 0 | 1 | **83%** |
-| **TOTAL** | **208** | **6** | **100** | **66%** |
+| **TOTAL** | **209** | **6** | **99** | **67%** |
 
 ## 🔤 Lexical Analysis (93% Complete)
 
@@ -127,7 +127,7 @@
 
 ---
 
-## 🌐 Node.js API Compatibility (60% Complete)
+## 🌐 Node.js API Compatibility (56% Complete)
 
 ### ✅ Implemented
 - **Module System**: Node.js-style module resolution with `node_modules` traversal, `package.json` main field support, `index.js` fallback, directory upward traversal, multi-extension support (`.ec`, `.js`, `.mjs`), `node:` prefix support for core modules (e.g., `require('node:http')`)
@@ -135,7 +135,7 @@
 - **Console**: `console.log()` with object formatting and multiple arguments
 - **HTTP (COMPLETE)**: Full Node.js-compatible HTTP module implementation with persistent server support (`http.createServer()`, `http.request()`, `http.get()`), complete `http.STATUS_CODES` and `http.METHODS` arrays, proper request/response objects with Node.js API (`req.method`, `req.url`, `req.headers`, `res.writeHead()`, `res.write()`, `res.end()`, `res.setHeader()`), event-driven server architecture, real HTTP listener integration, `node:` prefix support (`require('node:http')`), and persistent process execution
 - **Filesystem (fs)**: Complete Node.js-compatible filesystem API with 16+ functions including `readFile`, `writeFile`, `appendFile`, `stat`, `mkdir`, `rmdir`, `readdir`, `unlink`, `rename`, `copyFile`, `realpath`, `exists` (both sync and async variants), full `fs.constants` support with 30+ constants, proper error handling, and cross-platform path normalization
-- **Events**: `EventEmitter` implementation using object factory pattern with full API: `.on()`, `.emit()`, `.off()`, `.removeAllListeners()`, `.listenerCount()`, `.listeners()`, `.eventNames()`, multiple listeners per event, event argument passing
+- **Events (COMPLETE)**: Full Node.js-compatible `events` module implementation with complete `require('events')` and `require('node:events')` support, `EventEmitter` class constructor support (`new EventEmitter()`), all core instance methods (`.on()`, `.once()`, `.emit()`, `.off()`, `.removeListener()`, `.removeAllListeners()`, `.prependListener()`, `.prependOnceListener()`, `.listenerCount()`, `.listeners()`, `.rawListeners()`, `.eventNames()`, `.setMaxListeners()`, `.getMaxListeners()`), static utility functions (`events.once()`, `events.listenerCount()`, `events.getEventListeners()`, `events.getMaxListeners()`, `events.setMaxListeners()`), advanced listener management with EventListenerInfo tracking, once listener auto-removal, prepend functionality, error event special handling, max listeners configuration, multiple listeners per event, event argument passing, proper Node.js-compatible error behavior, constructor pattern integration with `new` operator, and comprehensive example files demonstrating all features
 - **Utilities (util)**: Comprehensive Node.js util module implementation with `util.inspect()` (object inspection with proper formatting), `util.format()` (printf-style string formatting with %s, %d, %j placeholders), type checking functions (`isArray`, `isFunction`, `isNumber`, `isObject`, `isPrimitive`, `isString`, `isUndefined`, `isNullOrUndefined`), `util.isDeepStrictEqual()` (deep object comparison), `util.debuglog()` (debug logging with sections), `util.types` module (advanced type checking), and `util.promisify/callbackify()` placeholders
 - **URL Module**: Complete Node.js-compatible URL API implementation with WHATWG URL standard support including `URL` constructor (`new URL(input, base)`), `URLSearchParams` class with full API (`get()`, `set()`, `append()`, `delete()`, `has()`, `getAll()`, `toString()`), legacy Node.js URL functions (`url.parse()`, `url.format()`, `url.resolve()`), domain conversion functions (`url.domainToASCII()`, `url.domainToUnicode()`), property access/modification (protocol, hostname, port, pathname, search, hash, username, password), integrated with `require('url')` and global constructors, comprehensive test coverage with 25+ test cases
 - **Querystring Module**: Complete Node.js-compatible querystring API implementation with full `require('querystring')` support including `querystring.parse()` (parse query strings into objects with custom separators and assignment operators), `querystring.stringify()` (convert objects to query strings with array support), `querystring.escape()` (URL encode strings), `querystring.unescape()` (URL decode strings), proper handling of special characters, arrays, boolean values, and edge cases, comprehensive test coverage with 17 test cases

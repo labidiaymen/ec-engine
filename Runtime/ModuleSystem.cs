@@ -104,7 +104,7 @@ public class ModuleSystem
     {
         // Remove node: prefix if present
         var normalizedPath = modulePath.StartsWith("node:") ? modulePath.Substring(5) : modulePath;
-        return normalizedPath == "querystring" || normalizedPath == "path" || normalizedPath == "http" || normalizedPath == "buffer";
+        return normalizedPath == "querystring" || normalizedPath == "path" || normalizedPath == "http" || normalizedPath == "buffer" || normalizedPath == "events";
     }
     
     /// <summary>
@@ -171,6 +171,14 @@ public class ModuleSystem
                     }
                     module.Exports["default"] = bufferDict;
                 }
+                break;
+            case "events":
+                var eventsModule = EventsModule.GetEventsModule();
+                foreach (var kvp in eventsModule)
+                {
+                    module.Exports[kvp.Key] = kvp.Value;
+                }
+                module.Exports["default"] = eventsModule["EventEmitter"];
                 break;
         }
         

@@ -754,6 +754,8 @@ public partial class Interpreter
                 new TransformStreamConstructor().Call(args.ToList()),
             _ when constructor is PassThroughStreamConstructor => 
                 new PassThroughStreamConstructor().Call(args.ToList()),
+            _ when constructor is EventEmitterConstructor => 
+                new EventEmitterConstructor().Call(args.ToList()),
             _ => throw new ECEngineException($"Constructor not found: {constructorName}",
                 1, 1, _sourceCode, $"Constructor '{constructorName}' is not defined")
         };

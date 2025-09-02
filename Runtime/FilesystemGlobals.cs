@@ -1175,11 +1175,8 @@ public class RequireFunction
 
     private object? GetEventsModule()
     {
-        // Return EventEmitter constructor
-        return new Dictionary<string, object?>
-        {
-            { "EventEmitter", new EventEmitterCreateFunction(new EventEmitterModule()) }
-        };
+        // Return the complete Node.js-compatible events module
+        return EventsModule.GetEventsModule();
     }
 
     private object? GetProcessModule()

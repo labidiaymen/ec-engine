@@ -248,7 +248,7 @@ public partial class Interpreter
             ProcessMethodFunction processMethodFunc => processMethodFunc.Call(arguments),
             ObjectMethodFunction objectMethodFunc => objectMethodFunc.Call(arguments),
             
-            // EventEmitter functions
+            // EventEmitter functions (legacy)
             EventEmitterCreateFunction eventEmitterCreateFunc => eventEmitterCreateFunc.Call(arguments),
             EventEmitterOnFunction eventEmitterOnFunc => eventEmitterOnFunc.Call(arguments),
             EventEmitterEmitFunction eventEmitterEmitFunc => HandleEventEmitterEmit(eventEmitterEmitFunc, arguments),
@@ -257,6 +257,30 @@ public partial class Interpreter
             EventEmitterListenerCountFunction eventEmitterListenerCountFunc => eventEmitterListenerCountFunc.Call(arguments),
             EventEmitterListenersFunction eventEmitterListenersFunc => eventEmitterListenersFunc.Call(arguments),
             EventEmitterEventNamesFunction eventEmitterEventNamesFunc => eventEmitterEventNamesFunc.Call(arguments),
+            
+            // New EventEmitter functions (Node.js compatible)
+            EventEmitterConstructor eventEmitterConstructor => eventEmitterConstructor.Call(arguments),
+            NodeEventEmitterOnFunction nodeEventEmitterOnFunc => nodeEventEmitterOnFunc.Call(arguments),
+            NodeEventEmitterEmitFunction nodeEventEmitterEmitFunc => HandleNodeEventEmitterEmit(nodeEventEmitterEmitFunc, arguments),
+            NodeEventEmitterOffFunction nodeEventEmitterOffFunc => nodeEventEmitterOffFunc.Call(arguments),
+            NodeEventEmitterOnceFunction eventEmitterOnceFunc => eventEmitterOnceFunc.Call(arguments),
+            NodeEventEmitterPrependListenerFunction eventEmitterPrependFunc => eventEmitterPrependFunc.Call(arguments),
+            NodeEventEmitterPrependOnceListenerFunction eventEmitterPrependOnceFunc => eventEmitterPrependOnceFunc.Call(arguments),
+            NodeEventEmitterRawListenersFunction eventEmitterRawListenersFunc => eventEmitterRawListenersFunc.Call(arguments),
+            NodeEventEmitterListenersFunction nodeEventEmitterListenersFunc => nodeEventEmitterListenersFunc.Call(arguments),
+            NodeEventEmitterListenerCountFunction nodeEventEmitterListenerCountFunc => nodeEventEmitterListenerCountFunc.Call(arguments),
+            NodeEventEmitterEventNamesFunction nodeEventEmitterEventNamesFunc => nodeEventEmitterEventNamesFunc.Call(arguments),
+            NodeEventEmitterSetMaxListenersFunction eventEmitterSetMaxFunc => eventEmitterSetMaxFunc.Call(arguments),
+            NodeEventEmitterGetMaxListenersFunction eventEmitterGetMaxFunc => eventEmitterGetMaxFunc.Call(arguments),
+            NodeEventEmitterRemoveAllListenersFunction eventEmitterRemoveAllFunc => eventEmitterRemoveAllFunc.Call(arguments),
+            
+            // Events module static functions
+            EventsOnceFunction eventsOnceFunc => eventsOnceFunc.Call(arguments),
+            EventsListenerCountFunction eventsListenerCountFunc => eventsListenerCountFunc.Call(arguments),
+            EventsGetEventListenersFunction eventsGetEventListenersFunc => eventsGetEventListenersFunc.Call(arguments),
+            EventsGetMaxListenersFunction eventsGetMaxFunc => eventsGetMaxFunc.Call(arguments),
+            EventsSetMaxListenersFunction eventsSetMaxFunc => eventsSetMaxFunc.Call(arguments),
+            EventsAddAbortListenerFunction eventsAddAbortFunc => eventsAddAbortFunc.Call(arguments),
             
             // String functions
             StringModule stringModule => stringModule.Call(arguments),
@@ -389,6 +413,81 @@ public partial class Interpreter
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Handle Node.js EventEmitter emit calls with EventListenerInfo support
+    /// </summary>
+    private object? HandleNodeEventEmitterEmit(NodeEventEmitterEmitFunction nodeEventEmitterEmitFunc, List<object?> arguments)
+    {
+        if (arguments.Count < 1)
+        {
+            throw new ECEngineException("EventEmitter.emit() requires at least 1 argument: event name",
+                1, 1, "", "Usage: emitter.emit('event', arg1, arg2, ...)");
+        }
+
+        var eventName = arguments[0]?.ToString() ?? "";
+        var eventArgs = arguments.Skip(1).ToList();
+
+        // Get the event listeners from the emit function
+        var (events, emitterInstance, captureRejections) = nodeEventEmitterEmitFunc.GetEventData();
+
+        // Special handling for 'error' events
+        if (eventName == "error" && (!events.ContainsKey("error") || events["error"].Count == 0))
+        {
+            // If no error listeners and it's an error event, throw the error
+            var error = eventArgs.Count > 0 ? eventArgs[0] : new ECEngineException("Unhandled 'error' event", 1, 1, "", "");
+            throw new ECEngineException($"Unhandled 'error' event: {error}", 1, 1, "", "Add an error event listener to handle this event");
+        }
+
+        // Check if there are listeners for this event
+        if (!events.ContainsKey(eventName) || events[eventName].Count == 0)
+        {
+            return false; // No listeners
+        }
+
+        var listeners = events[eventName].ToList(); // Copy to avoid modification during iteration
+        var hadListeners = listeners.Count > 0;
+
+        // Execute all listeners
+        var listenersToRemove = new List<EventListenerInfo>();
+        
+        foreach (var listenerInfo in listeners)
+        {
+            try
+            {
+                // Call the listener function using the interpreter
+                CallUserFunction(listenerInfo.Listener, eventArgs);
+                
+                // Mark once listeners for removal
+                if (listenerInfo.Once)
+                {
+                    listenersToRemove.Add(listenerInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (captureRejections)
+                {
+                    // Handle promise rejections (Node.js feature)
+                    // For now, just log the error
+                    Console.WriteLine($"Warning: EventEmitter promise rejection: {ex.Message}");
+                }
+                else
+                {
+                    // Re-throw the error as Node.js would do
+                    throw;
+                }
+            }
+        }
+
+        // Remove once listeners after execution
+        foreach (var listenerInfo in listenersToRemove)
+        {
+            events[eventName].Remove(listenerInfo);
+        }
+
+        return hadListeners;
     }
 
     /// <summary>
