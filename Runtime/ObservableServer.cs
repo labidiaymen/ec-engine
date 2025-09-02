@@ -121,7 +121,7 @@ public class ObservableServerObject
                     // Only call the observer if response hasn't been handled yet
                     if (!responseHandled && !response.HasEnded)
                     {
-                        _interpreter.CallUserFunction(observer, new List<object?> { requestEvent });
+                        _interpreter.CallUserFunctionPublic(observer, new List<object?> { requestEvent });
                         
                         // Check if this observer handled the response
                         if (response.HasEnded)
@@ -151,7 +151,7 @@ public class ObservableServerObject
         {
             try
             {
-                _interpreter.CallUserFunction(observer, new List<object?> { error.Message });
+                _interpreter.CallUserFunctionPublic(observer, new List<object?> { error.Message });
             }
             catch (Exception ex)
             {

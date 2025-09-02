@@ -122,7 +122,7 @@ public class HttpServer
                 // Call the user-defined request handler
                 try
                 {
-                    _interpreter.CallUserFunction(_requestHandler, new List<object?> { requestObj, responseObj });
+                    _interpreter.CallUserFunctionPublic(_requestHandler, new List<object?> { requestObj, responseObj });
                     
                     // Give a small delay to ensure proper response handling
                     System.Threading.Thread.Sleep(1);

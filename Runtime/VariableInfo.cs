@@ -11,7 +11,7 @@ public class VariableInfo
     public object? Value { get; set; }
     public bool IsConstant => Type == "const";
     public List<Function> Observers { get; } = new List<Function>();
-    public List<Interpreter.MultiVariableObserver> MultiObservers { get; } = new List<Interpreter.MultiVariableObserver>();
+    public List<MultiVariableObserver> MultiObservers { get; } = new List<MultiVariableObserver>();
 
     public VariableInfo(string type, object? value)
     {
@@ -64,20 +64,6 @@ public class ReturnException : Exception
     public object? Value { get; }
 
     public ReturnException(object? value)
-    {
-        Value = value;
-    }
-}
-
-/// <summary>
-/// Exception thrown when a yield statement is executed
-/// Used for control flow in generator function execution
-/// </summary>
-public class YieldException : Exception
-{
-    public object? Value { get; }
-
-    public YieldException(object? value)
     {
         Value = value;
     }
@@ -156,7 +142,15 @@ public class Generator
                 {
                     var paramName = Parameters[i];
                     var paramValue = i < _arguments.Count ? _arguments[i] : null;
-                    _interpreter.SetVariable(paramName, paramValue);
+                    // Check if parameter is already declared, if not declare it
+                    if (!_interpreter.HasVariable(paramName))
+                    {
+                        _interpreter.DeclareVariable("var", paramName, paramValue);
+                    }
+                    else
+                    {
+                        _interpreter.SetVariable(paramName, paramValue);
+                    }
                 }
             }
             

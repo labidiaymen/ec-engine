@@ -3,6 +3,7 @@ using ECEngine.Runtime;
 using ECEngine.Parser;
 using ECEngine.Lexer;
 using System.IO;
+using System.Linq;
 using RuntimeInterpreter = ECEngine.Runtime.Interpreter;
 
 namespace ECEngine.Tests.Runtime
@@ -12,11 +13,27 @@ namespace ECEngine.Tests.Runtime
         private RuntimeInterpreter CreateInterpreterWithModuleSupport()
         {
             var interpreter = new RuntimeInterpreter();
-            // Use absolute path to ensure test files are found
-            var moduleBasePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../examples/modules"));
+            // Find the project root by looking for ECEngine.csproj
+            var currentDirectory = Directory.GetCurrentDirectory();
+            var projectRoot = FindProjectRoot(currentDirectory);
+            var moduleBasePath = Path.Combine(projectRoot, "examples", "modules");
             var moduleSystem = new ModuleSystem(moduleBasePath);
             interpreter.SetModuleSystem(moduleSystem);
             return interpreter;
+        }
+
+        private string FindProjectRoot(string startPath)
+        {
+            var directory = new DirectoryInfo(startPath);
+            while (directory != null)
+            {
+                if (directory.GetFiles("ECEngine.csproj").Any())
+                {
+                    return directory.FullName;
+                }
+                directory = directory.Parent;
+            }
+            throw new DirectoryNotFoundException("Could not find project root containing ECEngine.csproj");
         }
 
         [Fact]

@@ -45,10 +45,10 @@ public class AdvancedOperatorIntegrationTests
             var output = stringWriter.ToString();
             var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             
-            Assert.Equal("True", lines[0].Trim());  // 5 === 5
-            Assert.Equal("False", lines[1].Trim()); // 5 === '5'
-            Assert.Equal("True", lines[2].Trim());  // true === true
-            Assert.Equal("True", lines[3].Trim());  // null === null
+            Assert.Equal("true", lines[0].Trim());  // 5 === 5
+            Assert.Equal("false", lines[1].Trim()); // 5 === '5'
+            Assert.Equal("true", lines[2].Trim());  // true === true
+            Assert.Equal("true", lines[3].Trim());  // null === null
         }
         finally
         {
@@ -78,9 +78,9 @@ public class AdvancedOperatorIntegrationTests
             var output = stringWriter.ToString();
             var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             
-            Assert.Equal("True", lines[0].Trim());  // 5 !== '5'
-            Assert.Equal("False", lines[1].Trim()); // 5 !== 5
-            Assert.Equal("True", lines[2].Trim());  // true !== false
+            Assert.Equal("true", lines[0].Trim());  // 5 !== '5'
+            Assert.Equal("false", lines[1].Trim()); // 5 !== 5
+            Assert.Equal("true", lines[2].Trim());  // true !== false
         }
         finally
         {
@@ -410,9 +410,9 @@ public class AdvancedOperatorIntegrationTests
             Assert.Contains("Has flag 4:", lines[2]);
             Assert.Contains("yes", lines[3]);
             Assert.Contains("Regular comparison:", lines[4]);
-            Assert.Contains("True", lines[5]);
+            Assert.Contains("true", lines[5]);
             Assert.Contains("Strict comparison:", lines[6]);
-            Assert.Contains("False", lines[7]);
+            Assert.Contains("false", lines[7]);
         }
         finally
         {
@@ -477,8 +477,8 @@ public class AdvancedOperatorIntegrationTests
     [InlineData("var result = false ? 'yes' : 'no'; console.log(result);", "no")]
     [InlineData("var result = 15 & 7; console.log(result);", "7")]
     [InlineData("var result = 8 << 1; console.log(result);", "16")]
-    [InlineData("console.log(null === null);", "True")]
-    [InlineData("console.log(5 !== '5');", "True")]
+    [InlineData("console.log(null === null);", "true")]
+    [InlineData("console.log(5 !== '5');", "true")]
     public void ExecuteScript_VariousAdvancedOperatorScenarios_ProducesExpectedOutput(string script, string expectedOutput)
     {
         // Arrange

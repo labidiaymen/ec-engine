@@ -30,7 +30,7 @@ public class SetTimeoutFunction
         _eventLoop.SetTimeout(() => {
             try
             {
-                _interpreter.CallUserFunction(callback, new List<object?>());
+                _interpreter.CallUserFunctionPublic(callback, new List<object?>());
             }
             catch (Exception ex)
             {
@@ -68,7 +68,7 @@ public class SetIntervalFunction
         _eventLoop.SetInterval(() => {
             try
             {
-                _interpreter.CallUserFunction(callback, new List<object?>());
+                _interpreter.CallUserFunctionPublic(callback, new List<object?>());
             }
             catch (Exception ex)
             {
@@ -137,7 +137,7 @@ public class NextTickFunction
         _eventLoop.NextTick(() => {
             try
             {
-                _interpreter.CallUserFunction(callback, new List<object?>());
+                _interpreter.CallUserFunctionPublic(callback, new List<object?>());
             }
             catch (Exception ex)
             {

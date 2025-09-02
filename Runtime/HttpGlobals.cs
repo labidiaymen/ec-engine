@@ -92,7 +92,7 @@ public class ServerObject
                     {
                         var interpreter = _server.GetType().GetField("_interpreter", 
                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(_server) as Interpreter;
-                        interpreter?.CallUserFunction(callback, new List<object?>());
+                        interpreter?.CallUserFunctionPublic(callback, new List<object?>());
                     }
                     catch (Exception ex)
                     {
@@ -128,7 +128,7 @@ public class ServerObject
                     {
                         var interpreter = _server.GetType().GetField("_interpreter", 
                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(_server) as Interpreter;
-                        interpreter?.CallUserFunction(callback, new List<object?>());
+                        interpreter?.CallUserFunctionPublic(callback, new List<object?>());
                     }
                     catch (Exception ex)
                     {
