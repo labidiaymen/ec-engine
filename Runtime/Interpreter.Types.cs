@@ -46,6 +46,10 @@ public partial class Interpreter
             RequireFunction or UrlConstructorFunction or URLSearchParamsConstructorFunction => "function",
             QuerystringMethodFunction => "function",
             PathMethodFunction => "function",
+            CreateServerFunction or RequestFunction or GetFunction => "function",
+            ServerListenFunction or ServerCloseFunction or ServerOnFunction or ServerEmitFunction => "function",
+            ClientRequestWriteFunction or ClientRequestEndFunction or ClientRequestOnFunction => "function",
+            IncomingMessageOnFunction or IncomingMessageSetEncodingFunction => "function",
             StringModule => "function", // String constructor is a function
             FunctionDeclaration => "function",
             ArrowFunction => "function",

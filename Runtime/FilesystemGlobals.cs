@@ -1139,7 +1139,6 @@ public class RequireFunction
             "events" => true,
             "process" => true,
             "querystring" => true,
-            "http" => true,
             _ => false
         };
     }
@@ -1160,7 +1159,6 @@ public class RequireFunction
             "events" => GetEventsModule(),
             "process" => GetProcessModule(),
             "querystring" => GetQuerystringModule(),
-            "http" => GetHttpModule(),
             _ => throw new ECEngineException($"Built-in module '{moduleName}' is not implemented", 1, 1, "", "Module not implemented")
         };
     }
@@ -1194,15 +1192,6 @@ public class RequireFunction
     {
         // Return querystring module
         return new Runtime.QuerystringModule();
-    }
-
-    private object? GetHttpModule()
-    {
-        // Return HTTP module
-        return new Dictionary<string, object?>
-        {
-            { "createServer", new CreateServerFunction(null, null) }
-        };
     }
 }
 

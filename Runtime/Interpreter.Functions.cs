@@ -188,12 +188,14 @@ public partial class Interpreter
             ClearIntervalFunction clearIntervalFunc => clearIntervalFunc.Call(arguments),
             NextTickFunction nextTickFunc => nextTickFunc.Call(arguments),
             
-            // HTTP functions
-            CreateServerFunction createServerFunc => createServerFunc.Call(arguments),
+            // HTTP functions (legacy)
             ServerMethodFunction serverMethodFunc => serverMethodFunc.Call(arguments),
             ResponseMethodFunction responseMethodFunc => responseMethodFunc.Call(arguments),
             ObservableServerMethodFunction observableServerMethodFunc => observableServerMethodFunc.Call(arguments),
             ResponseWrapperFunction responseWrapperFunc => responseWrapperFunc.Call(arguments),
+            
+            // HTTP functions (new Node.js-compatible)
+            HttpResponseMethodFunction httpResponseMethodFunc => httpResponseMethodFunc.Call(arguments),
             
             // Date functions
             DateModule dateModuleAsFunc => dateModuleAsFunc.Constructor.Call(arguments),
@@ -299,6 +301,20 @@ public partial class Interpreter
             // File stats functions
             IsFileFunction isFileFunc => isFileFunc.Call(arguments.ToArray()),
             IsDirectoryFunction isDirFunc => isDirFunc.Call(arguments.ToArray()),
+            
+            // HTTP functions
+            CreateServerFunction createServerFunc => createServerFunc.Call(arguments),
+            RequestFunction requestFunc => requestFunc.Call(arguments),
+            GetFunction getFunc => getFunc.Call(arguments),
+            ServerListenFunction serverListenFunc => serverListenFunc.Call(arguments),
+            ServerCloseFunction serverCloseFunc => serverCloseFunc.Call(arguments),
+            ServerOnFunction serverOnFunc => serverOnFunc.Call(arguments),
+            ServerEmitFunction serverEmitFunc => serverEmitFunc.Call(arguments),
+            ClientRequestWriteFunction clientWriteFunc => clientWriteFunc.Call(arguments),
+            ClientRequestEndFunction clientEndFunc => clientEndFunc.Call(arguments),
+            ClientRequestOnFunction clientOnFunc => clientOnFunc.Call(arguments),
+            IncomingMessageOnFunction messageOnFunc => messageOnFunc.Call(arguments),
+            IncomingMessageSetEncodingFunction messageSetEncodingFunc => messageSetEncodingFunc.Call(arguments),
             
             // C# delegate support
             Func<object[], object> delegateFunc => delegateFunc(arguments.ToArray()),

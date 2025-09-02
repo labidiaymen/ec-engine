@@ -231,6 +231,12 @@ public class HttpRequestObject
     public string Url { get; set; } = "";
     public string Path { get; set; } = "";
     public Dictionary<string, string> Headers { get; set; } = new();
+    
+    // JavaScript-style property names (lowercase)
+    public string method => Method;
+    public string url => Url;
+    public string path => Path;
+    public Dictionary<string, string> headers => Headers;
 }
 
 /// <summary>
@@ -367,5 +373,82 @@ public class HttpResponseObject
         }
 
         _headersSent = true;
+    }
+    
+    // JavaScript-style method names (camelCase)
+    public void writeHead(int statusCode, Dictionary<string, string>? headers = null) => WriteHead(statusCode, headers);
+    public void end(string? data = null) => End(data);
+    public void write(string data) => Write(data);
+    public void setHeader(string name, string value) => SetHeader(name, value);
+}
+
+/// <summary>
+/// Function wrapper for HTTP response methods
+/// </summary>
+public class HttpResponseMethodFunction
+{
+    private readonly HttpResponseObject _response;
+    private readonly string _methodName;
+
+    public HttpResponseMethodFunction(HttpResponseObject response, string methodName)
+    {
+        _response = response;
+        _methodName = methodName;
+    }
+
+    public object? Call(List<object?> arguments)
+    {
+        return _methodName switch
+        {
+            "writeHead" => CallWriteHead(arguments),
+            "write" => CallWrite(arguments),
+            "end" => CallEnd(arguments),
+            "setHeader" => CallSetHeader(arguments),
+            _ => null
+        };
+    }
+
+    private object? CallWriteHead(List<object?> arguments)
+    {
+        if (arguments.Count == 0) return null;
+        
+        var statusCode = Convert.ToInt32(arguments[0]);
+        Dictionary<string, string>? headers = null;
+        
+        if (arguments.Count > 1 && arguments[1] is Dictionary<string, object?> headerDict)
+        {
+            headers = new Dictionary<string, string>();
+            foreach (var kvp in headerDict)
+            {
+                headers[kvp.Key] = kvp.Value?.ToString() ?? "";
+            }
+        }
+        
+        _response.WriteHead(statusCode, headers);
+        return null;
+    }
+
+    private object? CallWrite(List<object?> arguments)
+    {
+        if (arguments.Count == 0) return null;
+        var data = arguments[0]?.ToString() ?? "";
+        _response.Write(data);
+        return null;
+    }
+
+    private object? CallEnd(List<object?> arguments)
+    {
+        var data = arguments.Count > 0 ? arguments[0]?.ToString() : null;
+        _response.End(data);
+        return null;
+    }
+
+    private object? CallSetHeader(List<object?> arguments)
+    {
+        if (arguments.Count < 2) return null;
+        var name = arguments[0]?.ToString() ?? "";
+        var value = arguments[1]?.ToString() ?? "";
+        _response.SetHeader(name, value);
+        return null;
     }
 }

@@ -83,6 +83,12 @@ public partial class Interpreter
             case ProcessObject processObj:
                 return GetProcessProperty(processObj, propertyName);
                 
+            case HttpResponseObject responseObj:
+                return GetHttpResponseProperty(responseObj, propertyName);
+                
+            case HttpRequestObject requestObj:
+                return GetHttpRequestProperty(requestObj, propertyName);
+                
             case Generator generator:
                 return GetGeneratorProperty(generator, propertyName);
                 
@@ -755,6 +761,42 @@ public partial class Interpreter
         return propertyName switch
         {
             "next" => new Func<object[], object?>(args => generator.Next()),
+            _ => null
+        };
+    }
+    
+    /// <summary>
+    /// Get HTTP response object properties and methods
+    /// </summary>
+    private object? GetHttpResponseProperty(HttpResponseObject responseObj, string propertyName)
+    {
+        return propertyName switch
+        {
+            "writeHead" => new HttpResponseMethodFunction(responseObj, "writeHead"),
+            "write" => new HttpResponseMethodFunction(responseObj, "write"),
+            "end" => new HttpResponseMethodFunction(responseObj, "end"),
+            "setHeader" => new HttpResponseMethodFunction(responseObj, "setHeader"),
+            "statusCode" => responseObj.StatusCode,
+            "hasEnded" => responseObj.HasEnded,
+            _ => null
+        };
+    }
+    
+    /// <summary>
+    /// Get HTTP request object properties and methods
+    /// </summary>
+    private object? GetHttpRequestProperty(HttpRequestObject requestObj, string propertyName)
+    {
+        return propertyName switch
+        {
+            "method" => requestObj.method,
+            "url" => requestObj.url,
+            "path" => requestObj.path,
+            "headers" => requestObj.headers,
+            "Method" => requestObj.Method,
+            "Url" => requestObj.Url,
+            "Path" => requestObj.Path,
+            "Headers" => requestObj.Headers,
             _ => null
         };
     }

@@ -15,10 +15,10 @@ public class ConsoleLogFunction { }
 /// </summary>
 public class ServerMethodFunction
 {
-    private readonly ServerObject _server;
+    private readonly object _server;
     private readonly string _methodName;
     
-    public ServerMethodFunction(ServerObject server, string methodName)
+    public ServerMethodFunction(object server, string methodName)
     {
         _server = server;
         _methodName = methodName;

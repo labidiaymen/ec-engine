@@ -42,7 +42,7 @@ public class ModuleSystem
         // Handle built-in modules
         if (IsBuiltinModule(modulePath))
         {
-            return LoadBuiltinModule(modulePath);
+            return LoadBuiltinModule(modulePath, interpreter);
         }
         
         // Handle URL imports
@@ -102,14 +102,19 @@ public class ModuleSystem
     /// </summary>
     private bool IsBuiltinModule(string modulePath)
     {
-        return modulePath == "querystring" || modulePath == "path";
+        // Remove node: prefix if present
+        var normalizedPath = modulePath.StartsWith("node:") ? modulePath.Substring(5) : modulePath;
+        return normalizedPath == "querystring" || normalizedPath == "path" || normalizedPath == "http";
     }
     
     /// <summary>
     /// Load a built-in module
     /// </summary>
-    private Module? LoadBuiltinModule(string modulePath)
+    private Module? LoadBuiltinModule(string modulePath, Interpreter? interpreter = null)
     {
+        // Remove node: prefix if present for processing
+        var normalizedPath = modulePath.StartsWith("node:") ? modulePath.Substring(5) : modulePath;
+        
         // Check if module is already loaded
         var cacheKey = $"builtin:{modulePath}";
         if (_modules.ContainsKey(cacheKey))
@@ -119,7 +124,7 @@ public class ModuleSystem
         
         var module = new Module(cacheKey);
         
-        switch (modulePath)
+        switch (normalizedPath)
         {
             case "querystring":
                 var querystringModule = new QuerystringModule();
@@ -142,6 +147,19 @@ public class ModuleSystem
                     module.Exports[kvp.Key] = kvp.Value;
                 }
                 module.Exports["default"] = pathExports;
+                break;
+            case "http":
+                // Get EventLoop from interpreter
+                var eventLoop = interpreter?.EventLoop;
+                var httpModule = HttpGlobals.GetHttpModule(eventLoop, interpreter);
+                if (httpModule is Dictionary<string, object?> httpDict)
+                {
+                    foreach (var kvp in httpDict)
+                    {
+                        module.Exports[kvp.Key] = kvp.Value;
+                    }
+                    module.Exports["default"] = httpDict;
+                }
                 break;
         }
         
