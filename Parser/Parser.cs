@@ -58,6 +58,43 @@ public partial class Parser
         _currentToken = _position < _tokens.Count ? _tokens[_position] : _tokens[^1];
     }
 
+    private bool IsKeywordToken(TokenType tokenType)
+    {
+        return tokenType == TokenType.Function ||
+               tokenType == TokenType.Var ||
+               tokenType == TokenType.Let ||
+               tokenType == TokenType.Const ||
+               tokenType == TokenType.Return ||
+               tokenType == TokenType.If ||
+               tokenType == TokenType.Else ||
+               tokenType == TokenType.For ||
+               tokenType == TokenType.While ||
+               tokenType == TokenType.Do ||
+               tokenType == TokenType.Break ||
+               tokenType == TokenType.Continue ||
+               tokenType == TokenType.Switch ||
+               tokenType == TokenType.Case ||
+               tokenType == TokenType.Default ||
+               tokenType == TokenType.Try ||
+               tokenType == TokenType.Catch ||
+               tokenType == TokenType.Finally ||
+               tokenType == TokenType.Throw ||
+               tokenType == TokenType.New ||
+               tokenType == TokenType.Typeof ||
+               tokenType == TokenType.Instanceof ||
+               tokenType == TokenType.True ||
+               tokenType == TokenType.False ||
+               tokenType == TokenType.Null ||
+               tokenType == TokenType.This ||
+               tokenType == TokenType.Export ||
+               tokenType == TokenType.Import ||
+               tokenType == TokenType.From ||
+               tokenType == TokenType.In ||
+               tokenType == TokenType.Of ||
+               tokenType == TokenType.As ||
+               tokenType == TokenType.Yield;
+    }
+
     // Parse code and return AST
     public ASTNode Parse(string code)
     {

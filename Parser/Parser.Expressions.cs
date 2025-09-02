@@ -284,7 +284,7 @@ public partial class Parser
     }
 
     /// <summary>
-    /// Parse relational expressions (<, <=, >, >=)
+    /// Parse relational expressions (<, <=, >, >=, instanceof)
     /// </summary>
     private Expression ParseRelational()
     {
@@ -293,7 +293,8 @@ public partial class Parser
         while (_currentToken.Type == TokenType.LessThan ||
                _currentToken.Type == TokenType.LessThanOrEqual ||
                _currentToken.Type == TokenType.GreaterThan ||
-               _currentToken.Type == TokenType.GreaterThanOrEqual)
+               _currentToken.Type == TokenType.GreaterThanOrEqual ||
+               _currentToken.Type == TokenType.Instanceof)
         {
             var op = _currentToken.Value;
             Advance();
@@ -459,8 +460,27 @@ public partial class Parser
             {
                 var token = _currentToken;
                 Advance(); // consume '.'
-                var property = Consume(TokenType.Identifier, "Expected property name after '.'");
-                expression = new MemberExpression(expression, property.Value, token);
+                
+                string propertyName;
+                if (_currentToken.Type == TokenType.Identifier)
+                {
+                    propertyName = _currentToken.Value;
+                    Advance();
+                }
+                else if (IsKeywordToken(_currentToken.Type))
+                {
+                    // Allow keywords as property names in member access
+                    propertyName = _currentToken.Value;
+                    Advance();
+                }
+                else
+                {
+                    throw new ECEngineException("Expected property name after '.'",
+                        _currentToken.Line, _currentToken.Column, _sourceCode,
+                        "Property names must be identifiers or keywords");
+                }
+                
+                expression = new MemberExpression(expression, propertyName, token);
             }
             else if (_currentToken.Type == TokenType.LeftBracket)
             {
@@ -505,11 +525,17 @@ public partial class Parser
                     propertyName = "from";
                     Advance(); // consume 'from'
                 }
+                else if (IsKeywordToken(_currentToken.Type))
+                {
+                    // Allow any keyword as property name
+                    propertyName = _currentToken.Value;
+                    Advance();
+                }
                 else
                 {
                     throw new ECEngineException("Expected property name after '.'",
                         _currentToken.Line, _currentToken.Column, _sourceCode,
-                        "Property access requires an identifier or 'default'");
+                        "Property access requires an identifier or keyword");
                 }
                 
                 expression = new MemberExpression(expression, propertyName, token);
@@ -687,7 +713,7 @@ public partial class Parser
         // Parse properties
         do
         {
-            // Parse property key (identifier or string)
+            // Parse property key (identifier, string, number, or keyword)
             string key;
             if (_currentToken.Type == TokenType.Identifier)
             {
@@ -699,9 +725,20 @@ public partial class Parser
                 key = _currentToken.Value;
                 Advance();
             }
+            else if (_currentToken.Type == TokenType.Number)
+            {
+                key = _currentToken.Value;
+                Advance();
+            }
+            else if (IsKeywordToken(_currentToken.Type))
+            {
+                // Allow keywords as property names
+                key = _currentToken.Value;
+                Advance();
+            }
             else
             {
-                throw new ECEngineException("Expected property name (identifier or string)",
+                throw new ECEngineException("Expected property name (identifier, string, number, or keyword)",
                     _currentToken.Line, _currentToken.Column, _sourceCode,
                     "Object properties must have a key");
             }

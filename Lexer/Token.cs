@@ -83,6 +83,7 @@ public enum TokenType
     Yield,          // yield keyword (for generator functions)
     New,            // new keyword
     Typeof,         // typeof keyword
+    Instanceof,     // instanceof keyword
     Colon,          // :
     
     // Template literal tokens

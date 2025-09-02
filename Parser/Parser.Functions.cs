@@ -25,6 +25,14 @@ public partial class Parser
             Advance(); // consume the *
         }
         
+        // Optional function name (for named function expressions)
+        string? functionName = null;
+        if (_currentToken.Type == TokenType.Identifier)
+        {
+            functionName = _currentToken.Value;
+            Advance(); // consume the function name
+        }
+        
         Consume(TokenType.LeftParen, "Expected '(' after 'function'");
         
         var parameters = new List<string>();
@@ -48,7 +56,7 @@ public partial class Parser
         }
         else
         {
-            return new FunctionExpression(parameters, body.Body, token);
+            return new FunctionExpression(parameters, body.Body, token, functionName);
         }
     }
 

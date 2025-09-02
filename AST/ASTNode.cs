@@ -384,11 +384,13 @@ public class FunctionDeclaration : Statement
 // Function expression node (e.g., function(a, b) { return a + b; })
 public class FunctionExpression : Expression
 {
+    public string? Name { get; }
     public List<string> Parameters { get; }
     public List<Statement> Body { get; }
     
-    public FunctionExpression(List<string> parameters, List<Statement> body, Token? token = null)
+    public FunctionExpression(List<string> parameters, List<Statement> body, Token? token = null, string? name = null)
     {
+        Name = name;
         Parameters = parameters;
         Body = body;
         Token = token;
