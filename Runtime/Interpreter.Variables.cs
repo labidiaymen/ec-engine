@@ -217,6 +217,14 @@ public partial class Interpreter
                 return new ConsoleObject();
             case "process":
                 return ProcessGlobals.CreateProcessObject(this);
+            case "__dirname":
+                if (_currentFilePath != null)
+                {
+                    return Path.GetDirectoryName(_currentFilePath) ?? "/";
+                }
+                return Environment.CurrentDirectory;
+            case "__filename":
+                return _currentFilePath ?? "";
             case "setTimeout":
                 return new SetTimeoutFunction(_eventLoop, this);
             case "setInterval":

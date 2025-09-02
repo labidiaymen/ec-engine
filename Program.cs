@@ -334,6 +334,9 @@ class Program
             interpreter.SetModuleSystem(moduleSystem);
             interpreter.SetEventLoop(eventLoop);
             
+            // Set the current file path for __filename and __dirname support
+            interpreter.SetCurrentFilePath(Path.GetFullPath(filePath));
+            
             var result = ExecuteCode(code, interpreter);
             
             // Run the event loop to handle async operations

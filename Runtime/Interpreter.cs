@@ -18,6 +18,7 @@ public partial class Interpreter
     private ModuleSystem? _moduleSystem;
     private EventLoop? _eventLoop;
     private Stack<object?> _thisStack = new Stack<object?>(); // Stack for 'this' context
+    private string? _currentFilePath; // Current script file path for __filename and __dirname
     #endregion
 
     #region Constructor
@@ -73,6 +74,14 @@ public partial class Interpreter
     public void SetEventLoop(EventLoop eventLoop)
     {
         _eventLoop = eventLoop;
+    }
+
+    /// <summary>
+    /// Set the current file path for __filename and __dirname globals
+    /// </summary>
+    public void SetCurrentFilePath(string? filePath)
+    {
+        _currentFilePath = filePath;
     }
 
     /// <summary>

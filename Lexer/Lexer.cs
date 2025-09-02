@@ -365,7 +365,7 @@ public class Lexer
                 continue;
             }
 
-            if (char.IsLetter(_currentChar))
+            if (char.IsLetter(_currentChar) || _currentChar == '_')
             {
                 var identifier = ReadIdentifier();
                 var tokenType = GetKeywordTokenType(identifier);

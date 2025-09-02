@@ -83,6 +83,7 @@ public class ModuleSystem
         // Create a new interpreter context for the module
         var moduleInterpreter = new Interpreter();
         moduleInterpreter.SetModuleSystem(this);
+        moduleInterpreter.SetCurrentFilePath(absolutePath);
         
         // Execute the module code
         moduleInterpreter.Evaluate(ast, moduleCode);
