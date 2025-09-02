@@ -322,4 +322,35 @@ public partial class Interpreter
             _ => false
         };
     }
+    
+    /// <summary>
+    /// Evaluate the 'in' operator to check if a property exists in an object
+    /// </summary>
+    private bool EvaluateInOperator(object? property, object? obj)
+    {
+        if (property == null || obj == null)
+            return false;
+            
+        string propertyName = property.ToString() ?? "";
+        
+        return obj switch
+        {
+            Dictionary<string, object?> dict => dict.ContainsKey(propertyName),
+            System.Collections.IList list when IsArrayIndex(propertyName, list.Count) => true,
+            System.Collections.IList list => propertyName == "length" || IsArrayIndex(propertyName, list.Count),
+            _ => false
+        };
+    }
+    
+    /// <summary>
+    /// Helper method to check if a string represents a valid array index
+    /// </summary>
+    private bool IsArrayIndex(string propertyName, int arrayLength)
+    {
+        if (int.TryParse(propertyName, out int index))
+        {
+            return index >= 0 && index < arrayLength;
+        }
+        return false;
+    }
 }

@@ -52,7 +52,7 @@ public class ModuleSystem
         }
         
         // Resolve the absolute path for local files
-        var absolutePath = ResolvePath(modulePath);
+        var absolutePath = ResolvePath(modulePath, interpreter?.GetCurrentFilePath());
         
         // If module couldn't be resolved, return null
         if (absolutePath == null)
@@ -98,6 +98,15 @@ public class ModuleSystem
             
             module.IsLoaded = true;
             return module;
+        }
+        catch (ECEngineException ex)
+        {
+            // Remove the failed module from cache
+            _modules.Remove(absolutePath);
+            
+            // Re-throw ECEngineException with module context but preserve original error details
+            throw new ECEngineException($"Error loading module '{absolutePath}': {ex.Message}", 
+                ex.Line, ex.Column, ex.SourceCode, ex.ContextInfo);
         }
         catch (Exception ex)
         {
@@ -199,14 +208,45 @@ public class ModuleSystem
         return module;
     }
     
-    private string? ResolvePath(string modulePath)
+    private string? ResolvePath(string modulePath, string? currentFilePath = null)
     {
+        // Determine the base directory for relative resolution
+        string baseDirectory;
+        if (currentFilePath != null && (modulePath.StartsWith("./") || modulePath.StartsWith("../")))
+        {
+            // For relative paths, resolve relative to the current module's directory
+            baseDirectory = Path.GetDirectoryName(currentFilePath) ?? _rootPath;
+        }
+        else
+        {
+            // For absolute paths and when no current file context, use root path
+            baseDirectory = _rootPath;
+        }
+        
         // Handle relative paths
         if (modulePath.StartsWith("./") || modulePath.StartsWith("../"))
         {
-            var relativePath = Path.GetFullPath(Path.Combine(_rootPath, modulePath));
+            var relativePath = Path.GetFullPath(Path.Combine(baseDirectory, modulePath));
+            
+            // First try as a file with extensions
             var resolvedRelative = ResolveWithExtensions(relativePath);
-            return File.Exists(resolvedRelative) ? resolvedRelative : null;
+            if (File.Exists(resolvedRelative))
+            {
+                return resolvedRelative;
+            }
+            
+            // If not found as file, try as directory (look for index.js)
+            if (Directory.Exists(relativePath))
+            {
+                var indexPath = Path.Combine(relativePath, "index");
+                var resolvedIndex = ResolveWithExtensions(indexPath);
+                if (File.Exists(resolvedIndex))
+                {
+                    return resolvedIndex;
+                }
+            }
+            
+            return null;
         }
         
         // If already has a supported extension, use as-is
@@ -220,13 +260,13 @@ public class ModuleSystem
             }
             else
             {
-                fullPath = Path.GetFullPath(Path.Combine(_rootPath, modulePath));
+                fullPath = Path.GetFullPath(Path.Combine(baseDirectory, modulePath));
             }
             return File.Exists(fullPath) ? fullPath : null;
         }
         
         // Try Node.js-style resolution for non-relative paths
-        var nodeStylePath = ResolveNodeStyleModule(modulePath, _rootPath);
+        var nodeStylePath = ResolveNodeStyleModule(modulePath, baseDirectory);
         if (nodeStylePath != null)
         {
             return nodeStylePath;
@@ -240,7 +280,7 @@ public class ModuleSystem
         }
         else
         {
-            basePath = Path.GetFullPath(Path.Combine(_rootPath, modulePath));
+            basePath = Path.GetFullPath(Path.Combine(baseDirectory, modulePath));
         }
         
         var resolvedFallback = ResolveWithExtensions(basePath);

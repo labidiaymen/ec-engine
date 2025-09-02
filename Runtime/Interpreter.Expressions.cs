@@ -41,6 +41,7 @@ public partial class Interpreter
             ">>" => EvaluateRightShift(left, right),
             ">>>" => EvaluateUnsignedRightShift(left, right),
             "instanceof" => IsInstanceOf(left, right),
+            "in" => EvaluateInOperator(left, right),
             _ => throw new ECEngineException($"Unknown binary operator: {binaryExpr.Operator}",
                 binaryExpr.Token?.Line ?? 1, binaryExpr.Token?.Column ?? 1, _sourceCode,
                 $"Unsupported binary operator '{binaryExpr.Operator}'")

@@ -166,7 +166,7 @@ public partial class Parser
     {
         var token = _currentToken;
         Consume(TokenType.Break, "Expected 'break' keyword");
-        Consume(TokenType.Semicolon, "Expected ';' after break statement");
+        Match(TokenType.Semicolon); // Optional semicolon
         return new BreakStatement(token);
     }
     
@@ -177,7 +177,7 @@ public partial class Parser
     {
         var token = _currentToken;
         Consume(TokenType.Continue, "Expected 'continue' keyword");
-        Consume(TokenType.Semicolon, "Expected ';' after continue statement");
+        Match(TokenType.Semicolon); // Optional semicolon
         return new ContinueStatement(token);
     }
 

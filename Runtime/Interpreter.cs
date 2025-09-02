@@ -85,6 +85,14 @@ public partial class Interpreter
     }
 
     /// <summary>
+    /// Get the current file path
+    /// </summary>
+    public string? GetCurrentFilePath()
+    {
+        return _currentFilePath;
+    }
+
+    /// <summary>
     /// Get exports dictionary (called from ModuleSystem and tests)
     /// </summary>
     public Dictionary<string, object?> GetExports()

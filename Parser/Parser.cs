@@ -255,7 +255,9 @@ public partial class Parser
         Consume(TokenType.Return, "Expected 'return' keyword");
         
         Expression? argument = null;
-        if (_currentToken.Type != TokenType.Semicolon && _currentToken.Type != TokenType.EOF)
+        if (_currentToken.Type != TokenType.Semicolon && 
+            _currentToken.Type != TokenType.EOF &&
+            _currentToken.Type != TokenType.RightBrace)
         {
             argument = ParseExpression();
         }

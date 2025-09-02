@@ -294,7 +294,8 @@ public partial class Parser
                _currentToken.Type == TokenType.LessThanOrEqual ||
                _currentToken.Type == TokenType.GreaterThan ||
                _currentToken.Type == TokenType.GreaterThanOrEqual ||
-               _currentToken.Type == TokenType.Instanceof)
+               _currentToken.Type == TokenType.Instanceof ||
+               _currentToken.Type == TokenType.In)
         {
             var op = _currentToken.Value;
             Advance();
@@ -366,34 +367,6 @@ public partial class Parser
     /// </summary>
     private Expression ParseUnary()
     {
-        // Handle new operator
-        if (_currentToken.Type == TokenType.New)
-        {
-            var token = _currentToken;
-            Advance();
-            var callee = ParseMember(); // Parse the constructor function
-            
-            // Check if there are arguments (parentheses)
-            var arguments = new List<Expression>();
-            if (_currentToken.Type == TokenType.LeftParen)
-            {
-                Advance(); // consume '('
-                
-                if (_currentToken.Type != TokenType.RightParen)
-                {
-                    arguments.Add(ParseExpression());
-                    while (_currentToken.Type == TokenType.Comma)
-                    {
-                        Advance(); // consume ','
-                        arguments.Add(ParseExpression());
-                    }
-                }
-                
-                Consume(TokenType.RightParen, "Expected ')' after arguments");
-            }
-            
-            return new NewExpression(callee, arguments, token);
-        }
 
         // Handle prefix unary operators
         if (_currentToken.Type == TokenType.LogicalNot ||
@@ -435,7 +408,40 @@ public partial class Parser
     /// </summary>
     private Expression ParseCall()
     {
-        var expression = ParseMember();
+        Expression expression;
+        
+        // Handle new operator
+        if (_currentToken.Type == TokenType.New)
+        {
+            var token = _currentToken;
+            Advance();
+            var callee = ParseMember(); // Parse the constructor function
+            
+            // Check if there are arguments (parentheses)
+            var arguments = new List<Expression>();
+            if (_currentToken.Type == TokenType.LeftParen)
+            {
+                Advance(); // consume '('
+                
+                if (_currentToken.Type != TokenType.RightParen)
+                {
+                    arguments.Add(ParseExpression());
+                    while (_currentToken.Type == TokenType.Comma)
+                    {
+                        Advance(); // consume ','
+                        arguments.Add(ParseExpression());
+                    }
+                }
+                
+                Consume(TokenType.RightParen, "Expected ')' after arguments");
+            }
+            
+            expression = new NewExpression(callee, arguments, token);
+        }
+        else
+        {
+            expression = ParseMember();
+        }
 
         while (_currentToken.Type == TokenType.LeftParen || _currentToken.Type == TokenType.Dot || _currentToken.Type == TokenType.LeftBracket)
         {
