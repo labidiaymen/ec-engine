@@ -2,20 +2,19 @@
 
 ## 📊 Progress Overview
 
-| Category | Implemented | Partial | Missing | Progress |
-|----------|------------|---------|---------|----------|
+| Category | Implemented | Partial | Missing | Progress |## 🌐 Node.js API Compatibility (33% Complete)|----------|------------|---------|---------|----------|
 | **Lexical Analysis** | 41 | 2 | 1 | **93%** |
 | **Parser & AST** | 56 | 2 | 12 | **83%** |
 | **Runtime & Interpreter** | 41 | 1 | 17 | **69%** |
 | **Control Flow** | 14 | 0 | 1 | **93%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
-| **Node.js API Compatibility** | 8 | 0 | 19 | **30%** |
+| **Node.js API Compatibility** | 9 | 0 | 18 | **33%** |
 | **Modern JavaScript** | 2 | 0 | 18 | **10%** |
 | **Object-Oriented** | 3 | 0 | 22 | **12%** |
 | **Event Loop & Async** | 18 | 0 | 3 | **86%** |
 | **ECEngine Extensions** | 5 | 0 | 1 | **83%** |
-| **TOTAL** | **203** | **6** | **105** | **65%** |
+| **TOTAL** | **204** | **6** | **104** | **65%** |
 
 ## 🔤 Lexical Analysis (93% Complete)
 
@@ -50,7 +49,7 @@
 ## ⚙️ Runtime & Interpreter (68% Complete)
 
 ### ✅ Implemented  
-- **Basic Evaluation**: Number/string/boolean/null literals, template literals with interpolation, identifier resolution, binary expressions (arithmetic, comparison, logical, strict comparison, bitwise), member expressions, function calls, object/array literals, compound assignments, conditional expressions, string concatenation with type conversion, escape sequences
+- **Basic Evaluation**: Number/string/boolean/null literals, template literals with interpolation, identifier resolution, binary expressions (arithmetic, comparison, logical, strict comparison, bitwise), unary expressions (`!`, `+x`, `-x`), update expressions (`++`, `--` prefix and postfix), member expressions, function calls, object/array literals, compound assignments, conditional expressions, string concatenation with type conversion, escape sequences
 - **Method Chaining**: Full support for chaining method calls (e.g., `str.trim().toUpperCase()`, `arr.slice(0, 2).join("-")`)
 - **Variable Management**: `var`/`let`/`const` declarations, assignments, property assignments (`obj.prop = value`), advanced scope management, const immutability, block scoping for `let`/`const`
 - **Functions**: Declarations, expressions, calls with parameters, return statements, basic closures, arrow functions, generator functions with `yield`, `next()` method, state preservation
@@ -138,10 +137,11 @@
 - **Events**: `EventEmitter` implementation using object factory pattern with full API: `.on()`, `.emit()`, `.off()`, `.removeAllListeners()`, `.listenerCount()`, `.listeners()`, `.eventNames()`, multiple listeners per event, event argument passing
 - **Utilities (util)**: Comprehensive Node.js util module implementation with `util.inspect()` (object inspection with proper formatting), `util.format()` (printf-style string formatting with %s, %d, %j placeholders), type checking functions (`isArray`, `isFunction`, `isNumber`, `isObject`, `isPrimitive`, `isString`, `isUndefined`, `isNullOrUndefined`), `util.isDeepStrictEqual()` (deep object comparison), `util.debuglog()` (debug logging with sections), `util.types` module (advanced type checking), and `util.promisify/callbackify()` placeholders
 - **URL Module**: Complete Node.js-compatible URL API implementation with WHATWG URL standard support including `URL` constructor (`new URL(input, base)`), `URLSearchParams` class with full API (`get()`, `set()`, `append()`, `delete()`, `has()`, `getAll()`, `toString()`), legacy Node.js URL functions (`url.parse()`, `url.format()`, `url.resolve()`), domain conversion functions (`url.domainToASCII()`, `url.domainToUnicode()`), property access/modification (protocol, hostname, port, pathname, search, hash, username, password), integrated with `require('url')` and global constructors, comprehensive test coverage with 25+ test cases
+- **Querystring Module**: Complete Node.js-compatible querystring API implementation with full `require('querystring')` support including `querystring.parse()` (parse query strings into objects with custom separators and assignment operators), `querystring.stringify()` (convert objects to query strings with array support), `querystring.escape()` (URL encode strings), `querystring.unescape()` (URL decode strings), proper handling of special characters, arrays, boolean values, and edge cases, comprehensive test coverage with 17 test cases
 
 ### ❌ Missing
 - **Global Objects**: `process` object (`process.env`, `process.argv`, `process.cwd()`, `process.exit()`), `global` object, `Buffer` class
-- **Built-in Modules**: `path` (path utilities), `os` (operating system), `crypto` (cryptographic functions), `querystring` (query string utilities)
+- **Built-in Modules**: `path` (path utilities), `os` (operating system), `crypto` (cryptographic functions)
 - **Module Helpers**: `require()` function, `__dirname`, `__filename` variables, `module` object with metadata
 - **Streams**: Readable/Writable/Transform streams, `stream` module
 - **Utilities**: `assert` module (✅ **util module implemented** with `util.inspect()`, `util.format()`, type checking, deep equality, debug logging)
@@ -213,7 +213,7 @@
 - **Parser**: Coverage for all implemented features  
 - **Interpreter**: Literals, expressions, functions, operators
 - **Integration**: Variables, functions, console, error handling
-- **Specialized**: Event loop (7 tests), Date (23 tests), Math (52 tests), JSON, templates (33 tests)
+- **Specialized**: Event loop (7 tests), Date (23 tests), Math (52 tests), JSON, templates (33 tests), querystring module (17 tests)
 - **Quality**: Memory leak, error handling, performance, concurrency tests
 
 ### ❌ Missing Test Areas

@@ -248,6 +248,8 @@ public partial class Interpreter
                 return "Boolean"; // String identifier for constructor
             case "Date":
                 return new DateModule();
+            case "querystring":
+                return new QuerystringModule();
             case "Math":
                 return new MathModule();
             case "JSON":

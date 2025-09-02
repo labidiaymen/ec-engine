@@ -228,6 +228,7 @@ public partial class Interpreter
             MathTruncFunction mathTruncFunc => mathTruncFunc.Call(arguments),
             
             JsonMethodFunction jsonMethodFunc => jsonMethodFunc.Call(arguments),
+            QuerystringMethodFunction querystringMethodFunc => querystringMethodFunc.Call(arguments),
             ObjectMethodFunction objectMethodFunc => objectMethodFunc.Call(arguments),
             
             // EventEmitter functions

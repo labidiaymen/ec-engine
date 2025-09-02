@@ -39,6 +39,12 @@ public class ModuleSystem
     
     public Module? LoadModule(string modulePath, Interpreter interpreter)
     {
+        // Handle built-in modules
+        if (IsBuiltinModule(modulePath))
+        {
+            return LoadBuiltinModule(modulePath);
+        }
+        
         // Handle URL imports
         if (IsUrl(modulePath))
         {
@@ -88,6 +94,51 @@ public class ModuleSystem
         }
         
         module.IsLoaded = true;
+        return module;
+    }
+    
+    /// <summary>
+    /// Check if a module path refers to a built-in module
+    /// </summary>
+    private bool IsBuiltinModule(string modulePath)
+    {
+        return modulePath == "querystring";
+    }
+    
+    /// <summary>
+    /// Load a built-in module
+    /// </summary>
+    private Module? LoadBuiltinModule(string modulePath)
+    {
+        // Check if module is already loaded
+        var cacheKey = $"builtin:{modulePath}";
+        if (_modules.ContainsKey(cacheKey))
+        {
+            return _modules[cacheKey];
+        }
+        
+        var module = new Module(cacheKey);
+        
+        switch (modulePath)
+        {
+            case "querystring":
+                var querystringModule = new QuerystringModule();
+                module.Exports["parse"] = new QuerystringMethodFunction(querystringModule, "parse");
+                module.Exports["stringify"] = new QuerystringMethodFunction(querystringModule, "stringify");
+                module.Exports["escape"] = new QuerystringMethodFunction(querystringModule, "escape");
+                module.Exports["unescape"] = new QuerystringMethodFunction(querystringModule, "unescape");
+                module.Exports["default"] = new Dictionary<string, object?>
+                {
+                    ["parse"] = module.Exports["parse"],
+                    ["stringify"] = module.Exports["stringify"],
+                    ["escape"] = module.Exports["escape"],
+                    ["unescape"] = module.Exports["unescape"]
+                };
+                break;
+        }
+        
+        module.IsLoaded = true;
+        _modules[cacheKey] = module;
         return module;
     }
     

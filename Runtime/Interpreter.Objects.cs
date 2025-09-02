@@ -94,6 +94,10 @@ public partial class Interpreter
                 // Handle JSON methods
                 return GetJsonModuleProperty(jsonModule, propertyName);
                 
+            case QuerystringModule querystringModule:
+                // Handle querystring methods
+                return GetQuerystringModuleProperty(querystringModule, propertyName);
+                
             case StringModule stringModule:
                 // Use reflection to get the property from StringModule
                 return GetReflectionProperty(obj, propertyName);
@@ -558,6 +562,21 @@ public partial class Interpreter
             "freeze" => new ObjectMethodFunction(objectModule, "freeze"),
             "seal" => new ObjectMethodFunction(objectModule, "seal"),
             "hasOwnProperty" => new ObjectMethodFunction(objectModule, "hasOwnProperty"),
+            _ => null
+        };
+    }
+    
+    /// <summary>
+    /// Get querystring module methods and properties
+    /// </summary>
+    private object? GetQuerystringModuleProperty(QuerystringModule querystringModule, string propertyName)
+    {
+        return propertyName switch
+        {
+            "parse" => new QuerystringMethodFunction(querystringModule, "parse"),
+            "stringify" => new QuerystringMethodFunction(querystringModule, "stringify"),
+            "escape" => new QuerystringMethodFunction(querystringModule, "escape"),
+            "unescape" => new QuerystringMethodFunction(querystringModule, "unescape"),
             _ => null
         };
     }

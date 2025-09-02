@@ -1115,7 +1115,7 @@ public class RequireFunction
         }
 
         // Return the module's exports
-        if (module.Exports.Count == 1 && module.Exports.ContainsKey("default"))
+        if (module.Exports.ContainsKey("default"))
         {
             return module.Exports["default"];
         }
