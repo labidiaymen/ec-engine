@@ -1,5 +1,6 @@
 using ECEngine.AST;
 using ECEngine.Lexer;
+using ECEngine.Runtime.Streams;
 using System.Reflection;
 
 namespace ECEngine.Runtime;
@@ -256,6 +257,34 @@ public partial class Interpreter
                 return new MathModule();
             case "JSON":
                 return new JsonModule();
+            case "stream":
+                var streamModule = new Dictionary<string, object?>();
+                
+                // Add stream constructors to the module
+                streamModule["Readable"] = new ReadableStreamConstructor();
+                streamModule["Writable"] = new WritableStreamConstructor();
+                streamModule["Duplex"] = new DuplexStreamConstructor();
+                streamModule["Transform"] = new TransformStreamConstructor();
+                streamModule["PassThrough"] = new PassThroughStreamConstructor();
+                
+                // Add stream utilities
+                streamModule["pipeline"] = new StreamPipelineFunction();
+                streamModule["finished"] = new StreamFinishedFunction();
+                streamModule["compose"] = new StreamComposeFunction();
+                streamModule["isReadable"] = new StreamIsReadableFunction();
+                streamModule["isWritable"] = new StreamIsWritableFunction();
+                
+                return streamModule;
+            case "Readable":
+                return new ReadableStreamConstructor();
+            case "Writable":
+                return new WritableStreamConstructor();
+            case "Duplex":
+                return new DuplexStreamConstructor();
+            case "Transform":
+                return new TransformStreamConstructor();
+            case "PassThrough":
+                return new PassThroughStreamConstructor();
         }
         
         // Look up in variable scopes

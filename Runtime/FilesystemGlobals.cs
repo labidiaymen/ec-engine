@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using ECEngine.Runtime;
+using ECEngine.Runtime.Streams;
 
 namespace ECEngine.Runtime;
 
@@ -1132,6 +1133,7 @@ public class RequireFunction
             "os" => true,
             "util" => true,
             "url" => true,
+            "stream" => true,
             _ => false
         };
     }
@@ -1145,6 +1147,7 @@ public class RequireFunction
             "os" => new OSModule(),
             "util" => new Runtime.UtilModule(),
             "url" => new Runtime.UrlModule(),
+            "stream" => new StreamModule(),
             _ => throw new ECEngineException($"Built-in module '{moduleName}' is not implemented", 1, 1, "", "Module not implemented")
         };
     }

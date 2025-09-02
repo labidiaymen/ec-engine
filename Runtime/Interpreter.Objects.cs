@@ -1,5 +1,6 @@
 using ECEngine.AST;
 using ECEngine.Lexer;
+using ECEngine.Runtime.Streams;
 using System.Reflection;
 using System.Text.Json;
 
@@ -731,6 +732,16 @@ public partial class Interpreter
                 new UrlConstructorFunction().Call(args.ToList()),
             _ when constructor is URLSearchParamsConstructorFunction => 
                 new URLSearchParamsConstructorFunction().Call(args.ToList()),
+            _ when constructor is ReadableStreamConstructor => 
+                new ReadableStreamConstructor().Call(args.ToList()),
+            _ when constructor is WritableStreamConstructor => 
+                new WritableStreamConstructor().Call(args.ToList()),
+            _ when constructor is DuplexStreamConstructor => 
+                new DuplexStreamConstructor().Call(args.ToList()),
+            _ when constructor is TransformStreamConstructor => 
+                new TransformStreamConstructor().Call(args.ToList()),
+            _ when constructor is PassThroughStreamConstructor => 
+                new PassThroughStreamConstructor().Call(args.ToList()),
             _ => throw new ECEngineException($"Constructor not found: {constructorName}",
                 1, 1, _sourceCode, $"Constructor '{constructorName}' is not defined")
         };
