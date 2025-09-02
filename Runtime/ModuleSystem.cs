@@ -76,26 +76,37 @@ public class ModuleSystem
         var module = new Module(absolutePath);
         _modules[absolutePath] = module;
         
-        var moduleCode = File.ReadAllText(absolutePath);
-        var parser = new Parser.Parser();
-        var ast = parser.Parse(moduleCode);
-        
-        // Create a new interpreter context for the module
-        var moduleInterpreter = new Interpreter();
-        moduleInterpreter.SetModuleSystem(this);
-        moduleInterpreter.SetCurrentFilePath(absolutePath);
-        
-        // Execute the module code
-        moduleInterpreter.Evaluate(ast, moduleCode);
-        
-        // Copy exports from module interpreter
-        foreach (var export in moduleInterpreter.GetExports())
+        try
         {
-            module.Exports[export.Key] = export.Value;
+            var moduleCode = File.ReadAllText(absolutePath);
+            var parser = new Parser.Parser();
+            var ast = parser.Parse(moduleCode);
+            
+            // Create a new interpreter context for the module
+            var moduleInterpreter = new Interpreter();
+            moduleInterpreter.SetModuleSystem(this);
+            moduleInterpreter.SetCurrentFilePath(absolutePath);
+            
+            // Execute the module code
+            moduleInterpreter.Evaluate(ast, moduleCode);
+            
+            // Copy exports from module interpreter
+            foreach (var export in moduleInterpreter.GetExports())
+            {
+                module.Exports[export.Key] = export.Value;
+            }
+            
+            module.IsLoaded = true;
+            return module;
         }
-        
-        module.IsLoaded = true;
-        return module;
+        catch (Exception ex)
+        {
+            // Remove the failed module from cache
+            _modules.Remove(absolutePath);
+            
+            // Re-throw with module context information
+            throw new Exception($"Error loading module '{absolutePath}': {ex.Message}", ex);
+        }
     }
     
     /// <summary>

@@ -1109,19 +1109,32 @@ public class RequireFunction
         }
 
         // Handle regular file modules through the module system
-        var module = _moduleSystem.LoadModule(moduleName, _interpreter);
-        if (module == null)
+        try
         {
-            throw new ECEngineException($"Cannot find module '{moduleName}'", 1, 1, "", "Module not found");
-        }
+            var module = _moduleSystem.LoadModule(moduleName, _interpreter);
+            if (module == null)
+            {
+                throw new ECEngineException($"Cannot find module '{moduleName}'", 1, 1, "", "Module not found");
+            }
 
-        // Return the module's exports
-        if (module.Exports.ContainsKey("default"))
+            // Return the module's exports
+            if (module.Exports.ContainsKey("default"))
+            {
+                return module.Exports["default"];
+            }
+
+            return module.Exports;
+        }
+        catch (ECEngineException)
         {
-            return module.Exports["default"];
+            // Re-throw ECEngine exceptions as-is
+            throw;
         }
-
-        return module.Exports;
+        catch (Exception ex)
+        {
+            // Wrap other exceptions with module context
+            throw new ECEngineException($"Error requiring module '{moduleName}': {ex.Message}", 1, 1, "", $"Module loading failed for '{moduleName}'");
+        }
     }
 
     private bool IsBuiltInModule(string moduleName)
