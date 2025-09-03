@@ -21,9 +21,9 @@
 
 ### ✅ Implemented
 - **Basic Tokens**: Numbers (`42`, `3.14`), strings (`"hello"`, `'world'`), template literals (`` `hello ${world}` ``), identifiers, comments (`//`, `/* */`)
-- **Operators**: Arithmetic (`+`, `-`, `*`, `/`), assignment (`=`), logical (`&&`, `||`), comparison (`==`, `!=`, `<`, `>`, `<=`, `>=`, `===`, `!==`), unary (`!`, `++`, `--`, `+x`, `-x`), compound (`+=`, `-=`, `*=`, `/=`), bitwise (`&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`), ternary (`? :`), arrow (`=>`)
+- **Operators**: Arithmetic (`+`, `-`, `*`, `/`), assignment (`=`), logical (`&&`, `||`), comparison (`==`, `!=`, `<`, `>`, `<=`, `>=`, `===`, `!==`), unary (`!`, `++`, `--`, `+x`, `-x`), compound (`+=`, `-=`, `*=`, `/=`), bitwise (`&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`), ternary (`? :`), arrow (`=>`), **alternative syntax** (`is` for `==`, `and` for `&&`, `or` for `||`)
 - **Punctuation**: `()`, `{}`, `;`, `,`, `.`, `[]`, `:`, `?`
-- **Keywords**: Variables (`var`, `let`, `const`), functions (`function`, `return`, `yield`), control flow (`if`, `else`, `for`, `while`, `do`, `break`, `continue`, `in`, `of`, `switch`, `case`, `default`, `try`, `catch`, `finally`, `throw`), booleans (`true`, `false`), null (`null`), context (`this`), modules (`import`, `export`, `from`), operators (`new`, `typeof`), ECEngine extensions (`observe`, `when`)
+- **Keywords**: Variables (`var`, `let`, `const`), functions (`function`, `return`, `yield`), control flow (`if`, `else`, `for`, `while`, `do`, `break`, `continue`, `in`, `of`, `switch`, `case`, `default`, `try`, `catch`, `finally`, `throw`), booleans (`true`, `false`), null (`null`), context (`this`), modules (`import`, `export`, `from`), operators (`new`, `typeof`), alternative operators (`is`, `and`, `or`), ECEngine extensions (`observe`, `when`)
 
 ### ❌ Missing  
 - Classes: `class`, `extends`, `super`, `static`

@@ -177,9 +177,9 @@ public partial class Parser
     {
         var left = ParseLogicalAnd();
 
-        while (_currentToken.Type == TokenType.LogicalOr)
+        while (_currentToken.Type == TokenType.LogicalOr || _currentToken.Type == TokenType.Or)
         {
-            var op = _currentToken.Value;
+            var op = _currentToken.Type == TokenType.Or ? "||" : _currentToken.Value;
             var token = _currentToken;
             Advance();
             var right = ParseLogicalAnd();
@@ -196,9 +196,9 @@ public partial class Parser
     {
         var left = ParseBitwiseOr();
 
-        while (_currentToken.Type == TokenType.LogicalAnd)
+        while (_currentToken.Type == TokenType.LogicalAnd || _currentToken.Type == TokenType.And)
         {
-            var op = _currentToken.Value;
+            var op = _currentToken.Type == TokenType.And ? "&&" : _currentToken.Value;
             var token = _currentToken;
             Advance();
             var right = ParseBitwiseOr();
@@ -272,9 +272,10 @@ public partial class Parser
         while (_currentToken.Type == TokenType.Equal ||
                _currentToken.Type == TokenType.NotEqual ||
                _currentToken.Type == TokenType.StrictEqual ||
-               _currentToken.Type == TokenType.StrictNotEqual)
+               _currentToken.Type == TokenType.StrictNotEqual ||
+               _currentToken.Type == TokenType.Is)
         {
-            var op = _currentToken.Value;
+            var op = _currentToken.Type == TokenType.Is ? "==" : _currentToken.Value;
             Advance();
             var right = ParseRelational();
             left = new BinaryExpression(left, op, right);

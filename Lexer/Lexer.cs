@@ -423,6 +423,9 @@ public class Lexer
             "new" => TokenType.New,
             "typeof" => TokenType.Typeof,
             "instanceof" => TokenType.Instanceof,
+            "is" => TokenType.Is,
+            "and" => TokenType.And,
+            "or" => TokenType.Or,
             _ => TokenType.Identifier
         };
     }
@@ -574,12 +577,15 @@ public class Lexer
                             case TokenType.StrictEqual:
                             case TokenType.NotEqual:
                             case TokenType.StrictNotEqual:
+                            case TokenType.Is:
                             case TokenType.LessThan:
                             case TokenType.GreaterThan:
                             case TokenType.LessThanOrEqual:
                             case TokenType.GreaterThanOrEqual:
                             case TokenType.LogicalAnd:
                             case TokenType.LogicalOr:
+                            case TokenType.And:
+                            case TokenType.Or:
                             case TokenType.Question:
                             case TokenType.Return:
                             case TokenType.Assign:

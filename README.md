@@ -20,6 +20,7 @@ ECEngine is a JavaScript interpreter that extends ECMAScript with reactive progr
 ## Features
 
 - **ECMAScript Compatibility** - Full JavaScript syntax support including variables, functions, arrays, and modules
+- **Alternative Syntax** - More readable operators: `is` for `==`, `and` for `&&`, `or` for `||`
 - **Complete String API** - All 70+ JavaScript string methods with Unicode support and full MDN compatibility
 - **Method Chaining** - Support for chaining method calls like `text.trim().toUpperCase().replace("old", "new")`
 - **Reactive Programming** - Built-in `observe` pattern for automatic variable change detection  
@@ -137,6 +138,38 @@ var joined = numbers.join(", ");   // "1, 2, 3, 4, 5"
 // Expressions
 var result = x * 2 + 10;
 console.log(greet("ECEngine"));
+```
+
+### Alternative Syntax Operators
+ECEngine provides more readable alternative operators for common operations:
+
+```javascript
+// Traditional JavaScript vs ECEngine alternatives
+var age = 25;
+var isAdmin = false;
+var username = "john";
+
+// Comparison operators
+if (age == 25) { }          // Traditional
+if (age is 25) { }          // ECEngine alternative
+
+// Logical AND operators  
+if (age > 18 && isAdmin) { }     // Traditional
+if (age > 18 and isAdmin) { }    // ECEngine alternative
+
+// Logical OR operators
+if (age < 18 || username is "admin") { }    // Traditional
+if (age < 18 or username is "admin") { }    // ECEngine alternative
+
+// Complex expressions work seamlessly
+if (age is 25 and (isAdmin or username is "john")) {
+    console.log("Access granted!");
+}
+
+// Mixed usage is supported
+if (age == 25 and isAdmin or username is "admin") {
+    console.log("Welcome!");
+}
 ```
 
 ### Programmatic Usage

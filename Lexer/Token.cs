@@ -31,6 +31,11 @@ public enum TokenType
     LogicalAnd,     // &&
     LogicalOr,      // ||
     
+    // Alternative operator keywords
+    Is,             // is (alias for ==)
+    And,            // and (alias for &&)
+    Or,             // or (alias for ||)
+    
     // Compound Assignment operators
     PlusAssign,     // +=
     MinusAssign,    // -=
