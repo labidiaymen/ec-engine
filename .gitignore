@@ -365,3 +365,4 @@ FodyWeavers.xsd
 *.sln.iml
 publish-aot/
 examples/performance/results
+release-build/

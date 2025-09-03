@@ -4,6 +4,7 @@ using ECEngine.Parser;
 using ECEngine.Lexer;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using RuntimeInterpreter = ECEngine.Runtime.Interpreter;
 
 namespace ECEngine.Tests.Runtime
@@ -33,7 +34,20 @@ namespace ECEngine.Tests.Runtime
                 }
                 directory = directory.Parent;
             }
-            throw new DirectoryNotFoundException("Could not find project root containing ECEngine.csproj");
+            
+            // Fallback: try to find it relative to the test assembly location
+            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            var assemblyDir = Path.GetDirectoryName(assemblyLocation);
+            if (!string.IsNullOrEmpty(assemblyDir))
+            {
+                var projectRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", ".."));
+                if (File.Exists(Path.Combine(projectRoot, "ECEngine.csproj")))
+                {
+                    return projectRoot;
+                }
+            }
+            
+            throw new DirectoryNotFoundException($"Could not find project root containing ECEngine.csproj. Started from: {startPath}, Assembly location: {assemblyLocation}");
         }
 
         [Fact]
