@@ -10,7 +10,11 @@
     <!-- Self-contained deployment settings (applied during publish) -->
     <PublishAot>false</PublishAot>
     <PublishSingleFile>true</PublishSingleFile>
-    <PublishTrimmed>false</PublishTrimmed>
+    <!-- Don't set PublishTrimmed to false when AOT is involved, let it be implicit -->
+    <PublishTrimmed Condition="'$(PublishAot)' != 'true'">false</PublishTrimmed>
+    <!-- Suppress trimming warnings for dynamic member access -->
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
     <!-- Version information -->
     <AssemblyVersion>0.1.2</AssemblyVersion>
     <FileVersion>0.1.2</FileVersion>
