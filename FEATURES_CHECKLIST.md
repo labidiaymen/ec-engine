@@ -7,7 +7,7 @@
 | **Lexical Analysis** | 41 | 2 | 1 | **93%** |
 | **Parser & AST** | 56 | 2 | 12 | **83%** |
 | **Runtime & Interpreter** | 41 | 1 | 17 | **69%** |
-| **Control Flow** | 14 | 0 | 1 | **93%** |
+| **Control Flow** | 15 | 0 | 1 | **94%** |
 | **Data Types** | 6 | 1 | 7 | **50%** |
 | **Module System** | 14 | 0 | 0 | **100%** |
 | **Node.js API Compatibility** | 15 | 0 | 12 | **56%** |
@@ -23,7 +23,7 @@
 - **Basic Tokens**: Numbers (`42`, `3.14`), strings (`"hello"`, `'world'`), template literals (`` `hello ${world}` ``), identifiers, comments (`//`, `/* */`)
 - **Operators**: Arithmetic (`+`, `-`, `*`, `/`), assignment (`=`), logical (`&&`, `||`), comparison (`==`, `!=`, `<`, `>`, `<=`, `>=`, `===`, `!==`), unary (`!`, `++`, `--`, `+x`, `-x`), compound (`+=`, `-=`, `*=`, `/=`), bitwise (`&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`), ternary (`? :`), arrow (`=>`), **alternative syntax** (`is` for `==`, `and` for `&&`, `or` for `||`)
 - **Punctuation**: `()`, `{}`, `;`, `,`, `.`, `[]`, `:`, `?`
-- **Keywords**: Variables (`var`, `let`, `const`), functions (`function`, `return`, `yield`), control flow (`if`, `else`, `for`, `while`, `do`, `break`, `continue`, `in`, `of`, `switch`, `case`, `default`, `try`, `catch`, `finally`, `throw`), booleans (`true`, `false`), null (`null`), context (`this`), modules (`import`, `export`, `from`), operators (`new`, `typeof`), alternative operators (`is`, `and`, `or`), ECEngine extensions (`observe`, `when`)
+- **Keywords**: Variables (`var`, `let`, `const`), functions (`function`, `return`, `yield`), control flow (`if`, `else`, `for`, `while`, `do`, `break`, `continue`, `in`, `of`, `switch`, `case`, `default`, `try`, `catch`, `finally`, `throw`), booleans (`true`, `false`), null (`null`), context (`this`), modules (`import`, `export`, `from`), operators (`new`, `typeof`), alternative operators (`is`, `and`, `or`), discard pattern (`_`), ECEngine extensions (`observe`, `when`)
 
 ### ❌ Missing  
 - Classes: `class`, `extends`, `super`, `static`
@@ -36,7 +36,7 @@
 
 ### ✅ Implemented
 - **Program Structure**: `ProgramNode`, `Statement`, `Expression`, `ExpressionStatement`
-- **Expressions**: `NumberLiteral`, `StringLiteral`, `BooleanLiteral`, `NullLiteral`, `ThisExpression`, `Identifier`, `BinaryExpression`, `AssignmentExpression`, `MemberAssignmentExpression`, `CallExpression`, `FunctionExpression`, `MemberExpression`, `LogicalExpression`, `ObjectLiteral`, `ArrayLiteral`, `UpdateExpression`, `UnaryExpression`, `ConditionalExpression`, `CompoundAssignmentExpression`, `TemplateLiteral`, `ArrowFunctionExpression`, `GeneratorFunctionExpression`
+- **Expressions**: `NumberLiteral`, `StringLiteral`, `BooleanLiteral`, `NullLiteral`, `ThisExpression`, `Identifier`, `BinaryExpression`, `AssignmentExpression`, `MemberAssignmentExpression`, `CallExpression`, `FunctionExpression`, `MemberExpression`, `LogicalExpression`, `ObjectLiteral`, `ArrayLiteral`, `UpdateExpression`, `UnaryExpression`, `ConditionalExpression`, `CompoundAssignmentExpression`, `TemplateLiteral`, `ArrowFunctionExpression`, `GeneratorFunctionExpression`, `SwitchExpression`, `DiscardPattern`
 - **Statements**: `VariableDeclaration`, `FunctionDeclaration`, `GeneratorFunctionDeclaration`, `ReturnStatement`, `YieldStatement`, `BlockStatement`, `IfStatement`, `ExportStatement`, `ImportStatement`, `WhileStatement`, `ForStatement`, `ForInStatement`, `ForOfStatement`, `DoWhileStatement`, `SwitchStatement`, `CaseStatement`, `DefaultStatement`, `TryStatement`, `CatchClause`, `FinallyStatement`, `ThrowStatement`, `BreakStatement`, `ContinueStatement`
 - **ECEngine Extensions**: `ObserveStatement`, `MultiObserveStatement`, `WhenStatement`
 - **Parser Features**: Operator precedence, associativity, parentheses grouping, member access, function calls, object/array literals, arrow functions, template literals, error reporting with line/column numbers
@@ -86,10 +86,10 @@
 
 ---
 
-## 🏗️ Control Flow (93% Complete)
+## 🏗️ Control Flow (94% Complete)
 
 ### ✅ Implemented
-- **Conditionals**: `if` statements, `else` clauses, `else if` chains, `switch` statements with `case` and `default` clauses
+- **Conditionals**: `if` statements, `else` clauses, `else if` chains, `switch` statements with `case` and `default` clauses, C#-style switch expressions with pattern matching and discard patterns (`_`)
 - **Loops**: `for` loops, `for...in` loops, `for...of` loops, `while` loops, `do...while` loops
 - **Loop Control**: `break` statements, `continue` statements
 - **Exceptions**: `try...catch` statements, `finally` blocks, `throw` statements

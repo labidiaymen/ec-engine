@@ -834,6 +834,43 @@ public class SwitchCase : ASTNode
     }
 }
 
+// Switch expression node (C#-style switch expression)
+public class SwitchExpression : Expression
+{
+    public Expression Discriminant { get; }
+    public List<SwitchExpressionArm> Arms { get; }
+    
+    public SwitchExpression(Expression discriminant, List<SwitchExpressionArm> arms, Token? token = null)
+    {
+        Discriminant = discriminant;
+        Arms = arms;
+        Token = token;
+    }
+}
+
+// Switch expression arm node (pattern => expression)
+public class SwitchExpressionArm : ASTNode
+{
+    public Expression? Pattern { get; }  // null for discard pattern (_)
+    public Expression Expression { get; }
+    
+    public SwitchExpressionArm(Expression? pattern, Expression expression, Token? token = null)
+    {
+        Pattern = pattern;
+        Expression = expression;
+        Token = token;
+    }
+}
+
+// Discard pattern node for switch expressions (_)
+public class DiscardPattern : Expression
+{
+    public DiscardPattern(Token? token = null)
+    {
+        Token = token;
+    }
+}
+
 // Try statement node
 public class TryStatement : Statement
 {

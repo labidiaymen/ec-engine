@@ -510,9 +510,61 @@ public partial class Parser
     {
         var expression = ParsePrimary();
 
-        while (_currentToken.Type == TokenType.Dot || _currentToken.Type == TokenType.LeftBracket)
+        while (_currentToken.Type == TokenType.Dot || 
+               _currentToken.Type == TokenType.LeftBracket ||
+               _currentToken.Type == TokenType.Switch)
         {
-            if (_currentToken.Type == TokenType.Dot)
+            if (_currentToken.Type == TokenType.Switch)
+            {
+                // Parse switch expression: expr switch { pattern => value, ... }
+                var token = _currentToken;
+                Advance(); // consume 'switch'
+                Consume(TokenType.LeftBrace, "Expected '{' after 'switch'");
+                
+                var arms = new List<SwitchExpressionArm>();
+                
+                while (_currentToken.Type != TokenType.RightBrace && _currentToken.Type != TokenType.EOF)
+                {
+                    Expression pattern;
+                    
+                    if (_currentToken.Type == TokenType.Underscore)
+                    {
+                        // Discard pattern
+                        var underscoreToken = _currentToken;
+                        Advance(); // consume '_'
+                        pattern = new DiscardPattern(underscoreToken);
+                    }
+                    else
+                    {
+                        pattern = ParseExpression();
+                    }
+                    
+                    Consume(TokenType.Arrow, "Expected '=>' after switch pattern");
+                    var value = ParseExpression();
+                    
+                    arms.Add(new SwitchExpressionArm(pattern, value));
+                    
+                    if (_currentToken.Type == TokenType.Comma)
+                    {
+                        Advance(); // consume ','
+                        // Allow trailing comma - if next token is closing brace, break
+                        if (_currentToken.Type == TokenType.RightBrace)
+                        {
+                            break;
+                        }
+                    }
+                    else if (_currentToken.Type != TokenType.RightBrace)
+                    {
+                        throw new ECEngineException("Expected ',' or '}' in switch expression",
+                            _currentToken.Line, _currentToken.Column, _sourceCode,
+                            "Switch expression arms must be separated by commas");
+                    }
+                }
+                
+                Consume(TokenType.RightBrace, "Expected '}' to close switch expression");
+                expression = new SwitchExpression(expression, arms, token);
+            }
+            else if (_currentToken.Type == TokenType.Dot)
             {
                 var token = _currentToken;
                 Advance(); // consume '.'

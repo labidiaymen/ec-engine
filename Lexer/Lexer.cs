@@ -38,6 +38,12 @@ public class Lexer
         _currentChar = _position < _code.Length ? _code[_position] : '\0';
     }
 
+    private char PeekChar()
+    {
+        var nextPosition = _position + 1;
+        return nextPosition < _code.Length ? _code[nextPosition] : '\0';
+    }
+
     private void SkipWhitespace()
     {
         while (_currentChar != '\0' && char.IsWhiteSpace(_currentChar))
@@ -453,7 +459,7 @@ public class Lexer
                 continue;
             }
 
-            if (char.IsLetter(_currentChar) || _currentChar == '_')
+            if (char.IsLetter(_currentChar) || (_currentChar == '_' && char.IsLetterOrDigit(PeekChar())))
             {
                 var identifier = ReadIdentifier();
                 var tokenType = GetKeywordTokenType(identifier);
@@ -777,6 +783,10 @@ public class Lexer
                     break;
                 case ':':
                     tokens.Add(new Token(TokenType.Colon, ":", _position, tokenLine, tokenColumn));
+                    Advance();
+                    break;
+                case '_':
+                    tokens.Add(new Token(TokenType.Underscore, "_", _position, tokenLine, tokenColumn));
                     Advance();
                     break;
                 default:

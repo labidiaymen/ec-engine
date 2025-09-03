@@ -26,6 +26,39 @@ public partial class Interpreter
     }
 
     /// <summary>
+    /// Evaluate switch expressions (value switch { pattern => result, ... })
+    /// </summary>
+    private object? EvaluateSwitchExpression(SwitchExpression switchExpr)
+    {
+        var discriminantValue = Evaluate(switchExpr.Discriminant, _sourceCode);
+        
+        foreach (var arm in switchExpr.Arms)
+        {
+            // Check if this arm matches
+            if (arm.Pattern is DiscardPattern)
+            {
+                // Discard pattern always matches (like default)
+                return Evaluate(arm.Expression, _sourceCode);
+            }
+            else if (arm.Pattern != null)
+            {
+                var patternValue = Evaluate(arm.Pattern, _sourceCode);
+                
+                // Use strict equality for pattern matching
+                if (StrictEquals(discriminantValue, patternValue))
+                {
+                    return Evaluate(arm.Expression, _sourceCode);
+                }
+            }
+        }
+        
+        // No pattern matched - this should ideally be a compile-time error in a complete implementation
+        throw new ECEngineException("No matching pattern in switch expression",
+            switchExpr.Token?.Line ?? 1, switchExpr.Token?.Column ?? 1, _sourceCode,
+            "All possible values must be handled in switch expressions");
+    }
+
+    /// <summary>
     /// Evaluate if statements with optional else clause
     /// </summary>
     private object? EvaluateIfStatement(IfStatement ifStmt)

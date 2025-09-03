@@ -111,6 +111,9 @@ public enum TokenType
     // Regular expression literal
     Regex,          // /pattern/flags
     
+    // Discard pattern
+    Underscore,     // _ (discard pattern for switch expressions)
+    
     EOF
 }
 

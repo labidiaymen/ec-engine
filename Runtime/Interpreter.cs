@@ -216,6 +216,8 @@ public partial class Interpreter
             MemberExpression memberExpr => EvaluateMemberExpression(memberExpr),
             ConditionalExpression conditional => EvaluateConditionalExpression(conditional),
             LogicalExpression logicalExpr => EvaluateLogicalExpression(logicalExpr),
+            SwitchExpression switchExpr => EvaluateSwitchExpression(switchExpr),
+            DiscardPattern discardPattern => null, // Discard patterns are handled in switch evaluation
             
             // Objects and Arrays
             ObjectLiteral objLiteral => EvaluateObjectLiteral(objLiteral),

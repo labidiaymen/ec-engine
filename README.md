@@ -172,6 +172,44 @@ if (age == 25 and isAdmin or username is "admin") {
 }
 ```
 
+### C#-Style Switch Expressions
+ECEngine supports modern C#-style switch expressions with pattern matching and discard patterns:
+
+```javascript
+// Switch expressions for cleaner value assignment
+var grade = "B";
+var description = grade switch {
+    "A" => "Excellent",
+    "B" => "Good", 
+    "C" => "Average",
+    "D" => "Below Average",
+    "F" => "Fail",
+    _ => "Unknown Grade"  // Discard pattern for default case
+};
+
+console.log("Grade description:", description); // "Good"
+
+// Switch expressions with numbers
+var dayNumber = 3;
+var dayName = dayNumber switch {
+    1 => "Monday",
+    2 => "Tuesday",
+    3 => "Wednesday",
+    4 => "Thursday",
+    5 => "Friday",
+    _ => "Weekend"
+};
+
+// Complex expressions in switch arms
+var number = 15;
+var category = number switch {
+    1 => "single",
+    2 => "double",
+    3 => "triple",
+    _ => number > 10 ? "large" : "small"
+};
+```
+
 ### Programmatic Usage
 ```csharp
 // Create and execute ECEngine code
