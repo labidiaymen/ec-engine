@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET 7.0](https://img.shields.io/badge/.NET-7.0-purple.svg)](https://dotnet.microsoft.com/download/dotnet/7.0)
 
-A lightweight ECMAScript (JavaScript) interpreter engine written in C# that supports standard JavaScript syntax plus modern language features like pipeline operators, switch expressions, and reactive programming patterns.
+A lightweight ECMAScript (JavaScript) interpreter engine written in C# that supports standard JavaScript syntax plus modern language features like pipeline operators, switch expressions, flexible if statements, and reactive programming patterns.
 
 > **ðŸ“š Educational Purpose**: ECEngine is designed primarily for educational purposes to demonstrate JavaScript engine implementation concepts, language design patterns, and reactive programming techniques. It serves as a learning tool for understanding how interpreters work and exploring innovative language features.
 
@@ -15,13 +15,14 @@ For a comprehensive overview of implemented and planned features, see the **[ðŸ“
 
 ## Overview
 
-ECEngine is a JavaScript interpreter that extends ECMAScript with modern language features and reactive programming capabilities. Built in C#, it provides a complete JavaScript runtime environment with innovative features like the pipeline operator (`|>`) for functional programming, C#-style switch expressions, and an `observe` pattern for automatic change detection.
+ECEngine is a JavaScript interpreter that extends ECMAScript with modern language features and reactive programming capabilities. Built in C#, it provides a complete JavaScript runtime environment with innovative features like the pipeline operator (`|>`) for functional programming, C#-style switch expressions, flexible if statement syntax with optional parentheses, and an `observe` pattern for automatic change detection.
 
 ## Features
 
 - **ECMAScript Compatibility** - Full JavaScript syntax support including variables, functions, arrays, and modules
 - **Pipeline Operator (`|>`)** - Functional programming with clean data transformation workflows and automatic parameter injection
 - **C#-Style Switch Expressions** - Modern pattern matching with `=>` syntax and discard patterns (`_`)
+- **Flexible If Statements** - Support for both traditional `if (condition)` and modern `if condition` syntax without parentheses
 - **Alternative Syntax** - More readable operators: `is` for `==`, `and` for `&&`, `or` for `||`
 - **Complete String API** - All 70+ JavaScript string methods with Unicode support and full MDN compatibility
 - **Method Chaining** - Support for chaining method calls like `text.trim().toUpperCase().replace("old", "new")`
@@ -181,6 +182,48 @@ if (age is 25 and (isAdmin or username is "john")) {
 // Mixed usage is supported
 if (age == 25 and isAdmin or username is "admin") {
     console.log("Welcome!");
+}
+```
+
+### Flexible If Statement Syntax
+ECEngine supports both traditional JavaScript syntax and a more concise alternative without parentheses:
+
+```javascript
+var temperature = 25;
+var isRaining = true;
+
+// Traditional syntax with parentheses (still fully supported)
+if (temperature > 20) {
+    console.log("It's warm outside!");
+}
+
+// Modern syntax without parentheses
+if temperature > 20 {
+    console.log("It's warm outside!");
+}
+
+// Both syntaxes work with complex conditions
+if (temperature > 20 && !isRaining) {
+    console.log("Perfect weather for a walk!");
+}
+
+if temperature > 20 and !isRaining {
+    console.log("Perfect weather for a walk!");
+}
+
+// Mixed syntax in nested conditions
+if temperature > 15 {
+    console.log("Not too cold");
+    if (isRaining) {
+        console.log("But it's raining");
+    } else {
+        console.log("And no rain!");
+    }
+}
+
+// Works with all alternative operators
+if temperature > 20 and !isRaining or temperature > 30 {
+    console.log("Great weather!");
 }
 ```
 

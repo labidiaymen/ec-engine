@@ -89,7 +89,7 @@
 ## 🏗️ Control Flow (94% Complete)
 
 ### ✅ Implemented
-- **Conditionals**: `if` statements, `else` clauses, `else if` chains, `switch` statements with `case` and `default` clauses, C#-style switch expressions with pattern matching and discard patterns (`_`)
+- **Conditionals**: `if` statements with optional parentheses (supports both `if (condition)` and `if condition` syntax), `else` clauses, `else if` chains, `switch` statements with `case` and `default` clauses, C#-style switch expressions with pattern matching and discard patterns (`_`)
 - **Loops**: `for` loops, `for...in` loops, `for...of` loops, `while` loops, `do...while` loops
 - **Loop Control**: `break` statements, `continue` statements
 - **Exceptions**: `try...catch` statements, `finally` blocks, `throw` statements

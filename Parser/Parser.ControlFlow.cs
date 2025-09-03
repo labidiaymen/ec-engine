@@ -11,16 +11,26 @@ namespace ECEngine.Parser;
 public partial class Parser
 {
     /// <summary>
-    /// Parse an if statement: if (condition) statement [else statement]
+    /// Parse an if statement: if (condition) statement [else statement] or if condition statement [else statement]
     /// </summary>
     private IfStatement ParseIfStatement()
     {
         var token = _currentToken;
         Consume(TokenType.If, "Expected 'if' keyword");
         
-        Consume(TokenType.LeftParen, "Expected '(' after 'if'");
+        // Support both if (condition) and if condition syntax
+        bool hasParens = _currentToken.Type == TokenType.LeftParen;
+        if (hasParens)
+        {
+            Consume(TokenType.LeftParen, "Expected '(' after 'if'");
+        }
+        
         var condition = ParseExpression();
-        Consume(TokenType.RightParen, "Expected ')' after if condition");
+        
+        if (hasParens)
+        {
+            Consume(TokenType.RightParen, "Expected ')' after if condition");
+        }
         
         var thenStatement = ParseStatement();
         
