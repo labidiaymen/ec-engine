@@ -450,4 +450,53 @@ public partial class Interpreter
         var shiftAmount = ToInt32(right) & 0x1F;
         return (double)((uint)leftValue >> shiftAmount);
     }
+    
+    /// <summary>
+    /// Evaluate pipeline expressions (left |> right)
+    /// </summary>
+    private object? EvaluatePipelineExpression(PipelineExpression pipelineExpr)
+    {
+        var leftValue = Evaluate(pipelineExpr.Left, _sourceCode);
+        var rightExpr = pipelineExpr.Right;
+        
+        if (rightExpr is CallExpression call)
+        {
+            // If right side is a function call, inject left value as first argument
+            var args = new List<Expression> { new ValueExpression(leftValue) };
+            args.AddRange(call.Arguments);
+            
+            var newCall = new CallExpression(call.Callee, args, call.Token);
+            return Evaluate(newCall, _sourceCode);
+        }
+        else if (rightExpr is Identifier identifier)
+        {
+            // If right side is just an identifier, call it with left value as argument
+            var func = Evaluate(identifier, _sourceCode);
+            
+            if (func is Function function)
+            {
+                return CallUserFunction(function, new object?[] { leftValue });
+            }
+            else if (func is Func<object[], object> nativeFunc)
+            {
+                return nativeFunc(new object[] { leftValue });
+            }
+            else if (func is Func<object[], object?> nativeNullableFunc)
+            {
+                return nativeNullableFunc(new object[] { leftValue });
+            }
+            else
+            {
+                throw new ECEngineException("Pipeline right side must be a function",
+                    pipelineExpr.Token?.Line ?? 1, pipelineExpr.Token?.Column ?? 1, _sourceCode,
+                    "Right side of pipeline operator must be callable");
+            }
+        }
+        else
+        {
+            throw new ECEngineException("Pipeline right side must be a function or function call",
+                pipelineExpr.Token?.Line ?? 1, pipelineExpr.Token?.Column ?? 1, _sourceCode,
+                "Pipeline operator requires a function on the right side");
+        }
+    }
 }

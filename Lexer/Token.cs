@@ -114,6 +114,9 @@ public enum TokenType
     // Discard pattern
     Underscore,     // _ (discard pattern for switch expressions)
     
+    // Pipeline operator
+    Pipeline,       // |>
+    
     EOF
 }
 

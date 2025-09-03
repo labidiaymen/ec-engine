@@ -50,7 +50,7 @@ public partial class Parser
     /// </summary>
     private Expression ParseAssignment()
     {
-        var expression = ParseArrowFunction();
+        var expression = ParsePipeline(); // Changed from ParseArrowFunction to add pipeline precedence
         
         if (_currentToken.Type == TokenType.Assign)
         {
@@ -168,6 +168,24 @@ public partial class Parser
             RestorePosition(start, startLine, startColumn);
             return ParseLogicalOr();
         }
+    }
+
+    /// <summary>
+    /// Parse pipeline expressions (|>)
+    /// </summary>
+    private Expression ParsePipeline()
+    {
+        var expression = ParseArrowFunction();
+        
+        while (_currentToken.Type == TokenType.Pipeline)
+        {
+            var token = _currentToken;
+            Advance(); // consume '|>'
+            var right = ParseArrowFunction();
+            expression = new PipelineExpression(expression, right, token);
+        }
+        
+        return expression;
     }
 
     /// <summary>

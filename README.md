@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET 7.0](https://img.shields.io/badge/.NET-7.0-purple.svg)](https://dotnet.microsoft.com/download/dotnet/7.0)
 
-A lightweight ECMAScript (JavaScript) interpreter engine written in C# that supports standard JavaScript syntax plus additional design patterns and reactive programming features.
+A lightweight ECMAScript (JavaScript) interpreter engine written in C# that supports standard JavaScript syntax plus modern language features like pipeline operators, switch expressions, and reactive programming patterns.
 
 > **ðŸ“š Educational Purpose**: ECEngine is designed primarily for educational purposes to demonstrate JavaScript engine implementation concepts, language design patterns, and reactive programming techniques. It serves as a learning tool for understanding how interpreters work and exploring innovative language features.
 
@@ -15,11 +15,13 @@ For a comprehensive overview of implemented and planned features, see the **[ðŸ“
 
 ## Overview
 
-ECEngine is a JavaScript interpreter that extends ECMAScript with reactive programming capabilities. Built in C#, it provides a complete JavaScript runtime environment with an innovative `observe` pattern for automatic change detection and reactive programming.
+ECEngine is a JavaScript interpreter that extends ECMAScript with modern language features and reactive programming capabilities. Built in C#, it provides a complete JavaScript runtime environment with innovative features like the pipeline operator (`|>`) for functional programming, C#-style switch expressions, and an `observe` pattern for automatic change detection.
 
 ## Features
 
 - **ECMAScript Compatibility** - Full JavaScript syntax support including variables, functions, arrays, and modules
+- **Pipeline Operator (`|>`)** - Functional programming with clean data transformation workflows and automatic parameter injection
+- **C#-Style Switch Expressions** - Modern pattern matching with `=>` syntax and discard patterns (`_`)
 - **Alternative Syntax** - More readable operators: `is` for `==`, `and` for `&&`, `or` for `||`
 - **Complete String API** - All 70+ JavaScript string methods with Unicode support and full MDN compatibility
 - **Method Chaining** - Support for chaining method calls like `text.trim().toUpperCase().replace("old", "new")`
@@ -79,6 +81,9 @@ dotnet run examples/variables/simple_observe.ec
 # Function examples
 dotnet run examples/functions/basic_functions.ec
 
+# Pipeline operator demo
+dotnet run examples/pipeline_demo.ec
+
 # Expression evaluation
 dotnet run examples/expressions/arithmetic.ec
 ```
@@ -129,6 +134,13 @@ function greet(name) {
     return "Hello, " + name + "!";
 }
 
+// Pipeline operator for clean data flow
+function double(x) { return x * 2; }
+function add10(x) { return x + 10; }
+
+var result = 5 |> double |> add10;  // Result: 20
+// Equivalent to: add10(double(5))
+
 // Arrays with methods
 var numbers = [1, 2, 3, 4, 5];
 numbers.push(6);             // Returns new length: 6
@@ -136,7 +148,7 @@ var subset = numbers.slice(1, 3); // [2, 3]
 var joined = numbers.join(", ");   // "1, 2, 3, 4, 5"
 
 // Expressions
-var result = x * 2 + 10;
+var calculation = x * 2 + 10;
 console.log(greet("ECEngine"));
 ```
 
@@ -209,6 +221,56 @@ var category = number switch {
     _ => number > 10 ? "large" : "small"
 };
 ```
+
+### Pipeline Operator (`|>`)
+ECEngine introduces the pipeline operator for functional programming and clean data transformation workflows:
+
+```javascript
+// Basic pipeline chaining
+var result = 5 |> double |> add10;  // double(5) |> add10 = 20
+
+// String processing pipeline
+var text = "hello world" |> toUpperCase |> addExclamation;  // "HELLO WORLD!"
+
+// Multiline pipelines for better readability
+var processed = "javascript programming"
+    |> filterLength(5)      // Keep only if >= 5 chars
+    |> capitalizeFirst()    // Capitalize first letter  
+    |> truncate(10);        // Truncate to 10 chars
+// Result: "Javascript..."
+
+// Mathematical operations with parameters
+var mathResult = 5
+    |> addNumbers(3)        // addNumbers(5, 3) = 8
+    |> multiply(4)          // multiply(8, 4) = 32
+    |> power(2);            // power(32, 2) = 1024
+
+// AI prompt chaining example
+var aiResult = "User wants to learn JavaScript"
+    |> analyzeContext       // Analyze the user input context
+    |> enhancePrompt        // Enhance with AI insights  
+    |> formatForModel       // Format for AI model consumption
+    |> processResponse;     // Process the AI response
+
+// Complex workflow with parameters
+var workflow = "Help me debug this Python code"
+    |> sanitizeInput(50)           // Limit input length to 50 chars
+    |> addSystemPrompt("coding assistant")  // Add system role
+    |> tokenize(15);               // Limit to 15 tokens max
+```
+
+#### How Pipeline Works
+The pipeline operator (`|>`) automatically injects the left-hand value as the first parameter to the function on the right:
+
+- `value |> func(param1, param2)` becomes `func(value, param1, param2)`
+- `value |> func()` becomes `func(value)`
+- `value |> func` becomes `func(value)` (for simple identifiers)
+
+#### Benefits
+- **Readable Data Flow**: Left-to-right reading matches data transformation flow
+- **Functional Composition**: Clean function chaining without deep nesting
+- **Parameter Injection**: Automatic argument passing eliminates wrapper functions
+- **Multiline Support**: Break complex pipelines across lines for clarity
 
 ### Programmatic Usage
 ```csharp

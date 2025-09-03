@@ -218,6 +218,8 @@ public partial class Interpreter
             LogicalExpression logicalExpr => EvaluateLogicalExpression(logicalExpr),
             SwitchExpression switchExpr => EvaluateSwitchExpression(switchExpr),
             DiscardPattern discardPattern => null, // Discard patterns are handled in switch evaluation
+            PipelineExpression pipelineExpr => EvaluatePipelineExpression(pipelineExpr),
+            ValueExpression valueExpr => valueExpr.Value,
             
             // Objects and Arrays
             ObjectLiteral objLiteral => EvaluateObjectLiteral(objLiteral),

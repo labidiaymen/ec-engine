@@ -871,6 +871,32 @@ public class DiscardPattern : Expression
     }
 }
 
+// Pipeline expression node for function chaining (left |> right)
+public class PipelineExpression : Expression
+{
+    public Expression Left { get; }   // The value being piped
+    public Expression Right { get; }  // The function to pipe into
+    
+    public PipelineExpression(Expression left, Expression right, Token? token = null)
+    {
+        Left = left;
+        Right = right;
+        Token = token;
+    }
+}
+
+// Value expression node for wrapping runtime values as expressions
+public class ValueExpression : Expression
+{
+    public object? Value { get; }
+    
+    public ValueExpression(object? value, Token? token = null)
+    {
+        Value = value;
+        Token = token;
+    }
+}
+
 // Try statement node
 public class TryStatement : Statement
 {
