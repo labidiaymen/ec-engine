@@ -104,7 +104,9 @@ get_latest_version() {
 install_ecengine() {
     local platform="$1"
     local version="$2"
-    local filename="ecengine-${version}-${platform}.tar.gz"
+    # Remove 'v' prefix from version for filename
+    local version_clean="${version#v}"
+    local filename="ecengine-${version_clean}-${platform}.tar.gz"
     local url="https://github.com/$REPO/releases/download/$version/$filename"
     
     print_status "Installing eec $version for $platform..."
