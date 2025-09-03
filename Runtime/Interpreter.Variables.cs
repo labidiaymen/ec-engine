@@ -213,6 +213,8 @@ public partial class Interpreter
         // Check for built-in global objects first
         switch (name)
         {
+            case "undefined":
+                return null; // JavaScript undefined is represented as C# null
             case "console":
                 return new ConsoleObject();
             case "process":
@@ -248,15 +250,25 @@ public partial class Interpreter
             case "URLSearchParams":
                 return new URLSearchParamsConstructorFunction();
             case "Object":
-                return "Object"; // String identifier for constructor
+                return new ObjectModuleClass(); // Return Object module with methods
             case "Array":
-                return "Array"; // String identifier for constructor
+                return new ArrayModuleClass(); // Return Array module with static methods
             case "String":
                 return new StringModule();
             case "Number":
-                return "Number"; // String identifier for constructor
+                return new NumberModule();
             case "Boolean":
                 return "Boolean"; // String identifier for constructor
+            case "Error":
+                return new ErrorModule();
+            case "TypeError":
+                return new ErrorModule(); // For now, use the same ErrorModule
+            case "ReferenceError":
+                return new ErrorModule(); // For now, use the same ErrorModule
+            case "SyntaxError":
+                return new ErrorModule(); // For now, use the same ErrorModule
+            case "RangeError":
+                return new ErrorModule(); // For now, use the same ErrorModule
             case "Date":
                 return new DateModule();
             case "querystring":

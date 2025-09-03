@@ -1,7 +1,6 @@
 using ECEngine.AST;
 using ECEngine.Lexer;
 using System.Reflection;
-using System.Text.Json;
 
 namespace ECEngine.Runtime;
 
@@ -45,12 +44,15 @@ public partial class Interpreter
             SetTimeoutFunction or SetIntervalFunction or ClearTimeoutFunction or ClearIntervalFunction => "function",
             RequireFunction or UrlConstructorFunction or URLSearchParamsConstructorFunction => "function",
             QuerystringMethodFunction => "function",
+            ObjectMethodFunction => "function",
             PathMethodFunction => "function",
             CreateServerFunction or RequestFunction or GetFunction => "function",
             ServerListenFunction or ServerCloseFunction or ServerOnFunction or ServerEmitFunction => "function",
             ClientRequestWriteFunction or ClientRequestEndFunction or ClientRequestOnFunction => "function",
             IncomingMessageOnFunction or IncomingMessageSetEncodingFunction => "function",
             StringModule => "function", // String constructor is a function
+            NumberModule => "function", // Number constructor is a function  
+            ErrorModule => "function", // Error constructor is a function
             FunctionDeclaration => "function",
             ArrowFunction => "function",
             GeneratorFunction => "function",
@@ -176,10 +178,22 @@ public partial class Interpreter
             float f when float.IsPositiveInfinity(f) => "Infinity",
             float f when float.IsNegativeInfinity(f) => "-Infinity",
             _ when IsUndefined(value) => "undefined",
-            Dictionary<string, object?> dict => JsonSerializer.Serialize(dict),
+            Dictionary<string, object?> dict => SimpleObjectToString(dict),
             System.Collections.IEnumerable enumerable => $"[{string.Join(",", enumerable.Cast<object?>().Select(ToString))}]",
             _ => value?.ToString() ?? "undefined"
         };
+    }
+    
+    /// <summary>
+    /// Simple object-to-string conversion without JSON serialization
+    /// </summary>
+    private string SimpleObjectToString(Dictionary<string, object?> dict)
+    {
+        if (dict.Count == 0)
+            return "{}";
+            
+        var pairs = dict.Select(kvp => $"{kvp.Key}:{ToString(kvp.Value)}");
+        return "{" + string.Join(",", pairs) + "}";
     }
     
     /// <summary>

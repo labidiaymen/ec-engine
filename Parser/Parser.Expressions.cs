@@ -447,6 +447,7 @@ public partial class Parser
         {
             if (_currentToken.Type == TokenType.LeftParen)
             {
+                var parenToken = _currentToken; // capture the opening parenthesis token
                 Advance(); // consume '('
                 var arguments = new List<Expression>();
 
@@ -460,7 +461,7 @@ public partial class Parser
                 }
 
                 Consume(TokenType.RightParen, "Expected ')' after arguments");
-                expression = new CallExpression(expression, arguments);
+                expression = new CallExpression(expression, arguments, parenToken);
             }
             else if (_currentToken.Type == TokenType.Dot)
             {

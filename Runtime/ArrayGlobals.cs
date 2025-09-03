@@ -33,6 +33,7 @@ public class ArrayMethodFunction
             "lastIndexOf" => LastIndexOf(arguments),
             "reverse" => Reverse(),
             "sort" => Sort(arguments),
+            "forEach" => ForEach(arguments),
             _ => throw new ECEngineException($"Array method {_methodName} not implemented",
                 1, 1, "", $"The method '{_methodName}' is not available on arrays")
         };
@@ -235,6 +236,14 @@ public class ArrayMethodFunction
         return _array; // Return the array itself
     }
 
+    private object? ForEach(List<object?> arguments)
+    {
+        // TODO: Implement forEach properly with interpreter context
+        // For now, this is a placeholder that indicates forEach is not fully implemented
+        throw new ECEngineException("Array.forEach() not yet fully implemented in ArrayGlobals",
+            1, 1, "", "forEach method needs interpreter context for function calling");
+    }
+
     private bool AreEqual(object? a, object? b)
     {
         if (a == null && b == null) return true;
@@ -251,5 +260,86 @@ public class ArrayMethodFunction
         
         // Default object comparison
         return a.Equals(b);
+    }
+}
+
+/// <summary>
+/// Array global object implementation for ECEngine scripts
+/// Provides JavaScript-like Array constructor and static methods
+/// </summary>
+public class ArrayStaticModule
+{
+    /// <summary>
+    /// Array.isArray() static method
+    /// </summary>
+    public object? isArray(object? value)
+    {
+        return value is List<object?> || value is object[];
+    }
+}
+
+/// <summary>
+/// Array static method function that delegates to ArrayStaticModule
+/// </summary>
+public class ArrayStaticMethodFunction
+{
+    private readonly ArrayStaticModule _arrayModule;
+    private readonly string _methodName;
+
+    public ArrayStaticMethodFunction(ArrayStaticModule arrayModule, string methodName)
+    {
+        _arrayModule = arrayModule;
+        _methodName = methodName;
+    }
+
+    public object? Call(List<object?> arguments)
+    {
+        return _methodName switch
+        {
+            "isArray" => _arrayModule.isArray(arguments.Count > 0 ? arguments[0] : null),
+            _ => throw new ECEngineException($"Unknown Array method: {_methodName}",
+                1, 1, "", $"Array.{_methodName} is not implemented")
+        };
+    }
+}
+
+/// <summary>
+/// Array module class that provides static methods like Array.isArray
+/// </summary>
+public class ArrayModuleClass
+{
+    public ArrayStaticMethodFunction isArray { get; }
+    
+    public ArrayModuleClass()
+    {
+        var arrayStaticModule = new ArrayStaticModule();
+        isArray = new ArrayStaticMethodFunction(arrayStaticModule, "isArray");
+    }
+
+    /// <summary>
+    /// Array constructor function
+    /// </summary>
+    public object? Call(List<object?> arguments)
+    {
+        if (arguments.Count == 0)
+            return new List<object?>();
+        
+        if (arguments.Count == 1 && arguments[0] is double length)
+        {
+            // Array(length) - create array with specified length
+            var arrayLength = (int)length;
+            if (arrayLength < 0) 
+                throw new ECEngineException("Invalid array length", 1, 1, "", "Array length must be non-negative");
+            
+            var array = new List<object?>();
+            for (int i = 0; i < arrayLength; i++)
+            {
+                array.Add(null);
+            }
+            return array;
+        }
+        
+        // Array(element0, element1, ...) - create array with elements
+        return new List<object?>(arguments);
     }
 }

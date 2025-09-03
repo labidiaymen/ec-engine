@@ -11,7 +11,7 @@ public class ObjectModule
     {
         if (obj is Dictionary<string, object?> dict)
         {
-            return dict.Keys.ToArray();
+            return dict.Keys.ToList<object?>();
         }
         
         if (obj == null)
@@ -25,7 +25,7 @@ public class ObjectModule
         var properties = type.GetProperties()
             .Where(p => p.CanRead)
             .Select(p => p.Name)
-            .ToArray();
+            .ToList<object?>();
         
         return properties;
     }
@@ -166,6 +166,52 @@ public class ObjectModule
         // For now, just return the object as-is
         return obj;
     }
+
+    public object? defineProperty(object? obj, object? prop, object? descriptor)
+    {
+        if (obj == null)
+        {
+            throw new ECEngineException("Cannot call defineProperty on null or undefined",
+                1, 1, "", "Object.defineProperty() requires a non-null object");
+        }
+
+        if (prop is not string propName)
+        {
+            throw new ECEngineException("Property name must be a string",
+                1, 1, "", "Object.defineProperty() property name must be a string");
+        }
+
+        // Convert object to dictionary if it's not already
+        Dictionary<string, object?> targetDict;
+        if (obj is Dictionary<string, object?> dict)
+        {
+            targetDict = dict;
+        }
+        else
+        {
+            // For now, we'll just throw an error for non-dictionary objects
+            // In a full implementation, we'd handle native objects differently
+            throw new ECEngineException("Cannot define property on non-object",
+                1, 1, "", "Object.defineProperty() only supports dictionary objects");
+        }
+
+        // Handle descriptor properties
+        if (descriptor is Dictionary<string, object?> desc)
+        {
+            // Simple implementation - just set the value if provided
+            if (desc.ContainsKey("value"))
+            {
+                targetDict[propName] = desc["value"];
+            }
+            
+            // Note: In a full implementation, we'd handle:
+            // - get/set (accessor properties)
+            // - writable, enumerable, configurable flags
+            // - Property descriptors and attribute enforcement
+        }
+
+        return obj;
+    }
 }
 
 /// <summary>
@@ -198,8 +244,61 @@ public class ObjectMethodFunction
                 arguments.Count > 1 ? arguments[1] : null),
             "freeze" => _objectModule.freeze(arguments.Count > 0 ? arguments[0] : null),
             "seal" => _objectModule.seal(arguments.Count > 0 ? arguments[0] : null),
+            "defineProperty" => _objectModule.defineProperty(
+                arguments.Count > 0 ? arguments[0] : null,
+                arguments.Count > 1 ? arguments[1] : null,
+                arguments.Count > 2 ? arguments[2] : null),
             _ => throw new ECEngineException($"Unknown Object method: {_methodName}",
                 1, 1, "", $"Object.{_methodName} is not implemented")
         };
+    }
+}
+
+/// <summary>
+/// Global Object module for ECEngine scripts, providing static Object methods
+/// </summary>
+public class ObjectModuleClass
+{
+    public ObjectMethodFunction keys { get; }
+    public ObjectMethodFunction values { get; }
+    public ObjectMethodFunction entries { get; }
+    public ObjectMethodFunction hasOwnProperty { get; }
+    public ObjectMethodFunction assign { get; }
+    public ObjectMethodFunction create { get; }
+    public ObjectMethodFunction freeze { get; }
+    public ObjectMethodFunction seal { get; }
+    public ObjectMethodFunction defineProperty { get; }
+
+    public ObjectModuleClass()
+    {
+        var objectModule = new ObjectModule();
+        keys = new ObjectMethodFunction(objectModule, "keys");
+        values = new ObjectMethodFunction(objectModule, "values");
+        entries = new ObjectMethodFunction(objectModule, "entries");
+        hasOwnProperty = new ObjectMethodFunction(objectModule, "hasOwnProperty");
+        assign = new ObjectMethodFunction(objectModule, "assign");
+        create = new ObjectMethodFunction(objectModule, "create");
+        freeze = new ObjectMethodFunction(objectModule, "freeze");
+        seal = new ObjectMethodFunction(objectModule, "seal");
+        defineProperty = new ObjectMethodFunction(objectModule, "defineProperty");
+    }
+
+    /// <summary>
+    /// Object constructor function
+    /// </summary>
+    public object? Call(List<object?> arguments)
+    {
+        if (arguments.Count == 0)
+            return new Dictionary<string, object?>();
+        
+        var value = arguments[0];
+        if (value == null)
+            return new Dictionary<string, object?>();
+        
+        // Convert primitive values to object form
+        if (value is string || value is double || value is bool)
+            return new Dictionary<string, object?> { ["value"] = value };
+        
+        return value;
     }
 }

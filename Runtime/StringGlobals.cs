@@ -98,6 +98,13 @@ namespace ECEngine.Runtime
                 "sub" => Sub(),
                 "sup" => Sup(),
                 
+                // Node.js compatibility methods
+                "getFileName" => GetFileName(),
+                "getLineNumber" => GetLineNumber(),
+                "getColumnNumber" => GetColumnNumber(),
+                "isEval" => IsEval(),
+                "getFunctionName" => GetFunctionName(),
+                
                 _ => throw new ECEngineException($"String method {_methodName} not implemented",
                     1, 1, "", $"The method '{_methodName}' is not available on strings")
             };
@@ -710,6 +717,151 @@ namespace ECEngine.Runtime
         private object? Sup()
         {
             return $"<sup>{_stringValue}</sup>";
+        }
+        
+        // Node.js compatibility methods
+        private object? GetFileName()
+        {
+            // For Node.js compatibility - typically used on file paths
+            // Extract filename from path-like strings
+            if (string.IsNullOrEmpty(_stringValue))
+                return "";
+                
+            try
+            {
+                return System.IO.Path.GetFileName(_stringValue);
+            }
+            catch
+            {
+                // If not a valid path, return the string as-is
+                return _stringValue;
+            }
+        }
+        
+        private object? GetLineNumber()
+        {
+            // For Node.js compatibility - typically used in Error stack traces
+            // Try to parse line number from strings like "file.js:123:45"
+            if (string.IsNullOrEmpty(_stringValue))
+                return null;
+                
+            try
+            {
+                // Look for :number: pattern (common in stack traces)
+                var parts = _stringValue.Split(':');
+                if (parts.Length >= 2)
+                {
+                    for (int i = 1; i < parts.Length; i++)
+                    {
+                        if (int.TryParse(parts[i], out var lineNumber))
+                        {
+                            return lineNumber;
+                        }
+                    }
+                }
+                
+                // If no line number found, return null or 0
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        
+        private object? GetColumnNumber()
+        {
+            // For Node.js compatibility - typically used in Error stack traces
+            // Try to parse column number from strings like "file.js:123:45"
+            if (string.IsNullOrEmpty(_stringValue))
+                return null;
+                
+            try
+            {
+                // Look for :number:number pattern and get the last number
+                var parts = _stringValue.Split(':');
+                if (parts.Length >= 3)
+                {
+                    // Try from the end - column is usually the last number
+                    for (int i = parts.Length - 1; i >= 0; i--)
+                    {
+                        if (int.TryParse(parts[i], out var columnNumber))
+                        {
+                            return columnNumber;
+                        }
+                    }
+                }
+                
+                // If no column number found, return null or 0
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        
+        private object? IsEval()
+        {
+            // For Node.js compatibility - typically used in Error stack traces
+            // Check if the string indicates eval code
+            if (string.IsNullOrEmpty(_stringValue))
+                return false;
+                
+            // Common patterns for eval code in stack traces
+            return _stringValue.Contains("eval") || 
+                   _stringValue.Contains("<anonymous>") ||
+                   _stringValue.Contains("(eval") ||
+                   _stringValue.StartsWith("eval ");
+        }
+        
+        private object? GetFunctionName()
+        {
+            // For Node.js compatibility - typically used in Error stack traces
+            // Try to extract function name from stack trace strings
+            if (string.IsNullOrEmpty(_stringValue))
+                return null;
+                
+            try
+            {
+                // Common patterns in stack traces: "at functionName (" or "functionName@"
+                if (_stringValue.Contains(" at "))
+                {
+                    var parts = _stringValue.Split(new[] { " at " }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        var functionPart = parts[1].Trim();
+                        var spaceIndex = functionPart.IndexOf(' ');
+                        if (spaceIndex >= 0)
+                        {
+                            return functionPart.Substring(0, spaceIndex);
+                        }
+                        var parenIndex = functionPart.IndexOf('(');
+                        if (parenIndex >= 0)
+                        {
+                            return functionPart.Substring(0, parenIndex);
+                        }
+                        return functionPart;
+                    }
+                }
+                
+                // Firefox style: functionName@file
+                if (_stringValue.Contains("@"))
+                {
+                    var atIndex = _stringValue.IndexOf('@');
+                    if (atIndex > 0)
+                    {
+                        return _stringValue.Substring(0, atIndex);
+                    }
+                }
+                
+                // If no function name found, return null
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         // Helper method to convert values to integers

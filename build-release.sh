@@ -6,9 +6,9 @@ set -e
 
 VERSION=${1:-"1.0.0"}
 BUILD_DIR="./release-build"
-PLATFORMS=("linux-x64" "osx-x64" "osx-arm64" "win-x64")
+PLATFORMS=("osx-x64" "osx-arm64")
 
-echo "Building ECEngine v$VERSION for all platforms..."
+echo "Building ECEngine v$VERSION for macOS platforms..."
 echo "=============================================="
 
 # Clean build directory
@@ -27,7 +27,8 @@ for platform in "${PLATFORMS[@]}"; do
     # Build the project
     dotnet publish -c Release -r "$platform" --self-contained true \
         -p:PublishAot=true \
-        -p:StripSymbols=true \
+        -p:StripSymbols=false \
+        -p:IlcDisableReflection=false \
         -p:Version="$VERSION" \
         -p:AssemblyVersion="$VERSION" \
         -p:FileVersion="$VERSION" \

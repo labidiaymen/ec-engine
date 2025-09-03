@@ -35,6 +35,9 @@ public class Function
     public List<Statement> Body { get; }
     public Dictionary<string, VariableInfo> Closure { get; }
     
+    // Function properties storage (JavaScript functions are objects and can have properties)
+    public Dictionary<string, object?> Properties { get; } = new Dictionary<string, object?>();
+    
     // Properties for observable server proxy support
     public bool IsObservableProxy { get; set; } = false;
     public object? ObservableServer { get; set; }

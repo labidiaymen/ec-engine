@@ -31,7 +31,10 @@ public class ModuleSystem
     {
         _rootPath = rootPath;
         _cacheDirectory = Path.Combine(Path.GetTempPath(), "ecengine-cache");
-        Directory.CreateDirectory(_cacheDirectory);
+        if (!Directory.Exists(_cacheDirectory))
+        {
+            Directory.CreateDirectory(_cacheDirectory);
+        }
         
         // Set a reasonable user agent for HTTP requests
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "ECEngine/1.0.0");
@@ -78,6 +81,21 @@ public class ModuleSystem
         
         try
         {
+            // Check if this is a JSON file
+            if (absolutePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                // Load JSON file using existing JSON parsing functionality
+                var jsonContent = File.ReadAllText(absolutePath);
+                var jsonParser = new JsonParseFunction();
+                var jsonObject = jsonParser.Call(new List<object?> { jsonContent });
+                
+                // Set the JSON data as the default export
+                module.Exports["default"] = jsonObject;
+                module.IsLoaded = true;
+                return module;
+            }
+            
+            // Regular JavaScript module loading
             var moduleCode = File.ReadAllText(absolutePath);
             var parser = new Parser.Parser();
             var ast = parser.Parse(moduleCode);
@@ -90,10 +108,18 @@ public class ModuleSystem
             // Execute the module code
             moduleInterpreter.Evaluate(ast, moduleCode);
             
-            // Copy exports from module interpreter
+            // Copy exports from module interpreter, wrapping functions to preserve scope
             foreach (var export in moduleInterpreter.GetExports())
             {
-                module.Exports[export.Key] = export.Value;
+                if (export.Value is Function function)
+                {
+                    // Wrap functions to preserve their module scope
+                    module.Exports[export.Key] = new ModuleBoundFunction(function, moduleInterpreter);
+                }
+                else
+                {
+                    module.Exports[export.Key] = export.Value;
+                }
             }
             
             module.IsLoaded = true;
@@ -289,7 +315,7 @@ public class ModuleSystem
     
     private bool HasSupportedExtension(string path)
     {
-        return path.EndsWith(".ec") || path.EndsWith(".js") || path.EndsWith(".mjs");
+        return path.EndsWith(".ec") || path.EndsWith(".js") || path.EndsWith(".mjs") || path.EndsWith(".json");
     }
     
     /// <summary>
@@ -477,7 +503,7 @@ public class ModuleSystem
         // If no extension, try supported extensions in order of preference
         if (!HasSupportedExtension(basePath))
         {
-            string[] extensions = { ".ec", ".js", ".mjs" };
+            string[] extensions = { ".ec", ".js", ".mjs", ".json" };
             
             foreach (string ext in extensions)
             {

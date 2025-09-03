@@ -108,6 +108,8 @@ public partial class Interpreter
         return _scopes;
     }
 
+
+
     /// <summary>
     /// Push 'this' context for function calls (called from VariableInfo)
     /// </summary>
@@ -344,6 +346,16 @@ public partial class Interpreter
     /// </summary>
     private object? EvaluateProgram(ProgramNode program)
     {
+        // First pass: Process function declarations (hoisting)
+        foreach (var statement in program.Body)
+        {
+            if (statement is FunctionDeclaration funcDecl)
+            {
+                EvaluateFunctionDeclaration(funcDecl);
+            }
+        }
+        
+        // Second pass: Process all statements (including the function declarations again, but they'll be no-ops)
         object? lastValue = null;
         
         foreach (var statement in program.Body)

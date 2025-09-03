@@ -264,10 +264,11 @@ public class CallExpression : Expression
 {
     public Expression Callee { get; }
     public List<Expression> Arguments { get; }
-    public CallExpression(Expression callee, List<Expression> arguments)
+    public CallExpression(Expression callee, List<Expression> arguments, Token? token = null)
     {
         Callee = callee;
         Arguments = arguments;
+        Token = token;
     }
     
     // Delegate to interpreter's optimized call expression evaluation

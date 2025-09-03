@@ -335,7 +335,17 @@ public partial class Interpreter
     private object? EvaluateThrowStatement(ThrowStatement throwStmt)
     {
         var value = Evaluate(throwStmt.Argument, _sourceCode);
-        var message = value?.ToString() ?? "Thrown value";
+        
+        // Extract message from Error objects (which are dictionaries)
+        string message;
+        if (value is Dictionary<string, object?> errorDict && errorDict.ContainsKey("message"))
+        {
+            message = errorDict["message"]?.ToString() ?? "Error";
+        }
+        else
+        {
+            message = value?.ToString() ?? "Thrown value";
+        }
         
         throw new ECEngineException(message, 
             throwStmt.Token?.Line ?? 1, throwStmt.Token?.Column ?? 1, _sourceCode,

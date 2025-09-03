@@ -1,3 +1,4 @@
+using System;
 using ECEngine.AST;
 using ECEngine.Lexer;
 using System.Reflection;
@@ -14,6 +15,14 @@ public partial class Interpreter
     /// </summary>
     private object? EvaluateFunctionDeclaration(FunctionDeclaration funcDecl)
     {
+        // Check if function is already declared (happens during hoisting)
+        var currentScope = _scopes.Peek();
+        if (currentScope.ContainsKey(funcDecl.Name))
+        {
+            // Function already hoisted, just return the existing function
+            return currentScope[funcDecl.Name].Value;
+        }
+        
         // Create closure with current scope variables (maintain references, not copies)
         var closure = new Dictionary<string, VariableInfo>();
         foreach (var scope in _scopes.Reverse())
@@ -247,6 +256,7 @@ public partial class Interpreter
             PathMethodFunction pathMethodFunc => pathMethodFunc.Call(arguments),
             ProcessMethodFunction processMethodFunc => processMethodFunc.Call(arguments),
             ObjectMethodFunction objectMethodFunc => objectMethodFunc.Call(arguments),
+            ArrayStaticMethodFunction arrayStaticMethodFunc => arrayStaticMethodFunc.Call(arguments),
             
             // EventEmitter functions (legacy)
             EventEmitterCreateFunction eventEmitterCreateFunc => eventEmitterCreateFunc.Call(arguments),
@@ -287,6 +297,13 @@ public partial class Interpreter
             StringStaticMethodFunction stringStaticFunc => stringStaticFunc.Call(arguments),
             StringMethodFunction stringMethodFunc => stringMethodFunc.Call(arguments),
             ArrayMethodFunction arrayMethodFunc => arrayMethodFunc.Call(arguments),
+            
+            // Number functions
+            NumberModule numberModule => numberModule.Call(arguments),
+            
+            // Error functions
+            ErrorModule errorModule => errorModule.Call(arguments),
+            ErrorMethodFunction errorMethodFunc => errorMethodFunc.Call(arguments),
             
             // Utility functions
             UtilMethodFunction utilMethodFunc => utilMethodFunc.Call(arguments),
@@ -359,6 +376,9 @@ public partial class Interpreter
             // Generator functions
             GeneratorMethodFunction generatorMethodFunc => generatorMethodFunc.Call(arguments),
             GeneratorFunction generatorFunction => CallGeneratorFunction(generatorFunction, arguments, thisContext),
+            
+            // Module-bound functions (exported from other modules)
+            ModuleBoundFunction moduleBoundFunc => moduleBoundFunc.Call(arguments, thisContext),
             
             // User-defined functions
             Function userFunction => CallUserFunction(userFunction, arguments, thisContext),
@@ -517,7 +537,22 @@ public partial class Interpreter
             
             // First, add the closure scopes in the correct order
             var closureScopes = new Stack<Dictionary<string, VariableInfo>>();
-            foreach (var kvp in function.Closure)
+            
+            // Add current module-level variables to closure (for hoisted functions)
+            var enhancedClosure = new Dictionary<string, VariableInfo>(function.Closure);
+            if (Variables.Count > 0)
+            {
+                // Add any module-level variables that might not be in the original closure
+                foreach (var moduleVar in Variables)
+                {
+                    if (!enhancedClosure.ContainsKey(moduleVar.Key))
+                    {
+                        enhancedClosure[moduleVar.Key] = moduleVar.Value;
+                    }
+                }
+            }
+            
+            foreach (var kvp in enhancedClosure)
             {
                 // We need to group variables by their original scope level
                 // For now, we'll put all closure variables in a single scope
@@ -555,6 +590,16 @@ public partial class Interpreter
             object? result = null;
             try
             {
+                // First pass: Process function declarations (hoisting) within the function scope
+                foreach (var statement in function.Body)
+                {
+                    if (statement is FunctionDeclaration funcDecl)
+                    {
+                        EvaluateFunctionDeclaration(funcDecl);
+                    }
+                }
+                
+                // Second pass: Execute all statements
                 foreach (var statement in function.Body)
                 {
                     Evaluate(statement, _sourceCode);

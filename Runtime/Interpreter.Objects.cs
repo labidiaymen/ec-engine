@@ -118,6 +118,14 @@ public partial class Interpreter
                 // Use reflection to get the property from StringModule
                 return GetReflectionProperty(obj, propertyName);
                 
+            case Function func:
+                // JavaScript functions are objects and can have properties
+                return func.Properties.TryGetValue(propertyName, out var funcProp) ? funcProp : null;
+                
+            case ModuleBoundFunction boundFunc:
+                // ModuleBoundFunction should delegate property access to the underlying function
+                return boundFunc.GetProperty(propertyName);
+                
             default:
                 // Try reflection for C# objects
                 return GetReflectionProperty(obj, propertyName);
@@ -137,6 +145,29 @@ public partial class Interpreter
         {
             case Dictionary<string, object?> dict:
                 dict[propertyName] = value;
+                
+                // Special case: if setting module.exports, also update the interpreter's _exports
+                if (propertyName == "exports" && dict.ContainsKey("exports"))
+                {
+                    // Check if this is the module object by seeing if it has an "exports" key
+                    // and if so, update our internal _exports reference
+                    _exports = value as Dictionary<string, object?> ?? new Dictionary<string, object?>();
+                    if (value != null && !(value is Dictionary<string, object?>))
+                    {
+                        // If exports is set to a non-dictionary (like a function), wrap it
+                        _exports = new Dictionary<string, object?> { ["default"] = value };
+                    }
+                }
+                break;
+                
+            case Function func:
+                // JavaScript functions are objects and can have properties
+                func.Properties[propertyName] = value;
+                break;
+                
+            case ModuleBoundFunction boundFunc:
+                // ModuleBoundFunction should delegate property setting to the underlying function
+                boundFunc.SetProperty(propertyName, value);
                 break;
                 
             case List<object?> list:
@@ -218,6 +249,92 @@ public partial class Interpreter
                 if (args.Length == 0) return false;
                 var searchValue = args[0];
                 return array.Any(item => StrictEquals(item, searchValue));
+            }),
+            "forEach" => new Func<object[], object?>(args => {
+                if (args.Length == 0)
+                {
+                    throw new ECEngineException("Array.forEach() requires a callback function",
+                        1, 1, "", "The first argument to forEach must be a function");
+                }
+
+                var callback = args[0];
+                var thisArg = args.Length > 1 ? args[1] : null;
+
+                // Iterate through array and call the callback function for each element
+                for (int i = 0; i < array.Count; i++)
+                {
+                    var callbackArgs = new object?[] { array[i], (double)i, array };
+                    
+                    try
+                    {
+                        // Handle different types of callbacks
+                        if (callback is Func<object[], object?> func)
+                        {
+                            func(callbackArgs);
+                        }
+                        else if (callback is Function function)
+                        {
+                            CallUserFunctionPublic(function, new List<object?> { array[i], (double)i, array }, thisArg);
+                        }
+                        else
+                        {
+                            throw new ECEngineException("Array.forEach() requires a callback function",
+                                1, 1, "", "The first argument to forEach must be a function");
+                        }
+                    }
+                    catch (Exception ex) when (!(ex is ECEngineException))
+                    {
+                        throw new ECEngineException($"Error in forEach callback: {ex.Message}",
+                            1, 1, "", $"forEach callback failed: {ex.Message}");
+                    }
+                }
+
+                return null; // forEach returns undefined
+            }),
+            "map" => new Func<object[], object?>(args => {
+                if (args.Length == 0)
+                {
+                    throw new ECEngineException("Array.map() requires a callback function",
+                        1, 1, "", "The first argument to map must be a function");
+                }
+
+                var callback = args[0];
+                var thisArg = args.Length > 1 ? args[1] : null;
+                var results = new List<object?>();
+
+                // Iterate through array and call the callback function for each element
+                for (int i = 0; i < array.Count; i++)
+                {
+                    var callbackArgs = new object?[] { array[i], (double)i, array };
+                    object? result = null;
+                    
+                    try
+                    {
+                        // Handle different types of callbacks
+                        if (callback is Func<object[], object?> func)
+                        {
+                            result = func(callbackArgs);
+                        }
+                        else if (callback is Function function)
+                        {
+                            result = CallUserFunctionPublic(function, new List<object?> { array[i], (double)i, array }, thisArg);
+                        }
+                        else
+                        {
+                            throw new ECEngineException("Array.map() requires a callback function",
+                                1, 1, "", "The first argument to map must be a function");
+                        }
+                    }
+                    catch (Exception ex) when (!(ex is ECEngineException))
+                    {
+                        throw new ECEngineException($"Error in map callback: {ex.Message}",
+                            1, 1, "", $"map callback failed: {ex.Message}");
+                    }
+                    
+                    results.Add(result);
+                }
+
+                return results; // map returns a new array
             }),
             _ when int.TryParse(propertyName, out int index) => 
                 index >= 0 && index < array.Count ? array[index] : null,
@@ -737,6 +854,14 @@ public partial class Interpreter
                 ? new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ToNumber(args[0]))
                 : DateTime.Now,
             _ when constructor is StringModule => args.Length > 0 ? ToString(args[0]) : "",
+            _ when constructor is NumberModule => 
+                new NumberModule().Call(args.ToList()),
+            _ when constructor is ErrorModule => 
+                new ErrorModule().Call(args.ToList()),
+            _ when constructor is ArrayModuleClass arrayModule => 
+                arrayModule.Call(args.ToList()),
+            _ when constructor is ObjectModuleClass objectModule => 
+                objectModule.Call(args.ToList()),
             _ when constructor is DateModule => args.Length > 0 
                 ? new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ToNumber(args[0]))
                 : DateTime.Now,
