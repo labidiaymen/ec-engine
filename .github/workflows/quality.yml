@@ -95,7 +95,7 @@ jobs:
         reportgenerator -reports:"./TestResults/**/coverage.cobertura.xml" -targetdir:"./TestResults/report" -reporttypes:"Html;Cobertura"
       
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         directory: ./TestResults
         flags: unittests
